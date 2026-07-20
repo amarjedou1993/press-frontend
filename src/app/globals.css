@@ -1,0 +1,106 @@
+/* src/app/globals.css
+   ─────────────────────────────────────────────────────────────
+   HAPA design tokens — anchored to the official RIM palette
+   (couleurs_rim.pdf):  green #00A95C · red #D01C1F · gold #FFD700
+   Rule of use:
+   · pure official values → brand moments, badges, the card motif
+   · derived darker greens → buttons, links, chrome (WCAG AA on white)
+   · gold accents, never carries text · red = rejection/danger ONLY
+   ───────────────────────────────────────────────────────────── */
+@import "tailwindcss";
+
+:root {
+  /* ── Green (primary) ─────────────────────────── */
+  --green-500: #00a95c;   /* official — badges, brand fills */
+  --green-600: #008a4c;   /* hover */
+  --green-700: #006b3c;   /* buttons, links — AA on white */
+  --green-900: #0b2e1f;   /* sidebar / chrome */
+  --green-tint: #e6f6ee;  /* soft backgrounds, accepted badge bg */
+
+  /* ── Gold (accent) ───────────────────────────── */
+  --gold-500: #ffd700;    /* official — seal, focus ring, highlights */
+  --gold-700: #8c7500;    /* text on gold tints */
+  --gold-tint: #fff6d1;   /* “action needed” badge bg */
+
+  /* ── Red (danger — rejection only) ───────────── */
+  --red-500: #d01c1f;     /* official */
+  --red-700: #a81618;     /* hover */
+  --red-tint: #fbe9e9;    /* error/rejected badge bg */
+
+  /* ── Neutrals (green-tinted greys) ───────────── */
+  --paper: #f6f8f7;
+  --card: #ffffff;
+  --ink: #16221b;
+  --slate: #5b6862;
+  --muted: #8a948d;
+  --line: #e4e8e5;
+
+  /* ── Legacy aliases (existing pages keep working) ── */
+  --green: var(--green-700);
+  --green-deep: var(--green-900);
+  --gold: var(--gold-500);
+  --gold-soft: var(--gold-tint);
+  --danger: var(--red-500);
+
+  /* ── Status system → the 9-state machine ─────── */
+  --st-draft-bg: #eef1ef;               --st-draft-fg: var(--slate);
+  --st-review-bg: #eef1ef;              --st-review-fg: var(--slate);
+  --st-correction-bg: var(--gold-tint); --st-correction-fg: var(--gold-700);
+  --st-accepted-bg: var(--green-tint);  --st-accepted-fg: var(--green-700);
+  --st-rejected-bg: var(--red-tint);    --st-rejected-fg: var(--red-500);
+
+  /* ── Shape & elevation ───────────────────────── */
+  --radius: 12px;
+  --radius-lg: 16px;
+  --shadow-card: 0 1px 2px rgba(22, 34, 27, 0.05), 0 4px 16px rgba(22, 34, 27, 0.05);
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+[dir="rtl"] {
+  font-family: var(--font-arabic), var(--font-sans), sans-serif;
+}
+
+.font-mono {
+  font-family: var(--font-mono), ui-monospace, monospace;
+}
+
+/* Keyboard focus: national gold — except inputs, which carry their own
+   green focus ring (defined in the components) to avoid double outlines. */
+:focus-visible {
+  outline: 3px solid var(--gold-500);
+  outline-offset: 2px;
+}
+input:focus-visible {
+  outline: none;
+}
+
+/* ── Motion system ─────────────────────────────────────────────
+   Two movements only, used with restraint:
+   · fade-up  — content entrance, staggered via animation-delay
+   · card-float — the press-card motif breathing on the brand panel */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes cardFloat {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-10px); }
+}
+
+.fade-up {
+  animation: fadeUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.card-float {
+  animation: cardFloat 7s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fade-up, .card-float {
+    animation: none;
+  }
+}
