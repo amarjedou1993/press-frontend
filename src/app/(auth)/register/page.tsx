@@ -1,11 +1,14 @@
 "use client";
 // src/app/(auth)/register/page.tsx — URL stays /register
+// Each error is bound to exactly its field via the shared name key, so a
+// message can never surface under the wrong input.
 
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { ApiError } from "@/lib/api/client";
+import { validateRegistration } from "@/lib/validation";
 import {
   AuthShell,
   Field,
@@ -25,23 +28,30 @@ export default function RegisterPage() {
     event.preventDefault();
     setError(undefined);
     setFieldErrors({});
-    setLoading(true);
 
     const form = new FormData(event.currentTarget);
+    const input = {
+      fullName: String(form.get("fullName")),
+      email: String(form.get("email")),
+      phone: String(form.get("phone")),
+      password: String(form.get("password")),
+    };
+
+    const clientErrors = validateRegistration(input);
+    if (Object.keys(clientErrors).length > 0) {
+      setFieldErrors(clientErrors);
+      return;
+    }
+
+    setLoading(true);
     try {
-      await register({
-        fullName: String(form.get("fullName")),
-        email: String(form.get("email")),
-        phone: String(form.get("phone")) || undefined,
-        password: String(form.get("password")),
-      });
+      await register({ ...input, phone: input.phone.replace(/\s/g, "") });
       router.push("/dashboard");
     } catch (e) {
       if (e instanceof ApiError) {
         if (e.problem.status === 409) {
           setFieldErrors({ email: "Un compte existe déjà avec cet e-mail." });
         } else if (e.problem.errors) {
-          // Backend field-level validation (400) → shown next to each field
           setFieldErrors(e.problem.errors);
         } else {
           setError(e.message);
@@ -75,7 +85,6 @@ export default function RegisterPage() {
           label="Nom complet"
           name="fullName"
           autoComplete="name"
-          required
           error={fieldErrors.fullName}
         />
         <Field
@@ -83,22 +92,22 @@ export default function RegisterPage() {
           name="email"
           type="email"
           autoComplete="email"
-          required
           error={fieldErrors.email}
         />
         <Field
-          label="Téléphone (optionnel)"
+          label="Téléphone"
           name="phone"
           type="tel"
+          inputMode="numeric"
           autoComplete="tel"
+          placeholder="22 12 34 56"
           error={fieldErrors.phone}
         />
         <PasswordField
           label="Mot de passe"
           name="password"
           autoComplete="new-password"
-          minLength={8}
-          required
+          placeholder="8 caractères min., une lettre et un chiffre"
           error={fieldErrors.password}
         />
         <SubmitButton loading={loading}>Créer mon compte</SubmitButton>

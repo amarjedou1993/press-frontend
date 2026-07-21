@@ -1,18 +1,19 @@
 "use client";
 // src/components/AppShell.tsx
-// The application chrome for all logged-in spaces (candidate / reviewer /
-// admin), following the inspiration set: deep-green sidebar, light content
-// area, white cards. Week 2+ screens plug their nav items and content in.
+// The application chrome for every logged-in space. Now ROLE-AWARE: each
+// group layout declares which role it's for, and the shell enforces it —
+// wrong-role users are redirected to THEIR home, not shown someone else's.
 
 import { useEffect, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/lib/auth";
+import { useAuth, homeForRole } from "@/lib/auth";
+import type { Role } from "@/lib/types";
 
 export interface NavItem {
   label: string;
   href: string;
   active?: boolean;
-  disabled?: boolean; // for “coming in week N” placeholders
+  disabled?: boolean;
 }
 
 const ROLE_LABELS: Record<string, string> = {
@@ -22,10 +23,12 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 export function AppShell({
+  requireRole,
   nav,
   title,
   children,
 }: {
+  requireRole: Role;
   nav: NavItem[];
   title: string;
   children: ReactNode;
@@ -33,13 +36,18 @@ export function AppShell({
   const { user, ready, logout } = useAuth();
   const router = useRouter();
 
-  // Guard shared by every protected space: wait for rehydration, then
-  // bounce anonymous visitors to /login.
   useEffect(() => {
-    if (ready && !user) router.replace("/login");
-  }, [ready, user, router]);
+    if (!ready) return;
+    if (!user) {
+      router.replace("/login");
+    } else if (user.role !== requireRole) {
+      // Logged in, wrong space → send to the caller's own home.
+      router.replace(homeForRole(user.role));
+    }
+  }, [ready, user, requireRole, router]);
 
-  if (!ready || !user) return null;
+  // Render nothing until we've confirmed the right user for this space.
+  if (!ready || !user || user.role !== requireRole) return null;
 
   return (
     <div className="min-h-screen lg:grid lg:grid-cols-[250px_1fr]">
@@ -62,7 +70,7 @@ export function AppShell({
         <nav className="flex-1 px-3 py-4 space-y-1">
           {nav.map((item) => (
             <a
-              key={item.href}
+              key={item.label}
               href={item.disabled ? undefined : item.href}
               aria-disabled={item.disabled}
               aria-current={item.active ? "page" : undefined}
@@ -110,13 +118,13 @@ export function AppShell({
   );
 }
 
-/* ── Shared card + status badge (the 9-state machine, visually) ── */
+/* ── Shared card + status badge ── */
 
 export function Card({ children }: { children: ReactNode }) {
   return (
     <div
-      className="rounded-[var(--radius-lg)] bg-white p-6"
-      style={{ boxShadow: "var(--shadow-card)", border: "1px solid var(--line)" }}
+      className="rounded-[16px] bg-white p-6"
+      style={{ boxShadow: "0 1px 2px rgba(22,34,27,.05),0 4px 16px rgba(22,34,27,.05)", border: "1px solid var(--line)" }}
     >
       {children}
     </div>
@@ -135,10 +143,7 @@ export function StatusBadge({
   return (
     <span
       className="inline-flex items-center rounded-full px-3 py-1 text-[12px] font-bold"
-      style={{
-        background: `var(--st-${kind}-bg)`,
-        color: `var(--st-${kind}-fg)`,
-      }}
+      style={{ background: `var(--st-${kind}-bg)`, color: `var(--st-${kind}-fg)` }}
     >
       {children}
     </span>

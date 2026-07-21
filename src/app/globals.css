@@ -1,58 +1,103 @@
 /* src/app/globals.css
    ─────────────────────────────────────────────────────────────
-   HAPA design tokens — anchored to the official RIM palette
-   (couleurs_rim.pdf):  green #00A95C · red #D01C1F · gold #FFD700
-   Rule of use:
-   · pure official values → brand moments, badges, the card motif
-   · derived darker greens → buttons, links, chrome (WCAG AA on white)
-   · gold accents, never carries text · red = rejection/danger ONLY
+   AUTHORITATIVE merge of the RIM design tokens and shadcn/ui theme.
+   Order matters: Tailwind first, then @theme mapping shadcn's tokens
+   to our RIM palette. This file replaces whatever `shadcn init` wrote —
+   if you re-run init, re-apply this file afterward.
+   Palette (couleurs_rim.pdf): green #00A95C · red #D01C1F · gold #FFD700
    ───────────────────────────────────────────────────────────── */
 @import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
 
 :root {
-  /* ── Green (primary) ─────────────────────────── */
-  --green-500: #00a95c;   /* official — badges, brand fills */
-  --green-600: #008a4c;   /* hover */
-  --green-700: #006b3c;   /* buttons, links — AA on white */
-  --green-900: #0b2e1f;   /* sidebar / chrome */
-  --green-tint: #e6f6ee;  /* soft backgrounds, accepted badge bg */
+  /* ── RIM palette (our own tokens, used directly across the app) ── */
+  --green-500: #00a95c;
+  --green-600: #008a4c;
+  --green-700: #006b3c;
+  --green-900: #0b2e1f;
+  --green-tint: #e6f6ee;
+  --gold-500: #ffd700;
+  --gold-700: #8c7500;
+  --gold-tint: #fff6d1;
+  --red-500: #d01c1f;
+  --red-700: #a81618;
+  --red-tint: #fbe9e9;
 
-  /* ── Gold (accent) ───────────────────────────── */
-  --gold-500: #ffd700;    /* official — seal, focus ring, highlights */
-  --gold-700: #8c7500;    /* text on gold tints */
-  --gold-tint: #fff6d1;   /* “action needed” badge bg */
-
-  /* ── Red (danger — rejection only) ───────────── */
-  --red-500: #d01c1f;     /* official */
-  --red-700: #a81618;     /* hover */
-  --red-tint: #fbe9e9;    /* error/rejected badge bg */
-
-  /* ── Neutrals (green-tinted greys) ───────────── */
   --paper: #f6f8f7;
-  --card: #ffffff;
+  --card-bg: #ffffff;
   --ink: #16221b;
   --slate: #5b6862;
-  --muted: #8a948d;
+  --muted-fg: #8a948d;
   --line: #e4e8e5;
 
-  /* ── Legacy aliases (existing pages keep working) ── */
+  /* legacy aliases used by existing components */
   --green: var(--green-700);
   --green-deep: var(--green-900);
   --gold: var(--gold-500);
   --gold-soft: var(--gold-tint);
   --danger: var(--red-500);
 
-  /* ── Status system → the 9-state machine ─────── */
+  /* status system → the 9-state machine */
   --st-draft-bg: #eef1ef;               --st-draft-fg: var(--slate);
   --st-review-bg: #eef1ef;              --st-review-fg: var(--slate);
   --st-correction-bg: var(--gold-tint); --st-correction-fg: var(--gold-700);
   --st-accepted-bg: var(--green-tint);  --st-accepted-fg: var(--green-700);
   --st-rejected-bg: var(--red-tint);    --st-rejected-fg: var(--red-500);
 
-  /* ── Shape & elevation ───────────────────────── */
-  --radius: 12px;
-  --radius-lg: 16px;
-  --shadow-card: 0 1px 2px rgba(22, 34, 27, 0.05), 0 4px 16px rgba(22, 34, 27, 0.05);
+  --radius: 0.75rem;
+
+  /* ── shadcn/ui tokens, themed to the RIM palette ──
+     These are what shadcn components read. Mapping them here means every
+     shadcn component is on-brand automatically. */
+  --background: #ffffff;
+  --foreground: #16221b;
+  --card: #ffffff;
+  --card-foreground: #16221b;
+  --popover: #ffffff;
+  --popover-foreground: #16221b;
+  --primary: #006b3c;
+  --primary-foreground: #ffffff;
+  --secondary: #e6f6ee;
+  --secondary-foreground: #006b3c;
+  --muted: #eef1ef;
+  --muted-foreground: #5b6862;
+  --accent: #fff6d1;
+  --accent-foreground: #8c7500;
+  --destructive: #d01c1f;
+  --destructive-foreground: #ffffff;
+  --border: #e4e8e5;
+  --input: #e4e8e5;
+  --ring: #ffd700;
+}
+
+/* Bridge our CSS variables into Tailwind's utility system so classes like
+   bg-background / text-foreground / border-border resolve. */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+}
+
+* {
+  border-color: var(--border);
 }
 
 body {
@@ -69,8 +114,7 @@ body {
   font-family: var(--font-mono), ui-monospace, monospace;
 }
 
-/* Keyboard focus: national gold — except inputs, which carry their own
-   green focus ring (defined in the components) to avoid double outlines. */
+/* Keyboard focus in national gold — inputs carry their own green ring. */
 :focus-visible {
   outline: 3px solid var(--gold-500);
   outline-offset: 2px;
@@ -79,28 +123,13 @@ input:focus-visible {
   outline: none;
 }
 
-/* ── Motion system ─────────────────────────────────────────────
-   Two movements only, used with restraint:
-   · fade-up  — content entrance, staggered via animation-delay
-   · card-float — the press-card motif breathing on the brand panel */
+/* ── restrained motion ── */
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(16px); }
+  from { opacity: 0; transform: translateY(14px); }
   to   { opacity: 1; transform: none; }
 }
-@keyframes cardFloat {
-  0%, 100% { transform: translateY(0); }
-  50%      { transform: translateY(-10px); }
-}
-
-.fade-up {
-  animation: fadeUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-.card-float {
-  animation: cardFloat 7s ease-in-out infinite;
-}
+.fade-up { animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; }
 
 @media (prefers-reduced-motion: reduce) {
-  .fade-up, .card-float {
-    animation: none;
-  }
+  .fade-up { animation: none; }
 }

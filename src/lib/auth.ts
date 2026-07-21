@@ -1,22 +1,35 @@
+// src/lib/auth.ts
+// Session store (Zustand) + the single source of truth for where each role
+// lands after login. Pure client state; never mirrors server data.
+
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { registerAuthBridge } from "./api/client";
 import { login as apiLogin, register as apiRegister } from "./api/auth";
-import type {
-  LoginRequest,
-  RegisterCandidateRequest,
-  Role,
-} from "./types";
+import type { LoginRequest, RegisterCandidateRequest, Role } from "./types";
+import type { AuthResponse } from "./types";
 
 export interface SessionUser {
   role: Role;
   fullName: string;
 }
 
+/** The home route for each role — used by login and by the group guards. */
+export function homeForRole(role: Role): string {
+  switch (role) {
+    case "SUPER_ADMIN":
+      return "/admin";
+    case "REVIEWER":
+      return "/pool";
+    case "CANDIDATE":
+    default:
+      return "/dashboard";
+  }
+}
+
 interface AuthState {
   token: string | null;
   user: SessionUser | null;
-  /** true once localStorage rehydration finished — prevents redirect flicker */
   ready: boolean;
   login: (input: LoginRequest) => Promise<SessionUser>;
   register: (input: RegisterCandidateRequest) => Promise<SessionUser>;
@@ -51,21 +64,16 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: "pc-auth",
-      // Persist only the session itself — never flags or actions.
       partialize: (s) => ({ token: s.token, user: s.user }),
       onRehydrateStorage: () => (state) => state?._setReady(),
     }
   )
 );
 
-/** Drop-in replacement for the old context hook — same shape, no provider. */
 export function useAuth() {
   return useAuthStore();
 }
 
-// ── Bridge to the HTTP layer ─────────────────────────────────────────
-// client.ts stays free of store imports (no module cycle); the store
-// registers itself as the token source and the session-expiry handler.
 registerAuthBridge({
   getToken: () => useAuthStore.getState().token,
   onSessionExpired: () => {

@@ -3,17 +3,13 @@ import type { Metadata } from "next";
 import {
   Plus_Jakarta_Sans,
   IBM_Plex_Sans_Arabic,
-  IBM_Plex_Mono,
-} from "next/font/google";
+  IBM_Plex_Mono, Inter } from "next/font/google";
 import { QueryProvider } from "@/components/QueryProvider";
 import "./globals.css";
+import { cn } from "@/lib/utils";
 
 // Latin UI face — matches the inspiration set's modern grotesque voice
-const jakarta = Plus_Jakarta_Sans({
-  subsets: ["latin"],
-  variable: "--font-sans",
-  weight: ["400", "500", "600", "700", "800"],
-});
+const inter = Inter({subsets:['latin'],variable:'--font-sans'});
 
 // Arabic face — proper naskh proportions for the bilingual surfaces
 const plexArabic = IBM_Plex_Sans_Arabic({
@@ -39,9 +35,9 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="fr">
+    <html lang="fr" className={cn("font-sans", inter.variable)}>
       <body
-        className={`${jakarta.variable} ${plexArabic.variable} ${plexMono.variable} antialiased`}
+        className={`${inter.variable} ${plexArabic.variable} ${plexMono.variable} antialiased`}
       >
         {/* Auth needs no provider anymore (Zustand store) —
             Query is the only context the tree carries. */}

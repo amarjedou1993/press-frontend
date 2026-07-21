@@ -1,7 +1,5 @@
 // src/lib/types.ts
 // The shared vocabulary: TypeScript twins of the backend DTOs and enums.
-// Names mirror the backend exactly — when a DTO changes there, it changes
-// here, and the compiler finds every affected screen.
 
 /* ── Roles (backend: UserRole) ─────────────────────────────── */
 export type Role = "CANDIDATE" | "REVIEWER" | "SUPER_ADMIN";
@@ -21,7 +19,7 @@ export interface LoginRequest {
 export interface RegisterCandidateRequest {
   fullName: string;
   email: string;
-  phone?: string;
+  phone: string; // mandatory since feedback §2.1 — mirrors the backend
   password: string;
 }
 
@@ -30,7 +28,7 @@ export interface ProblemDetail {
   status: number;
   title?: string;
   detail?: string;
-  errors?: Record<string, string>; // field → message (validation failures)
+  errors?: Record<string, string>;
 }
 
 /* ── The 9-state machine (backend: application status CHECK) ── */
@@ -45,9 +43,6 @@ export type ApplicationStatus =
   | "FINAL_REJECTION"
   | "CARD_ISSUED";
 
-/* Visual kinds rendered by <StatusBadge> (5 kinds for 9 states).
-   Logic: neutral = in HAPA's hands · gold = candidate must act ·
-   green = positive terminal · red = rejection. */
 export type StatusKind =
   | "draft"
   | "review"
@@ -67,7 +62,6 @@ export const STATUS_BADGE: Record<ApplicationStatus, StatusKind> = {
   FINAL_REJECTION: "rejected",
 };
 
-/* French labels for the statuses — the UI never shows raw enum names. */
 export const STATUS_LABELS: Record<ApplicationStatus, string> = {
   DRAFT: "Brouillon",
   UNDER_REVIEW: "En cours d'examen",

@@ -52,7 +52,7 @@ function PressCardSpecimen() {
             <p className="text-[11px] font-extrabold tracking-[0.08em] text-[var(--green-700)]">
               HAPA
             </p>
-            <p className="mt-0.5 max-w-[150px] text-[6.5px] font-semibold uppercase leading-[1.4] tracking-[0.08em] text-[var(--muted)]">
+            <p className="mt-0.5 max-w-[150px] text-[6.5px] font-semibold uppercase leading-[1.4] tracking-[0.08em] text-[var(--muted-fg)]">
               Haute Autorité de la Presse et de l&apos;Audiovisuel
             </p>
           </div>
@@ -119,7 +119,7 @@ function PressCardSpecimen() {
 
         {/* MRZ line */}
         <p
-          className="absolute bottom-3 left-5 right-5 overflow-hidden whitespace-nowrap font-mono text-[8.5px] tracking-[0.32em] text-[var(--muted)]"
+          className="absolute bottom-3 left-5 right-5 overflow-hidden whitespace-nowrap font-mono text-[8.5px] tracking-[0.32em] text-[var(--muted-fg)]"
           aria-hidden="true"
         >
           HAPA&lt;RIM&lt;PRESSE&lt;&lt;SPECIMEN
@@ -241,7 +241,7 @@ export function AuthShell({
             </span>
           </div>
 
-          <p className="fade-up text-[10.5px] font-bold uppercase tracking-[0.2em] text-[var(--muted)]">
+          <p className="fade-up text-[10.5px] font-bold uppercase tracking-[0.2em] text-[var(--muted-fg)]">
             HAPA · Accréditation presse
           </p>
           <h2 className="fade-up mt-2 text-[30px] font-extrabold leading-tight text-[var(--green-900)]" style={{ animationDelay: "60ms" }}>
@@ -266,7 +266,7 @@ export function AuthShell({
 
 const inputBase =
   "w-full rounded-xl border-[1.5px] bg-white px-4 py-3 text-[15px] transition-all " +
-  "placeholder:text-[var(--muted)] focus:outline-none focus:border-[var(--green-600)] " +
+  "placeholder:text-[var(--muted-fg)] focus:outline-none focus:border-[var(--green-600)] " +
   "focus:ring-4 focus:ring-[var(--green-tint)]";
 
 export function Field({
@@ -329,7 +329,7 @@ export function PasswordField({
           onClick={() => setVisible((v) => !v)}
           aria-label={visible ? "Masquer le mot de passe" : "Afficher le mot de passe"}
           aria-pressed={visible}
-          className="absolute inset-y-0 right-0 flex w-12 items-center justify-center rounded-r-xl text-[var(--muted)] transition-colors hover:text-[var(--green-700)]"
+          className="absolute inset-y-0 right-0 flex w-12 items-center justify-center rounded-r-xl text-[var(--muted-fg)] transition-colors hover:text-[var(--green-700)]"
         >
           {visible ? (
             <svg width="19" height="19" viewBox="0 0 24 24" fill="none"

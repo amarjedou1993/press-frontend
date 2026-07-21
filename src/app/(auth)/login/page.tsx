@@ -1,13 +1,16 @@
 "use client";
-// src/app/(auth)/login/page.tsx — URL stays /login
-// Also the landing spot of the global 401 rule: an expired session anywhere
-// in the app redirects here with ?expired=1, shown as an info notice.
+// src/app/(auth)/login/page.tsx
+// After login, routes each role to its OWN home via homeForRole(). The form
+// submits on Enter natively (single form, type="submit" button); an explicit
+// requestSubmit fallback on the password field guarantees it even if focus
+// is unusual.
 
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/lib/auth";
+import { useAuth, homeForRole } from "@/lib/auth";
 import { ApiError } from "@/lib/api/client";
+import { validateLogin } from "@/lib/validation";
 import {
   AuthShell,
   Field,
@@ -21,8 +24,8 @@ export default function LoginPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>();
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-  // Lazy init: read the flag once, on the client, without useSearchParams.
   const [sessionExpired] = useState(
     () =>
       typeof window !== "undefined" &&
@@ -32,21 +35,30 @@ export default function LoginPage() {
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(undefined);
-    setLoading(true);
+    setFieldErrors({});
 
     const form = new FormData(event.currentTarget);
+    const input = {
+      email: String(form.get("email")),
+      password: String(form.get("password")),
+    };
+
+    const clientErrors = validateLogin(input);
+    if (Object.keys(clientErrors).length > 0) {
+      setFieldErrors(clientErrors);
+      return;
+    }
+
+    setLoading(true);
     try {
-      await login({
-        email: String(form.get("email")),
-        password: String(form.get("password")),
-      });
-      router.push("/dashboard");
+      const user = await login(input);
+      router.push(homeForRole(user.role)); // ← role-based landing
     } catch (e) {
-      setError(
-        e instanceof ApiError && e.problem.status === 401
-          ? "E-mail ou mot de passe incorrect."
-          : "Connexion impossible. Vérifiez que le serveur est démarré."
-      );
+      if (e instanceof ApiError && e.problem.status === 401) {
+        setError("E-mail ou mot de passe incorrect.");
+      } else {
+        setError("Connexion impossible. Vérifiez que le serveur est démarré.");
+      }
       setLoading(false);
     }
   }
@@ -58,20 +70,14 @@ export default function LoginPage() {
       footer={
         <>
           Pas encore de compte ?{" "}
-          <Link
-            href="/register"
-            className="font-bold text-[var(--green-700)] underline underline-offset-2"
-          >
+          <Link href="/register" className="font-bold text-[var(--green-700)] underline underline-offset-2">
             Créer un compte candidat
           </Link>
         </>
       }
     >
       {sessionExpired && (
-        <p
-          role="status"
-          className="mb-4 rounded-[var(--radius)] border border-[var(--gold-500)]/40 bg-[var(--gold-tint)] px-3.5 py-2.5 text-sm font-medium text-[var(--gold-700)]"
-        >
+        <p role="status" className="mb-5 rounded-xl border border-[var(--gold-500)]/40 bg-[var(--gold-tint)] px-4 py-3 text-sm font-medium text-[var(--gold-700)]">
           Votre session a expiré. Veuillez vous reconnecter.
         </p>
       )}
@@ -82,13 +88,13 @@ export default function LoginPage() {
           name="email"
           type="email"
           autoComplete="email"
-          required
+          error={fieldErrors.email}
         />
         <PasswordField
           label="Mot de passe"
           name="password"
           autoComplete="current-password"
-          required
+          error={fieldErrors.password}
         />
         <SubmitButton loading={loading}>Se connecter</SubmitButton>
       </form>

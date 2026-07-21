@@ -1,10 +1,4 @@
 "use client";
-// src/components/QueryProvider.tsx
-// One QueryClient for the app. Created inside useState so it is stable
-// across re-renders and never shared between users during SSR.
-//
-// Retry policy: retrying a 4xx is pointless (the request is wrong, or the
-// user isn't allowed) — only network failures and 5xx get up to 2 retries.
 
 import { useState, type ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";

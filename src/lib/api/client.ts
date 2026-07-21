@@ -1,12 +1,3 @@
-// src/lib/api/client.ts
-// The HTTP core. Token injection, JSON handling, error shaping, and the
-// GLOBAL 401 rule live here — exactly once.
-//
-// The auth bridge: lib/auth.ts registers { getToken, onSessionExpired }
-// at module load. client.ts never imports the store (no module cycle),
-// yet every request is authenticated automatically and an expired session
-// anywhere in the app funnels to one behavior: logout + /login?expired=1.
-
 import type { ProblemDetail } from "@/lib/types";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
