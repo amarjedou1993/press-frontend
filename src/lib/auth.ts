@@ -1,30 +1,20 @@
 // src/lib/auth.ts
-// Session store (Zustand) + the single source of truth for where each role
-// lands after login. Pure client state; never mirrors server data.
+// Session store (Zustand). Pure client state; never mirrors server data.
+// Route knowledge now lives in lib/routes.ts — homeForRole is re-exported
+// here so existing imports keep working.
 
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { persist, createJSONStorage } from "zustand/middleware";
 import { registerAuthBridge } from "./api/client";
 import { login as apiLogin, register as apiRegister } from "./api/auth";
-import type { LoginRequest, RegisterCandidateRequest, Role } from "./types";
-import type { AuthResponse } from "./types";
+import { routes, homeForRole } from "./routes";
+import type { LoginRequest, RegisterCandidateRequest, Role, AuthResponse } from "./types";
+
+export { homeForRole };
 
 export interface SessionUser {
   role: Role;
   fullName: string;
-}
-
-/** The home route for each role — used by login and by the group guards. */
-export function homeForRole(role: Role): string {
-  switch (role) {
-    case "SUPER_ADMIN":
-      return "/admin";
-    case "REVIEWER":
-      return "/pool";
-    case "CANDIDATE":
-    default:
-      return "/dashboard";
-  }
 }
 
 interface AuthState {
@@ -34,7 +24,7 @@ interface AuthState {
   login: (input: LoginRequest) => Promise<SessionUser>;
   register: (input: RegisterCandidateRequest) => Promise<SessionUser>;
   logout: () => void;
-  _setReady: () => void;
+  setReady: () => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -45,27 +35,27 @@ export const useAuthStore = create<AuthState>()(
       ready: false,
 
       login: async (input) => {
-        const r = await apiLogin(input);
+        const r: AuthResponse = await apiLogin(input);
         const user: SessionUser = { role: r.role, fullName: r.fullName };
         set({ token: r.token, user });
         return user;
       },
 
       register: async (input) => {
-        const r = await apiRegister(input);
+        const r: AuthResponse = await apiRegister(input);
         const user: SessionUser = { role: r.role, fullName: r.fullName };
         set({ token: r.token, user });
         return user;
       },
 
       logout: () => set({ token: null, user: null }),
-
-      _setReady: () => set({ ready: true }),
+      setReady: () => set({ ready: true }),
     }),
     {
       name: "pc-auth",
+      storage: createJSONStorage(() => localStorage),
       partialize: (s) => ({ token: s.token, user: s.user }),
-      onRehydrateStorage: () => (state) => state?._setReady(),
+      onRehydrateStorage: () => (state) => { state?.setReady(); },
     }
   )
 );
@@ -74,12 +64,23 @@ export function useAuth() {
   return useAuthStore();
 }
 
+// Belt-and-suspenders hydration flag (prevents guard flicker on refresh).
+if (typeof window !== "undefined") {
+  if (useAuthStore.persist.hasHydrated()) {
+    useAuthStore.getState().setReady();
+  }
+  useAuthStore.persist.onFinishHydration(() => {
+    useAuthStore.getState().setReady();
+  });
+}
+
+// Token injection + global 401 handling.
 registerAuthBridge({
   getToken: () => useAuthStore.getState().token,
   onSessionExpired: () => {
     useAuthStore.getState().logout();
     if (typeof window !== "undefined") {
-      window.location.assign("/login?expired=1");
+      window.location.assign(routes.auth.loginExpired);
     }
   },
 });

@@ -1,16 +1,16 @@
 "use client";
 // src/app/(auth)/login/page.tsx
-// After login, routes each role to its OWN home via homeForRole(). The form
-// submits on Enter natively (single form, type="submit" button); an explicit
-// requestSubmit fallback on the password field guarantees it even if focus
-// is unusual.
+// Guarded against already-authenticated visitors: if a logged-in user lands
+// here (via the Back button, a bookmark, or typing /login), they're bounced
+// to their role's home instead of being shown the login form again.
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth, homeForRole } from "@/lib/auth";
 import { ApiError } from "@/lib/api/client";
 import { validateLogin } from "@/lib/validation";
+import { routes } from "@/lib/routes";
 import {
   AuthShell,
   Field,
@@ -20,7 +20,7 @@ import {
 } from "@/components/AuthShell";
 
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { login, user, ready } = useAuth();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>();
@@ -31,6 +31,15 @@ export default function LoginPage() {
       typeof window !== "undefined" &&
       new URLSearchParams(window.location.search).has("expired")
   );
+
+  // Already logged in? Don't show the form — go to the role's home.
+  // Runs on mount and whenever auth state settles, so Back-button and
+  // bfcache restores are caught too.
+  useEffect(() => {
+    if (ready && user) {
+      router.replace(homeForRole(user.role));
+    }
+  }, [ready, user, router]);
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -51,34 +60,37 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
-      const user = await login(input);
-      router.push(homeForRole(user.role)); // ← role-based landing
+      const loggedIn = await login(input);
+      router.replace(homeForRole(loggedIn.role));
     } catch (e) {
       if (e instanceof ApiError && e.problem.status === 401) {
         setError("E-mail ou mot de passe incorrect.");
       } else {
-        setError("Connexion impossible. Vérifiez que le serveur est démarré.");
+        setError("Connexion impossible. Verifiez que le serveur est demarre.");
       }
       setLoading(false);
     }
   }
 
+  // While redirecting an already-authenticated user, render nothing.
+  if (ready && user) return null;
+
   return (
     <AuthShell
       title="Connexion"
-      subtitle="Accédez à votre espace d'accréditation."
+      subtitle="Accedez a votre espace d'accreditation."
       footer={
         <>
           Pas encore de compte ?{" "}
-          <Link href="/register" className="font-bold text-[var(--green-700)] underline underline-offset-2">
-            Créer un compte candidat
+          <Link href={routes.auth.register} className="font-bold text-[var(--green-700)] underline underline-offset-2">
+            Creer un compte candidat
           </Link>
         </>
       }
     >
       {sessionExpired && (
         <p role="status" className="mb-5 rounded-xl border border-[var(--gold-500)]/40 bg-[var(--gold-tint)] px-4 py-3 text-sm font-medium text-[var(--gold-700)]">
-          Votre session a expiré. Veuillez vous reconnecter.
+          Votre session a expire. Veuillez vous reconnecter.
         </p>
       )}
       <form onSubmit={onSubmit} noValidate>

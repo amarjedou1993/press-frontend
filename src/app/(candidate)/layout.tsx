@@ -1,9 +1,9 @@
 "use client";
-// src/app/(candidate)/layout.tsx
-// Guard + chrome for the CANDIDATE space. Every page inside inherits the
-// role check and the candidate sidebar — declared once, here.
-import { AppShell } from "@/components/AppShell";
+// src/app/(candidate)/layout.tsx — guard + chrome for CANDIDATE.
 import { usePathname } from "next/navigation";
+import { LayoutDashboard, FileText, User } from "lucide-react";
+import { AppShell } from "@/components/AppShell";
+import { routes } from "@/lib/routes";
 
 export default function CandidateLayout({ children }: { children: React.ReactNode }) {
   const path = usePathname();
@@ -11,10 +11,26 @@ export default function CandidateLayout({ children }: { children: React.ReactNod
     <AppShell
       requireRole="CANDIDATE"
       title="Espace candidat"
-      nav={[
-        { label: "Tableau de bord", href: "/dashboard", active: path === "/dashboard" },
-        { label: "Ma candidature", href: "#", disabled: true },
-        { label: "Mon profil", href: "#", disabled: true },
+      subtitle="Votre demande de carte de presse"
+      groups={[
+        {
+          items: [
+            { label: "Tableau de bord", href: routes.candidate.dashboard,
+              icon: <LayoutDashboard className="h-[17px] w-[17px]" />,
+              active: path === routes.candidate.dashboard },
+          ],
+        },
+        {
+          label: "Ma candidature",
+          items: [
+            { label: "Mon dossier", href: routes.candidate.application,
+              icon: <FileText className="h-[17px] w-[17px]" />,
+              disabled: true, badge: "S3" },
+            { label: "Mon profil", href: routes.candidate.profile,
+              icon: <User className="h-[17px] w-[17px]" />,
+              disabled: true, badge: "S3" },
+          ],
+        },
       ]}
     >
       {children}

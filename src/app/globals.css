@@ -1,9 +1,9 @@
 /* src/app/globals.css
    ─────────────────────────────────────────────────────────────
-   AUTHORITATIVE merge of the RIM design tokens and shadcn/ui theme.
-   Order matters: Tailwind first, then @theme mapping shadcn's tokens
-   to our RIM palette. This file replaces whatever `shadcn init` wrote —
-   if you re-run init, re-apply this file afterward.
+   AUTHORITATIVE merge: RIM design tokens + the COMPLETE shadcn token set.
+   The @theme inline block maps EVERY token shadcn components consume —
+   missing entries there is why dialogs/popovers/the calendar rendered
+   with transparent backgrounds.
    Palette (couleurs_rim.pdf): green #00A95C · red #D01C1F · gold #FFD700
    ───────────────────────────────────────────────────────────── */
 @import "tailwindcss";
@@ -12,7 +12,7 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* ── RIM palette (our own tokens, used directly across the app) ── */
+  /* ── RIM palette ── */
   --green-500: #00a95c;
   --green-600: #008a4c;
   --green-700: #006b3c;
@@ -26,7 +26,6 @@
   --red-tint: #fbe9e9;
 
   --paper: #f6f8f7;
-  --card-bg: #ffffff;
   --ink: #16221b;
   --slate: #5b6862;
   --muted-fg: #8a948d;
@@ -48,14 +47,12 @@
 
   --radius: 0.75rem;
 
-  /* ── shadcn/ui tokens, themed to the RIM palette ──
-     These are what shadcn components read. Mapping them here means every
-     shadcn component is on-brand automatically. */
+  /* ── shadcn tokens, themed to RIM ── */
   --background: #ffffff;
   --foreground: #16221b;
   --card: #ffffff;
   --card-foreground: #16221b;
-  --popover: #ffffff;
+  --popover: #ffffff;              /* dialogs, popovers, calendar surface */
   --popover-foreground: #16221b;
   --primary: #006b3c;
   --primary-foreground: #ffffff;
@@ -63,22 +60,40 @@
   --secondary-foreground: #006b3c;
   --muted: #eef1ef;
   --muted-foreground: #5b6862;
-  --accent: #fff6d1;
-  --accent-foreground: #8c7500;
+  --accent: #e6f6ee;               /* hover surfaces */
+  --accent-foreground: #006b3c;
   --destructive: #d01c1f;
   --destructive-foreground: #ffffff;
   --border: #e4e8e5;
   --input: #e4e8e5;
-  --ring: #ffd700;
+  --ring: #00a95c;
+  --overlay: rgb(11 46 31 / 0.45); /* dialog backdrop */
+
+  --chart-1: #00a95c;
+  --chart-2: #ffd700;
+  --chart-3: #d01c1f;
+  --chart-4: #006b3c;
+  --chart-5: #8a948d;
+
+  --sidebar: #0b2e1f;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #00a95c;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: rgb(255 255 255 / 0.1);
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: rgb(255 255 255 / 0.1);
+  --sidebar-ring: #ffd700;
 }
 
-/* Bridge our CSS variables into Tailwind's utility system so classes like
-   bg-background / text-foreground / border-border resolve. */
+/* EVERY token bridged into Tailwind utilities. A missing line here means a
+   utility like bg-popover silently resolves to nothing → transparent panel. */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
@@ -88,17 +103,31 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-overlay: var(--overlay);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
+  --radius-xl: calc(var(--radius) + 4px);
 }
 
-* {
-  border-color: var(--border);
-}
+* { border-color: var(--border); }
 
 body {
   background: var(--paper);
@@ -106,30 +135,39 @@ body {
   font-family: var(--font-sans), system-ui, sans-serif;
 }
 
-[dir="rtl"] {
-  font-family: var(--font-arabic), var(--font-sans), sans-serif;
+[dir="rtl"] { font-family: var(--font-arabic), var(--font-sans), sans-serif; }
+.font-mono { font-family: var(--font-mono), ui-monospace, monospace; }
+
+:focus-visible { outline: 2px solid var(--gold-500); outline-offset: 2px; }
+input:focus-visible { outline: none; }
+
+/* ── Safety net: force solid surfaces on floating panels, whichever
+      primitive library renders them (Base UI or Radix). ── */
+[data-slot="dialog-content"],
+[data-slot="alert-dialog-content"],
+[data-slot="popover-content"],
+[data-slot="dropdown-menu-content"],
+[data-slot="select-content"],
+[data-slot="tooltip-content"],
+[role="dialog"],
+[role="alertdialog"],
+[role="menu"],
+[role="listbox"] {
+  background-color: #ffffff;
+}
+[data-slot="tooltip-content"] {
+  background-color: var(--green-900);
+  color: #ffffff;
+}
+[data-slot="dialog-overlay"],
+[data-slot="alert-dialog-overlay"] {
+  background-color: rgb(11 46 31 / 0.45);
+  backdrop-filter: blur(2px);
 }
 
-.font-mono {
-  font-family: var(--font-mono), ui-monospace, monospace;
-}
-
-/* Keyboard focus in national gold — inputs carry their own green ring. */
-:focus-visible {
-  outline: 3px solid var(--gold-500);
-  outline-offset: 2px;
-}
-input:focus-visible {
-  outline: none;
-}
-
-/* ── restrained motion ── */
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(14px); }
   to   { opacity: 1; transform: none; }
 }
 .fade-up { animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; }
-
-@media (prefers-reduced-motion: reduce) {
-  .fade-up { animation: none; }
-}
+@media (prefers-reduced-motion: reduce) { .fade-up { animation: none; } }

@@ -1,7 +1,9 @@
 "use client";
-// src/app/(admin)/layout.tsx — guard + chrome for the SUPER_ADMIN space.
-import { AppShell } from "@/components/AppShell";
+// src/app/(admin)/layout.tsx — guard + chrome for SUPER_ADMIN.
 import { usePathname } from "next/navigation";
+import { LayoutDashboard, CalendarDays, Users, IdCard } from "lucide-react";
+import { AppShell } from "@/components/AppShell";
+import { routes } from "@/lib/routes";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const path = usePathname();
@@ -9,11 +11,29 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <AppShell
       requireRole="SUPER_ADMIN"
       title="Administration"
-      nav={[
-        { label: "Tableau de bord", href: "/admin", active: path === "/admin" },
-        { label: "Sessions", href: "#", disabled: true },
-        { label: "Réviseurs", href: "#", disabled: true },
-        { label: "Cartes", href: "#", disabled: true },
+      subtitle="Sessions, commission d'examen et cartes de presse"
+      groups={[
+        {
+          items: [
+            { label: "Tableau de bord", href: routes.admin.home,
+              icon: <LayoutDashboard className="h-[17px] w-[17px]" />,
+              active: path === routes.admin.home },
+          ],
+        },
+        {
+          label: "Accréditation",
+          items: [
+            { label: "Sessions", href: routes.admin.sessions,
+              icon: <CalendarDays className="h-[17px] w-[17px]" />,
+              active: path.startsWith(routes.admin.sessions) },
+            { label: "Réviseurs", href: routes.admin.reviewers,
+              icon: <Users className="h-[17px] w-[17px]" />,
+              active: path === routes.admin.reviewers },
+            { label: "Cartes", href: routes.admin.cards,
+              icon: <IdCard className="h-[17px] w-[17px]" />,
+              disabled: true, badge: "S6" },
+          ],
+        },
       ]}
     >
       {children}
