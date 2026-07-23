@@ -171,3 +171,46 @@ input:focus-visible { outline: none; }
 }
 .fade-up { animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; }
 @media (prefers-reduced-motion: reduce) { .fade-up { animation: none; } }
+
+@keyframes revealUp {
+  from { opacity: 0; transform: translateY(22px); }
+  to   { opacity: 1; transform: none; }
+}
+.reveal   { animation: revealUp .85s cubic-bezier(.16,1,.3,1) both; }
+.reveal-2 { animation-delay: .12s; }
+.reveal-3 { animation-delay: .24s; }
+
+/* The press card: a slow float, and a holographic sheen sweeping across */
+@keyframes cardFloat {
+  0%, 100% { transform: perspective(1400px) rotateY(-7deg) rotateX(2deg) translateY(0); }
+  50%      { transform: perspective(1400px) rotateY(-5deg) rotateX(1deg) translateY(-12px); }
+}
+@keyframes cardSheen {
+  0%       { transform: translateX(-140%) skewX(-18deg); opacity: 0; }
+  12%      { opacity: 1; }
+  55%      { opacity: 1; }
+  100%     { transform: translateX(260%) skewX(-18deg); opacity: 0; }
+}
+
+.press-card-wrap {
+  animation: cardFloat 9s ease-in-out infinite;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+.press-card-sheen {
+  background: linear-gradient(
+    100deg,
+    transparent 20%,
+    rgba(255, 255, 255, .55) 42%,
+    rgba(255, 215, 0, .18) 50%,
+    rgba(255, 255, 255, .5) 58%,
+    transparent 80%
+  );
+  animation: cardSheen 7s ease-in-out 2s infinite;
+  mix-blend-mode: overlay;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .press-card-wrap, .press-card-sheen { animation: none; }
+  .press-card-wrap { transform: perspective(1400px) rotateY(-6deg); }
+}

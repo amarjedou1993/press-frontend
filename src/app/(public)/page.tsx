@@ -1,21 +1,24 @@
 // src/app/(public)/page.tsx  →  /
-// The real landing page, replacing the redirect-to-login. Server component +
-// ISR: it shows live session status pulled from the API, but costs the
-// backend one request per minute no matter the traffic.
+// Server component + ISR. Complete HTML on the first byte, indexable, fast on
+// a weak connection — and it reads like an official publication rather than a
+// product page: numbered sections, security-print motifs, editorial type, and
+// Arabic set as composition rather than as a translation footnote.
 
 import Link from "next/link";
-import {
-  ArrowRight, ShieldCheck, Languages, FileCheck2, CalendarClock, UserPlus,
-} from "lucide-react";
-import { fetchOpenSessions } from "@/lib/api/public";
+import { ArrowRight, ShieldCheck, Languages, BadgeCheck } from "lucide-react";
+import { fetchOpenSessions, fetchCategories } from "@/lib/api/public";
 import { routes } from "@/lib/routes";
+import { PressCard } from "@/components/public/PressCard";
+import {
+  Guilloche, GuillocheBand, OfficialSeal, MicroprintRule, TricolorRule, Overline,
+} from "@/components/public/patterns";
 
 export const revalidate = 60;
 
 export const metadata = {
-  title: "HAPA — Accréditation presse",
+  title: "HAPA — Accréditation presse | République Islamique de Mauritanie",
   description:
-    "Demandez votre carte de presse auprès de la Haute Autorité de la Presse et de l'Audiovisuel (HAPA), République Islamique de Mauritanie.",
+    "Demandez votre carte de presse auprès de la Haute Autorité de la Presse et de l'Audiovisuel. Dépôt en ligne, suivi de dossier, délivrance officielle.",
 };
 
 function fmtLong(iso: string) {
@@ -24,191 +27,261 @@ function fmtLong(iso: string) {
   });
 }
 
+const STEPS = [
+  { n: "01", t: "Ouverture d'une session", ar: "فتح الدورة",
+    d: "La HAPA ouvre une session de candidature et en publie le calendrier." },
+  { n: "02", t: "Dépôt du dossier", ar: "إيداع الملف",
+    d: "Vous créez votre compte et soumettez vos pièces justificatives en ligne." },
+  { n: "03", t: "Examen par la commission", ar: "دراسة اللجنة",
+    d: "La commission étudie votre dossier ; une correction peut être demandée." },
+  { n: "04", t: "Délivrance de la carte", ar: "تسليم البطاقة",
+    d: "En cas d'acceptation, votre carte bilingue est éditée par la HAPA." },
+];
+
 export default async function LandingPage() {
-  const sessions = await fetchOpenSessions();
+  const [sessions, categories] = await Promise.all([
+    fetchOpenSessions(),
+    fetchCategories(),
+  ]);
   const open = sessions.length > 0;
 
   return (
     <>
-      {/* ── Hero ── */}
+      {/* ══ HERO ══════════════════════════════════════════════ */}
       <section
         className="relative overflow-hidden text-white"
         style={{
           background:
-            "radial-gradient(900px 460px at 85% -15%, rgba(255,215,0,.14), transparent 60%), radial-gradient(700px 500px at -10% 115%, rgba(0,169,92,.22), transparent 55%), linear-gradient(168deg, var(--green-900) 0%, #0e3d29 60%, #0b3524 100%)",
+            "radial-gradient(1100px 520px at 78% -20%, rgba(255,215,0,.13), transparent 62%), radial-gradient(800px 600px at -12% 120%, rgba(0,169,92,.24), transparent 58%), linear-gradient(168deg, #08251a 0%, var(--green-900) 45%, #0d3a27 100%)",
         }}
       >
+        {/* engraved rosettes */}
+        <Guilloche className="pointer-events-none absolute -right-40 -top-56 h-[720px] w-[720px] text-white opacity-[0.055]" rings={54} />
+        <Guilloche className="pointer-events-none absolute -bottom-72 -left-52 h-[560px] w-[560px] text-[var(--gold-500)] opacity-[0.05]" rings={38} />
+        {/* fine security hatching */}
         <div
-          className="pointer-events-none absolute inset-0 opacity-[0.045]"
-          style={{ backgroundImage: "repeating-linear-gradient(115deg,#fff 0 1px,transparent 1px 11px)" }}
+          className="pointer-events-none absolute inset-0 opacity-[0.05]"
+          style={{ backgroundImage: "repeating-linear-gradient(112deg,#fff 0 1px,transparent 1px 13px)" }}
           aria-hidden="true"
         />
-        <div className="relative z-10 mx-auto grid max-w-5xl gap-10 px-5 py-20 lg:grid-cols-[1.15fr_1fr] lg:items-center">
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--gold-500)]">
-              République Islamique de Mauritanie
-            </p>
-            <h1 className="mt-4 text-[40px] font-extrabold leading-[1.08] xl:text-[46px]">
-              La carte de presse<br />
-              <span className="text-[var(--gold-500)]">officielle</span> de la Mauritanie
-            </h1>
-            <p className="mt-5 max-w-xl text-[15.5px] leading-relaxed text-white/70">
-              La Haute Autorité de la Presse et de l&apos;Audiovisuel délivre la
-              carte de presse aux journalistes exerçant en Mauritanie. Déposez
-              votre demande en ligne et suivez son avancement à chaque étape.
-            </p>
 
-            {/* Live session status */}
-            <div className="mt-7 inline-flex flex-wrap items-center gap-3 rounded-xl bg-black/20 px-4 py-3 ring-1 ring-white/15">
-              <span
-                className={`h-2 w-2 rounded-full ${open ? "animate-pulse bg-[var(--green-500)]" : "bg-white/30"}`}
-                aria-hidden="true"
-              />
-              <span className="text-[13px] font-semibold">
-                {open
-                  ? `Candidatures ouvertes jusqu'au ${fmtLong(sessions[0].receivingEnd)}`
-                  : "Aucune session ouverte actuellement"}
-              </span>
-              <Link
-                href={routes.publicSessions}
-                className="text-[13px] font-bold text-[var(--gold-500)] underline underline-offset-4 hover:text-white"
-              >
-                Voir les sessions
-              </Link>
-            </div>
-
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link
-                href={routes.auth.register}
-                className="inline-flex items-center gap-2 rounded-lg bg-white px-6 py-3 text-sm font-bold text-[var(--green-900)] transition-transform hover:-translate-y-px"
-              >
-                <UserPlus className="h-4 w-4" /> Créer un compte
-              </Link>
-              <Link
-                href={routes.auth.login}
-                className="inline-flex items-center gap-2 rounded-lg border border-white/30 px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-white/10"
-              >
-                Se connecter
-              </Link>
-            </div>
-          </div>
-
-          {/* Press-card specimen */}
-          <div className="hidden justify-self-center lg:block">
-            <div
-              className="relative aspect-[1.586] w-[380px] -rotate-3 overflow-hidden rounded-2xl bg-white p-5"
-              style={{ boxShadow: "0 40px 80px -24px rgba(0,0,0,.55)" }}
-              role="img"
-              aria-label="Carte de presse — spécimen"
-            >
-              <div className="flex items-start justify-between gap-3 border-b-2 border-[var(--green-500)] pb-2">
-                <div>
-                  <p className="text-[11px] font-extrabold tracking-[0.08em] text-[var(--green-700)]">HAPA</p>
-                  <p className="mt-0.5 max-w-[150px] text-[6.5px] font-semibold uppercase leading-[1.4] tracking-[0.08em] text-[var(--muted-fg)]">
-                    Haute Autorité de la Presse et de l&apos;Audiovisuel
-                  </p>
-                </div>
-                <p dir="rtl" className="text-right text-[10px] leading-snug text-[var(--green-700)]">
-                  السلطة العليا للصحافة<br />والسمعيات البصرية
+        <div className="relative z-10 mx-auto max-w-6xl px-6 pb-24 pt-20 lg:pt-24">
+          <div className="grid items-center gap-14 lg:grid-cols-[1.08fr_1fr]">
+            {/* ── headline column ── */}
+            <div className="reveal">
+              <div className="flex items-center gap-3">
+                <span className="inline-flex items-center gap-[3px]" aria-hidden="true">
+                  <i className="h-4 w-1.5 rounded-full bg-[var(--green-500)]" />
+                  <i className="h-4 w-1.5 rounded-full bg-[var(--gold-500)]" />
+                  <i className="h-4 w-1.5 rounded-full bg-[var(--red-500)]" />
+                </span>
+                <p className="text-[10.5px] font-bold uppercase tracking-[0.24em] text-white/55">
+                  République Islamique de Mauritanie
                 </p>
               </div>
-              <div className="h-px w-full bg-[var(--gold-500)]/70" aria-hidden="true" />
-              <div className="mt-3 flex gap-4">
-                <div className="flex h-[84px] w-[68px] flex-none items-center justify-center rounded-lg border border-[var(--green-500)]/30 bg-[var(--green-tint)]">
-                  <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="var(--green-600)"
-                    strokeWidth="1.6" opacity="0.55" strokeLinecap="round" aria-hidden="true">
-                    <circle cx="12" cy="8" r="4" /><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5" />
-                  </svg>
-                </div>
-                <div className="min-w-0">
-                  <div className="flex items-baseline justify-between gap-3">
-                    <b className="text-[13.5px] font-extrabold tracking-[0.05em] text-[var(--green-900)]">
-                      CARTE DE PRESSE
-                    </b>
-                    <span dir="rtl" className="text-[12px] font-semibold text-[var(--green-900)]">
-                      بطاقة صحفية
-                    </span>
-                  </div>
-                  <dl className="mt-2.5 space-y-1.5">
-                    {[["Nom", "—————————"], ["N°", "HAPA-2026-000000"], ["Validité", "12 / 2027"]].map(([l, v]) => (
-                      <div key={l} className="flex items-baseline gap-2">
-                        <dt className="w-14 flex-none text-[7.5px] font-bold uppercase tracking-[0.14em] text-[var(--green-700)]/80">{l}</dt>
-                        <dd className="font-mono text-[9.5px] text-[var(--ink)]/85">{v}</dd>
-                      </div>
-                    ))}
-                  </dl>
-                </div>
+
+              <div className="mt-8 flex gap-6">
+                <h1 className="text-[clamp(40px,6.4vw,74px)] font-extrabold leading-[0.94] tracking-[-0.02em]">
+                  La carte
+                  <br />
+                  de presse
+                  <br />
+                  <span className="text-[var(--gold-500)]">officielle</span>
+                </h1>
+                {/* Arabic as a vertical ornament, not a footnote */}
+                <p
+                  dir="rtl"
+                  className="hidden self-stretch border-r border-white/15 pr-5 text-[15px] font-semibold leading-[2.1] text-white/45 sm:block"
+                  style={{ writingMode: "vertical-rl" }}
+                >
+                  البطاقة الصحفية الرسمية
+                </p>
               </div>
-              <div className="absolute inset-x-0 bottom-0 flex h-1.5" aria-hidden="true">
-                <i className="flex-1 bg-[var(--green-500)]" />
-                <i className="flex-1 bg-[var(--gold-500)]" />
-                <i className="flex-1 bg-[var(--red-500)]" />
+
+              <p className="mt-7 max-w-xl text-[16px] leading-[1.75] text-white/65">
+                La Haute Autorité de la Presse et de l&apos;Audiovisuel délivre la
+                carte de presse aux journalistes exerçant en Mauritanie. Déposez
+                votre demande en ligne et suivez chaque étape de son instruction.
+              </p>
+
+              {/* live status */}
+              <div className="mt-9 inline-flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-white/12 bg-black/25 px-5 py-3.5 backdrop-blur-sm">
+                <span className="flex items-center gap-2.5">
+                  <span
+                    className={`h-2 w-2 rounded-full ${open ? "bg-[var(--green-500)] shadow-[0_0_0_4px_rgba(0,169,92,.22)] motion-safe:animate-pulse" : "bg-white/25"}`}
+                    aria-hidden="true"
+                  />
+                  <span className="text-[13.5px] font-semibold">
+                    {open
+                      ? `Candidatures ouvertes jusqu'au ${fmtLong(sessions[0].receivingEnd)}`
+                      : "Aucune session ouverte actuellement"}
+                  </span>
+                </span>
+                <Link
+                  href={routes.publicSessions}
+                  className="inline-flex items-center gap-1 text-[13px] font-bold text-[var(--gold-500)] underline decoration-[var(--gold-500)]/40 underline-offset-4 transition-colors hover:text-white hover:decoration-white/60"
+                >
+                  Consulter les sessions <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              </div>
+
+              <div className="mt-8 flex flex-wrap gap-3">
+                <Link
+                  href={routes.auth.register}
+                  className="group inline-flex items-center gap-2 rounded-xl bg-white px-7 py-3.5 text-[14px] font-bold text-[var(--green-900)] shadow-[0_12px_30px_-12px_rgba(255,255,255,.4)] transition-all hover:-translate-y-0.5 hover:shadow-[0_18px_40px_-14px_rgba(255,255,255,.5)]"
+                >
+                  Déposer une demande
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                </Link>
+                <Link
+                  href={routes.auth.login}
+                  className="inline-flex items-center rounded-xl border border-white/25 px-7 py-3.5 text-[14px] font-bold text-white transition-colors hover:border-white/45 hover:bg-white/10"
+                >
+                  Espace candidat
+                </Link>
+              </div>
+            </div>
+
+            {/* ── specimen column ── */}
+            <div className="reveal reveal-2 justify-self-center lg:justify-self-end">
+              <div className="relative w-[min(430px,88vw)]">
+                <OfficialSeal
+                  className="pointer-events-none absolute -left-14 -top-14 z-20 hidden h-32 w-32 opacity-95 drop-shadow-[0_8px_20px_rgba(0,0,0,.45)] xl:block"
+                  color="var(--gold-500)"
+                  id="hero-seal"
+                />
+                <PressCard />
+                <p className="mt-6 text-center text-[10.5px] font-semibold uppercase tracking-[0.2em] text-white/35">
+                  Spécimen — carte de presse bilingue
+                </p>
               </div>
             </div>
           </div>
         </div>
+
+        {/* woven band closing the hero */}
+        <GuillocheBand className="pointer-events-none absolute inset-x-0 bottom-0 h-20 text-white opacity-[0.09]" lines={9} />
+        <TricolorRule className="absolute inset-x-0 bottom-0" />
       </section>
 
-      {/* ── How it works ── */}
-      <section className="mx-auto max-w-5xl px-5 py-16">
-        <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--green-700)]">
-          Comment ça marche
+      {/* microprint seam */}
+      <MicroprintRule className="border-b border-[var(--line)] bg-white py-1.5 text-[var(--green-700)] opacity-30" repeat={14} />
+
+      {/* ══ PROCÉDURE ═════════════════════════════════════════ */}
+      <section className="mx-auto max-w-6xl px-6 py-20">
+        <Overline index="01">La procédure</Overline>
+        <h2 className="mt-5 max-w-2xl text-[clamp(26px,3.4vw,36px)] font-extrabold leading-[1.15] tracking-[-0.015em] text-[var(--green-900)]">
+          Quatre étapes, de la candidature à la carte
         </h2>
-        <div className="mt-6 grid gap-4 md:grid-cols-4">
+
+        <ol className="mt-12 grid gap-px overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--line)] md:grid-cols-4">
+          {STEPS.map((s) => (
+            <li key={s.n} className="group relative bg-white p-7 transition-colors hover:bg-[var(--green-tint)]/40">
+              <span className="font-mono text-[26px] font-extrabold leading-none text-[var(--green-900)]/12 transition-colors group-hover:text-[var(--green-600)]/30">
+                {s.n}
+              </span>
+              <h3 className="mt-4 text-[15px] font-extrabold leading-snug text-[var(--green-900)]">
+                {s.t}
+              </h3>
+              <p dir="rtl" className="mt-1 text-[12.5px] font-semibold text-[var(--green-700)]/65">
+                {s.ar}
+              </p>
+              <p className="mt-3 text-[13.5px] leading-relaxed text-[var(--slate)]">{s.d}</p>
+              <span className="absolute inset-x-7 bottom-0 h-[3px] scale-x-0 bg-[var(--gold-500)] transition-transform duration-300 group-hover:scale-x-100" aria-hidden="true" />
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      {/* ══ CATÉGORIES ════════════════════════════════════════ */}
+      {categories.length > 0 && (
+        <section className="border-y border-[var(--line)] bg-white">
+          <div className="mx-auto max-w-6xl px-6 py-20">
+            <Overline index="02">Catégories d&apos;accréditation</Overline>
+            <div className="mt-10 grid gap-6 md:grid-cols-3">
+              {categories.map((c, i) => (
+                <article
+                  key={c.id}
+                  className="relative overflow-hidden rounded-2xl border border-[var(--line)] p-7 transition-shadow hover:shadow-[0_18px_40px_-24px_rgba(11,46,31,.35)]"
+                >
+                  <Guilloche
+                    className="pointer-events-none absolute -right-10 -top-12 h-40 w-40 text-[var(--green-700)] opacity-[0.06]"
+                    rings={26}
+                  />
+                  <span className="relative font-mono text-[11px] font-bold text-[var(--gold-700)]">
+                    0{i + 1}
+                  </span>
+                  <h3 className="relative mt-3 text-[16px] font-extrabold leading-snug text-[var(--green-900)]">
+                    {c.labelFr}
+                  </h3>
+                  <p dir="rtl" className="relative mt-2 text-[14px] font-semibold text-[var(--green-700)]/70">
+                    {c.labelAr}
+                  </p>
+                  <TricolorRule className="relative mt-6 w-16 rounded-full" thin />
+                </article>
+              ))}
+            </div>
+            <p className="mt-8 max-w-2xl text-[13.5px] leading-relaxed text-[var(--slate)]">
+              Les pièces justificatives requises dépendent de votre catégorie ;
+              elles vous sont indiquées lors du dépôt, et le système vérifie que
+              votre dossier est complet avant soumission.
+            </p>
+          </div>
+        </section>
+      )}
+
+      {/* ══ GARANTIES ═════════════════════════════════════════ */}
+      <section className="mx-auto max-w-6xl px-6 py-20">
+        <Overline index="03">Nos garanties</Overline>
+        <div className="mt-10 grid gap-10 md:grid-cols-3">
           {[
-            { Icon: CalendarClock, t: "Une session s'ouvre", d: "La HAPA ouvre une session de candidature et en annonce les dates." },
-            { Icon: UserPlus, t: "Vous déposez", d: "Créez votre compte et soumettez votre dossier avec les pièces requises." },
-            { Icon: FileCheck2, t: "La commission examine", d: "Votre dossier est étudié ; une correction peut vous être demandée." },
-            { Icon: ShieldCheck, t: "Votre carte est éditée", d: "En cas d'acceptation, votre carte bilingue est délivrée par la HAPA." },
-          ].map(({ Icon, t, d }, i) => (
-            <div key={t} className="rounded-xl border border-[var(--line)] bg-white p-5">
-              <div className="flex items-center gap-2.5">
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--green-tint)] text-[11px] font-extrabold text-[var(--green-700)]">
-                  {i + 1}
-                </span>
-                <Icon className="h-4 w-4 text-[var(--green-600)]" />
-              </div>
-              <p className="mt-3 text-sm font-bold text-[var(--green-900)]">{t}</p>
-              <p className="mt-1 text-[13px] leading-relaxed text-[var(--slate)]">{d}</p>
+            { Icon: ShieldCheck, t: "Données protégées", ar: "بيانات محمية",
+              d: "Vos informations sont traitées exclusivement par la HAPA, dans le cadre de l'instruction de votre dossier." },
+            { Icon: Languages, t: "Bilingue français · arabe", ar: "ثنائي اللغة",
+              d: "Le service et la carte délivrée sont disponibles dans les deux langues officielles de la République." },
+            { Icon: BadgeCheck, t: "Registre officiel", ar: "سجل رسمي",
+              d: "Chaque carte délivrée est enregistrée et vérifiable auprès de la Haute Autorité." },
+          ].map(({ Icon, t, ar, d }) => (
+            <div key={t}>
+              <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--green-tint)]">
+                <Icon className="h-[19px] w-[19px] text-[var(--green-700)]" />
+              </span>
+              <h3 className="mt-4 text-[15px] font-extrabold text-[var(--green-900)]">{t}</h3>
+              <p dir="rtl" className="mt-0.5 text-[12.5px] font-semibold text-[var(--green-700)]/60">{ar}</p>
+              <p className="mt-2.5 text-[13.5px] leading-relaxed text-[var(--slate)]">{d}</p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* ── Assurances ── */}
-      <section className="border-y border-[var(--line)] bg-white">
-        <div className="mx-auto flex max-w-5xl flex-wrap justify-between gap-8 px-5 py-10">
-          {[
-            { Icon: ShieldCheck, t: "Données sécurisées", d: "Vos informations sont traitées par la HAPA seule." },
-            { Icon: Languages, t: "Bilingue FR · AR", d: "La carte et le service sont disponibles en deux langues." },
-            { Icon: FileCheck2, t: "Registre officiel", d: "Chaque carte délivrée est vérifiable auprès de la HAPA." },
-          ].map(({ Icon, t, d }) => (
-            <div key={t} className="flex max-w-xs items-start gap-3">
-              <Icon className="mt-0.5 h-5 w-5 flex-none text-[var(--green-600)]" />
-              <div>
-                <p className="text-sm font-bold text-[var(--green-900)]">{t}</p>
-                <p className="mt-0.5 text-[13px] text-[var(--slate)]">{d}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── Final CTA ── */}
-      <section className="mx-auto max-w-5xl px-5 py-16 text-center">
-        <h2 className="text-2xl font-extrabold text-[var(--green-900)]">
-          Prêt à déposer votre demande ?
-        </h2>
-        <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-[var(--slate)]">
-          Créez votre compte dès maintenant. Vous serez informé par e-mail à
-          chaque étape de votre dossier.
-        </p>
-        <Link
-          href={routes.auth.register}
-          className="mt-6 inline-flex items-center gap-2 rounded-lg bg-[var(--green-700)] px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-[var(--green-600)]"
+      {/* ══ CTA ═══════════════════════════════════════════════ */}
+      <section className="mx-auto max-w-6xl px-6 pb-24">
+        <div
+          className="relative overflow-hidden rounded-3xl px-8 py-16 text-center text-white"
+          style={{
+            background:
+              "radial-gradient(700px 340px at 50% -30%, rgba(255,215,0,.16), transparent 62%), linear-gradient(158deg, var(--green-900), #0e3d29)",
+          }}
         >
-          Créer mon compte <ArrowRight className="h-4 w-4" />
-        </Link>
+          <Guilloche className="pointer-events-none absolute -bottom-40 left-1/2 h-[420px] w-[420px] -translate-x-1/2 text-white opacity-[0.07]" rings={40} />
+          <div className="relative z-10">
+            <OfficialSeal className="mx-auto h-20 w-20 opacity-90" color="var(--gold-500)" id="cta-seal" />
+            <h2 className="mt-7 text-[clamp(24px,3.2vw,34px)] font-extrabold leading-tight tracking-[-0.015em]">
+              Prêt à déposer votre demande ?
+            </h2>
+            <p className="mx-auto mt-3 max-w-lg text-[14.5px] leading-relaxed text-white/65">
+              Créez votre compte dès maintenant. Vous serez informé par courriel
+              à chaque étape de l&apos;instruction de votre dossier.
+            </p>
+            <Link
+              href={routes.auth.register}
+              className="group mt-9 inline-flex items-center gap-2 rounded-xl bg-white px-8 py-4 text-[14px] font-bold text-[var(--green-900)] transition-all hover:-translate-y-0.5"
+            >
+              Créer mon compte
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+            </Link>
+          </div>
+        </div>
       </section>
     </>
   );
