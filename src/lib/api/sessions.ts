@@ -25,11 +25,16 @@ export interface SessionResponse {
   correctionEnd: string;
   reclamationEnd: string;
   // countdown
+  //
+  // These are OPTIONAL on the wire: the backend runs
+  // jackson.default-property-inclusion=non_null, so a null value is omitted
+  // from the JSON and arrives as `undefined`. Typing them as `| null` only
+  // was what let a strict !== null check through and produced NaN.
   phaseStartedAt: string;
-  currentPhaseEnd: string | null;
-  allottedDaysInPhase: number | null;
-  daysRemainingInPhase: number | null;   // negative = overdue
-  nextPhase: SessionStatus | null;
+  currentPhaseEnd?: string | null;
+  allottedDaysInPhase?: number | null;
+  daysRemainingInPhase?: number | null;   // negative = overdue
+  nextPhase?: SessionStatus | null;
 }
 
 export interface CreateSessionRequest {

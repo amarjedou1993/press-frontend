@@ -1,7 +1,3 @@
-// src/lib/validation.ts
-// Client-side MIRROR of the backend rules — instant, localized, per-field
-// feedback. The backend remains the enforcer. Keep regexes in sync with
-// application.yaml (app.identity.phone-regex / app.security.password-regex).
 
 export const PHONE_REGEX = /^(\+222)?[234]\d{7}$/;
 export const PASSWORD_REGEX = /^(?=.*[A-Za-z])(?=.*\d).{8,100}$/;

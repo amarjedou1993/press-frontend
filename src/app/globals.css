@@ -214,3 +214,48 @@ input:focus-visible { outline: none; }
   .reveal, .press-card-wrap, .press-card-sheen { animation: none; }
   .press-card-wrap { transform: perspective(1400px) rotateY(-6deg); }
 }
+
+.gold-foil {
+  background: linear-gradient(
+    100deg,
+    #8c7500 0%, #c9a227 18%, #ffd700 34%,
+    #fff6c2 46%, #ffd700 58%, #c9a227 76%, #8c7500 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: foilDrift 9s ease-in-out infinite;
+}
+@keyframes foilDrift {
+  0%, 100% { background-position: 0% 50%; }
+  50%      { background-position: 100% 50%; }
+}
+
+/* A hairline that shimmers like a foil rule on a certificate. */
+.foil-rule {
+  background: linear-gradient(
+    90deg,
+    transparent, rgba(255,215,0,.15) 15%, #ffd700 50%, rgba(255,215,0,.15) 85%, transparent
+  );
+  background-size: 220% 100%;
+  animation: foilDrift 7s ease-in-out infinite;
+}
+
+/* Engraved (debossed) type for dark surfaces. */
+.engraved-dark {
+  text-shadow: 0 1px 0 rgba(255, 255, 255, .12), 0 -1px 1px rgba(0, 0, 0, .5);
+}
+/* Embossed type for light surfaces. */
+.engraved-light {
+  text-shadow: 0 1px 0 rgba(255, 255, 255, .85), 0 -1px 0 rgba(11, 46, 31, .12);
+}
+
+/* Slow rotation for the emblem seal. */
+@keyframes sealTurn { to { transform: rotate(360deg); } }
+.seal-turn { animation: sealTurn 120s linear infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .gold-foil, .foil-rule, .seal-turn { animation: none; }
+  .gold-foil { background-position: 40% 50%; }
+}

@@ -160,10 +160,18 @@ export default function SessionsPage() {
 
         {active.map((s) => {
           // All computed server-side: the client never re-derives dates.
+          //
+          // NOTE the LOOSE null checks (!= null, not !== null). The backend
+          // runs jackson.default-property-inclusion=non_null, so a null field
+          // is OMITTED from the JSON entirely — it arrives as `undefined`,
+          // which a strict !== null check lets through. That produced
+          // "NaN jour restant" on a freshly created (PLANNED) session.
           const remaining = s.daysRemainingInPhase;
           const allotted = s.allottedDaysInPhase;
-          const overdue = remaining !== null && remaining < 0;
+          const hasCountdown = typeof remaining === "number";
+          const overdue = hasCountdown && remaining < 0;
           const dueToday = remaining === 0;
+          const notStarted = s.status === "PLANNED";
           return (
             <div
               key={s.id}
@@ -196,17 +204,26 @@ export default function SessionsPage() {
                       {s.totalDays} jours · se termine le {fmtLong(s.reclamationEnd)}
                     </p>
                   </div>
-                  {remaining !== null && (
+                  {notStarted ? (
+                    <div className="min-w-[132px] rounded-xl bg-white/[0.08] px-4 py-3 text-center ring-1 ring-inset ring-white/15">
+                      <p className="text-[13px] font-extrabold leading-tight">
+                        Non démarrée
+                      </p>
+                      <p className="mt-1.5 text-[10px] font-bold uppercase tracking-wider text-white/55">
+                        début prévu le {fmt(s.startDate)}
+                      </p>
+                    </div>
+                  ) : hasCountdown ? (
                     <div
                       className="min-w-[132px] rounded-xl px-4 py-3 text-center ring-1"
                       style={{
                         background: overdue ? "rgba(208,28,31,.18)" : "rgba(255,255,255,.10)",
                         boxShadow: `inset 0 0 0 1px ${overdue ? "rgba(208,28,31,.45)" : "rgba(255,255,255,.15)"}`,
                       }}
-                      title={`Phase « ${PHASE_LABELS[s.status]} » : ${allotted} jours alloués, ouverte le ${fmtLong(s.phaseStartedAt)}, fin prévue le ${fmtLong(s.currentPhaseEnd!)}`}
+                      title={`Phase « ${PHASE_LABELS[s.status]} » : ${allotted} jours alloués, ouverte le ${fmtLong(s.phaseStartedAt)}, fin prévue le ${s.currentPhaseEnd ? fmtLong(s.currentPhaseEnd) : "—"}`}
                     >
                       <p className="text-2xl font-extrabold leading-none">
-                        {dueToday ? "Aujourd'hui" : Math.abs(remaining)}
+                        {dueToday ? "Aujourd'hui" : Math.abs(remaining ?? 0)}
                       </p>
                       <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-white/70">
                         {dueToday
@@ -221,7 +238,7 @@ export default function SessionsPage() {
                         </p>
                       )}
                     </div>
-                  )}
+                  ) : null}
                 </div>
 
                 {/* Phase stepper */}
