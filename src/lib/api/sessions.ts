@@ -45,9 +45,27 @@ export interface CreateSessionRequest {
   reclamationDays: number;
 }
 
+export interface SessionSchedulingRules {
+  minimumGapDays: number;
+  /** null when no session has ever been created. */
+  lastSessionStart: string | null;
+  /** The earliest date a new session may start — never before tomorrow. */
+  earliestNextStart: string;
+}
+
+export function getSchedulingRules() {
+  return apiFetch<SessionSchedulingRules>("/api/admin/sessions/scheduling-rules");
+}
+
+// export const sessionKeys = {
+//   all: ["sessions"] as const,
+//   detail: (id: number) => ["sessions", id] as const,
+// };
+
 export const sessionKeys = {
   all: ["sessions"] as const,
   detail: (id: number) => ["sessions", id] as const,
+  schedulingRules: ["sessions", "scheduling-rules"] as const,   // ← ADD
 };
 
 export function listSessions() {

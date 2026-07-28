@@ -1,5 +1,6 @@
 "use client";
 // src/app/(candidate)/layout.tsx — guard + chrome for CANDIDATE.
+// The nav items are live now that week 3 has built their destinations.
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, FileText, User } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
@@ -25,10 +26,10 @@ export default function CandidateLayout({ children }: { children: React.ReactNod
           items: [
             { label: "Mon dossier", href: routes.candidate.application,
               icon: <FileText className="h-[17px] w-[17px]" />,
-              disabled: true, badge: "S3" },
+              active: path.startsWith(routes.candidate.application) },
             { label: "Mon profil", href: routes.candidate.profile,
               icon: <User className="h-[17px] w-[17px]" />,
-              disabled: true, badge: "S3" },
+              active: path === routes.candidate.profile },
           ],
         },
       ]}

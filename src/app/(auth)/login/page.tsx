@@ -7,10 +7,10 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useAuth, homeForRole } from "@/lib/auth";
+import { useAuth } from "@/lib/auth";
+import { routes, homeForRole } from "@/lib/routes";
 import { ApiError } from "@/lib/api/client";
 import { validateLogin } from "@/lib/validation";
-import { routes } from "@/lib/routes";
 import {
   AuthShell,
   Field,
@@ -108,6 +108,18 @@ export default function LoginPage() {
           autoComplete="current-password"
           error={fieldErrors.password}
         />
+
+        {/* Placed under the field it relates to — where someone who has just
+            failed to remember their password is already looking. */}
+        <div className="-mt-3 mb-5 text-right">
+          <Link
+            href={routes.auth.forgotPassword}
+            className="text-[13px] font-semibold text-[var(--green-700)] underline underline-offset-2 hover:text-[var(--green-600)]"
+          >
+            Mot de passe oublié ?
+          </Link>
+        </div>
+
         <SubmitButton loading={loading}>Se connecter</SubmitButton>
       </form>
     </AuthShell>

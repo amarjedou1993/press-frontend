@@ -3,8 +3,9 @@
 // Session creation: <Field> family + react-hook-form <Controller>.
 //
 // Two version-proofing decisions:
-//  1. PopoverTrigger IS the styled button (no composition, no asChild) —
-//     works under Base UI or Radix, and can never nest <button>s.
+//  1. The date field uses the SHARED <DatePicker> (components/ui/date-picker),
+//     so admin and candidate forms pick dates the same way. Inside it, the
+//     PopoverTrigger IS the button — no asChild, so nothing nests.
 //  2. The resolver argument is cast, and the number inputs convert on change,
 //     so zod v4's types line up with @hookform/resolvers.
 
@@ -12,22 +13,20 @@ import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, Controller, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { CalendarIcon, ArrowLeft, Inbox, Gavel, PenLine, Scale } from "lucide-react";
+import { ArrowLeft, Inbox, Gavel, PenLine, Scale, CalendarClock, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Field, FieldLabel, FieldDescription, FieldError } from "@/components/ui/field";
+import { DatePicker } from "@/components/ui/date-picker";
 import { createSessionSchema, type CreateSessionValues } from "@/lib/schemas";
-import { createSession, sessionKeys } from "@/lib/api/sessions";
+import { createSession, getSchedulingRules, sessionKeys } from "@/lib/api/sessions";
 import { ApiError } from "@/lib/api/client";
-import { routes } from "@/lib/routes";
 
 const PHASES = [
   { name: "receivingDays", label: "Réception des dossiers", hint: "Dépôt des candidatures", Icon: Inbox },
@@ -35,12 +34,6 @@ const PHASES = [
   { name: "correctionDays", label: "Correction", hint: "Corrections demandées aux candidats", Icon: PenLine },
   { name: "reclamationDays", label: "Réclamation", hint: "Recours des candidats rejetés", Icon: Scale },
 ] as const;
-
-const TRIGGER_CLASS =
-  "inline-flex h-9 w-[280px] items-center justify-start gap-2 rounded-md border border-input " +
-  "bg-background px-4 py-2 text-sm font-medium shadow-sm transition-colors " +
-  "hover:bg-accent hover:text-accent-foreground focus-visible:outline-none " +
-  "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
 
 function addDays(iso: string, days: number): string {
   if (!iso) return "";
@@ -60,13 +53,19 @@ export default function NewSessionPage() {
   const router = useRouter();
   const qc = useQueryClient();
 
+  // The spacing rule is fetched BEFORE the admin fills anything in. A rule
+  // that blocks an action should be visible while the action is being taken,
+  // not explained by a toast afterwards.
+  const rules = useQuery({
+    queryKey: sessionKeys.schedulingRules,
+    queryFn: getSchedulingRules,
+  });
+
   const form = useForm<CreateSessionValues>({
     // Cast the ARGUMENT (not the result): zod v4's inferred schema type
     // doesn't match any resolver overload directly.
     resolver: zodResolver(createSessionSchema as any) as Resolver<CreateSessionValues>,
-    // Validate on SUBMIT, then re-validate on change (see ReviewerDialog).
-    mode: "onSubmit",
-    reValidateMode: "onChange",
+    mode: "onBlur",
     defaultValues: {
       startDate: "",
       receivingDays: 10,
@@ -105,9 +104,19 @@ export default function NewSessionPage() {
       toast.success("Session créée", {
         description: `Session #${created.id} — ${created.totalDays} jours, du ${longFr(created.startDate)} au ${longFr(created.reclamationEnd)}.`,
       });
-      router.push(routes.admin.sessions);
+      router.push("/admin/sessions");
     },
     onError: (e) => {
+      // 409 = the spacing rule. Bind it to the DATE FIELD, where the problem
+      // is, and keep it on screen — a toast disappears while the admin is
+      // still looking at the form wondering what to change.
+      if (e instanceof ApiError && e.problem.status === 409) {
+        form.setError("startDate", {
+          type: "server",
+          message: e.problem.detail ?? "Cette date est trop proche de la session précédente.",
+        });
+        return;
+      }
       toast.error("Création impossible", {
         description: e instanceof ApiError ? (e.problem.detail ?? e.message) : "Réessayez.",
       });
@@ -117,7 +126,7 @@ export default function NewSessionPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => router.push(routes.admin.sessions)}
+        <Button variant="ghost" size="icon" onClick={() => router.push("/admin/sessions")}
           aria-label="Retour aux sessions">
           <ArrowLeft className="h-4 w-4" />
         </Button>
@@ -130,6 +139,36 @@ export default function NewSessionPage() {
           </p>
         </div>
       </div>
+
+      {/* ── the rule, stated before it can be broken ── */}
+      {rules.data && rules.data.minimumGapDays > 0 && rules.data.lastSessionStart && (
+        <div className="flex items-start gap-3 rounded-xl border border-[var(--gold-500)]/40 bg-[var(--gold-tint)] p-4">
+          <CalendarClock className="mt-0.5 h-4 w-4 flex-none text-[var(--gold-700)]" />
+          <div className="text-[13px] leading-relaxed text-[var(--gold-700)]">
+            <p className="font-extrabold">
+              Une session doit être espacée de {rules.data.minimumGapDays} jours de la précédente
+            </p>
+            <p className="mt-1">
+              La dernière session a débuté le{" "}
+              <b className="font-semibold">{longFr(rules.data.lastSessionStart)}</b>.
+              La prochaine ne peut pas commencer avant le{" "}
+              <b className="font-semibold">{longFr(rules.data.earliestNextStart)}</b> —
+              les dates antérieures sont désactivées dans le calendrier.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {rules.data && !rules.data.lastSessionStart && (
+        <div className="flex items-start gap-3 rounded-xl border border-[var(--line)] bg-white p-4">
+          <Info className="mt-0.5 h-4 w-4 flex-none text-[var(--green-600)]" />
+          <p className="text-[13px] leading-relaxed text-[var(--slate)]">
+            Première session : aucune contrainte d&apos;espacement ne
+            s&apos;applique. Les sessions suivantes devront être espacées de{" "}
+            {rules.data.minimumGapDays} jours.
+          </p>
+        </div>
+      )}
 
       <form onSubmit={form.handleSubmit((v) => mutation.mutate(v))} className="space-y-6">
         <Card>
@@ -145,27 +184,37 @@ export default function NewSessionPage() {
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
                   <FieldLabel htmlFor={field.name}>Premier jour de la session</FieldLabel>
-                  <Popover>
-                    <PopoverTrigger
+                  <div className="max-w-[280px]">
+                    <DatePicker
                       id={field.name}
-                      aria-invalid={fieldState.invalid}
-                      className={TRIGGER_CLASS + (field.value ? "" : " text-[var(--muted-fg)]")}
-                    >
-                      <CalendarIcon className="h-4 w-4" />
-                      {field.value ? longFr(field.value) : "Choisir une date"}
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        locale={fr}
-                        selected={field.value ? new Date(field.value + "T00:00:00") : undefined}
-                        onSelect={(d?: Date) => field.onChange(d ? format(d, "yyyy-MM-dd") : "")}
-                        disabled={(d: Date) => d <= new Date(new Date().setHours(0, 0, 0, 0))}
-                      />
-                    </PopoverContent>
-                  </Popover>
+                      name={field.name}
+                      value={field.value ?? ""}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      invalid={fieldState.invalid}
+                      placeholder="Choisir une date"
+                      // Impossible dates are GREYED OUT rather than refused
+                      // after the fact: a session opens in the future, and
+                      // no sooner than the spacing rule allows.
+                      disabled={(d) => {
+                        const floor = rules.data?.earliestNextStart
+                          ? new Date(rules.data.earliestNextStart + "T00:00:00")
+                          : new Date(new Date().setHours(0, 0, 0, 0) + 86_400_000);
+                        return d < floor;
+                      }}
+                      defaultMonth={
+                        rules.data?.earliestNextStart
+                          ? new Date(rules.data.earliestNextStart + "T00:00:00")
+                          : undefined
+                      }
+                      fromYear={new Date().getFullYear()}
+                      toYear={new Date().getFullYear() + 2}
+                    />
+                  </div>
                   <FieldDescription>
-                    La session doit commencer après aujourd&apos;hui.
+                    {rules.data?.lastSessionStart
+                      ? `Au plus tôt le ${longFr(rules.data.earliestNextStart)}.`
+                      : "La session doit commencer après aujourd'hui."}
                   </FieldDescription>
                   {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                 </Field>
@@ -256,7 +305,7 @@ export default function NewSessionPage() {
         </div>
 
         <div className="flex justify-end gap-3">
-          <Button type="button" variant="outline" onClick={() => router.push(routes.admin.sessions)}>
+          <Button type="button" variant="outline" onClick={() => router.push("/admin/sessions")}>
             Annuler
           </Button>
           <Button type="submit" disabled={mutation.isPending}>

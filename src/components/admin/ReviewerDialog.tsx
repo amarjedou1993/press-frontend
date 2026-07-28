@@ -82,7 +82,7 @@ export function ReviewerDialog({
               <Field data-invalid={fieldState.invalid}>
                 <FieldLabel htmlFor={field.name}>Adresse e-mail</FieldLabel>
                 <Input {...field} value={field.value ?? ""} id={field.name} type="email"
-                  aria-invalid={fieldState.invalid} placeholder="nom@hapa.mr" autoComplete="off" />
+                  aria-invalid={fieldState.invalid} placeholder="nom@culture.mr" autoComplete="off" />
                 {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
               </Field>
             )}

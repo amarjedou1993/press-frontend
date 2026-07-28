@@ -16,7 +16,7 @@ export function PressCard({ className = "" }: { className?: string }) {
             "0 50px 90px -30px rgba(0,0,0,.6), 0 18px 40px -20px rgba(0,0,0,.4), inset 0 0 0 1px rgba(11,46,31,.08)",
         }}
         role="img"
-        aria-label="Carte de presse HAPA — spécimen"
+        aria-label="Carte de presse — spécimen"
       >
         {/* guilloche rosette behind everything */}
         <Guilloche
@@ -50,10 +50,10 @@ export function PressCard({ className = "" }: { className?: string }) {
               </span>
               <div>
                 <p className="text-[13px] font-extrabold leading-none tracking-[0.1em] text-[var(--green-800,#0f4a30)]">
-                  HAPA
+                  RIM
                 </p>
                 <p className="mt-1 max-w-[168px] text-[6px] font-bold uppercase leading-[1.5] tracking-[0.1em] text-[var(--muted-fg)]">
-                  Haute Autorité de la Presse et de l&apos;Audiovisuel
+                  Réplique Islamique de Mauritanie
                 </p>
               </div>
             </div>
@@ -61,9 +61,9 @@ export function PressCard({ className = "" }: { className?: string }) {
               dir="rtl"
               className="text-right text-[10.5px] font-semibold leading-[1.5] text-[var(--green-700)]"
             >
-              السلطة العليا للصحافة
-              <br />
-              والسمعيات البصرية
+              الجمهورية
+                <br />
+                الاسلامية الموريتانية
             </p>
           </header>
 
@@ -100,7 +100,7 @@ export function PressCard({ className = "" }: { className?: string }) {
               </div>
               <MicroprintRule
                 className="mt-1 w-[74px] text-[var(--green-700)] opacity-45"
-                text="HAPA·RIM·"
+                text="CARTE·RIM·"
                 repeat={4}
               />
             </div>
@@ -110,7 +110,7 @@ export function PressCard({ className = "" }: { className?: string }) {
               {[
                 ["Nom / الاسم", "————————————"],
                 ["Catégorie", "————————————"],
-                ["N° de carte", "HAPA-2026-000000"],
+                ["N° de carte", "RIM-2026-000000"],
                 ["Validité", "31 / 12 / 2027"],
               ].map(([label, value]) => (
                 <div key={label} className="flex items-baseline gap-2 border-b border-dotted border-[var(--line)] pb-[3px]">
@@ -133,9 +133,9 @@ export function PressCard({ className = "" }: { className?: string }) {
           {/* ── MRZ ── */}
           <div className="mt-2 rounded-[3px] bg-[var(--green-900)]/[0.04] px-2 py-1">
             <p className="overflow-hidden whitespace-nowrap font-mono text-[7.5px] leading-[1.6] tracking-[0.24em] text-[var(--ink)]/45">
-              P&lt;RIMHAPA&lt;&lt;PRESSE&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;
+              P&lt;RIMCARTE&lt;&lt;PRESSE&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;
               <br />
-              HAPA2026000000&lt;9MRT&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;2
+              RIM2026000000&lt;9MRT&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;2
             </p>
           </div>
         </div>

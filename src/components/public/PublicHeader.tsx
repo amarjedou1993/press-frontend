@@ -76,12 +76,12 @@ export async function PublicHeader() {
 
             <span className="leading-none">
               <span className="gold-foil block text-[19px] font-extrabold tracking-[0.16em]">
-                HAPA
+                RIM
               </span>
               <span className="engraved-light mt-1.5 block max-w-[220px] text-[8px] font-bold uppercase leading-[1.55] tracking-[0.12em] text-[var(--green-900)]/65">
-                Haute Autorité de la Presse
+                République
                 <br />
-                et de l&apos;Audiovisuel
+                Islamique de Mauritanie
               </span>
             </span>
 
@@ -90,9 +90,9 @@ export async function PublicHeader() {
                 dir="rtl"
                 className="block text-[11px] font-semibold leading-[1.6] text-[var(--green-700)]/65"
               >
-                السلطة العليا
+                الجمهورية
                 <br />
-                للصحافة والسمعيات البصرية
+                الاسلامية الموريتانية
               </span>
             </span>
           </Link>
@@ -135,7 +135,7 @@ export async function PublicHeader() {
               className="group relative inline-flex items-center gap-1.5 overflow-hidden rounded-lg px-4 py-2.5 text-[13px] font-bold text-white shadow-[0_10px_24px_-12px_rgba(0,107,60,.9)] transition-all hover:-translate-y-px"
               style={{ background: "linear-gradient(140deg, var(--green-600), var(--green-700) 60%, #05502c)" }}
             >
-              <span className="relative z-10">Déposer une demande</span>
+              <span className="relative z-10">Déposer</span>
               <ArrowRight className="relative z-10 h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
               <span
                 className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent transition-transform duration-700 group-hover:translate-x-full"

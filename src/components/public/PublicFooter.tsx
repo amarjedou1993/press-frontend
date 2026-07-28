@@ -43,7 +43,7 @@ export function PublicFooter() {
           className="pointer-events-none absolute inset-x-0 -bottom-8 select-none text-center text-[clamp(90px,20vw,240px)] font-extrabold leading-none tracking-[-0.03em] text-white opacity-[0.028]"
           aria-hidden="true"
         >
-          HAPA
+          RIM
         </span>
 
         <div className="relative z-10 mx-auto max-w-6xl px-6 pb-20 pt-16">
@@ -63,17 +63,20 @@ export function PublicFooter() {
             </div>
 
             <p className="gold-foil mt-6 text-[13px] font-extrabold uppercase leading-[1.7] tracking-[0.28em]">
-              Haute Autorité de la Presse
+              
+              Ministère de la Culture, des Arts,
               <br />
-              et de l&apos;Audiovisuel
+             de la Communication
+              <br />
+             et des Relations avec le Parlement
             </p>
 
             <p dir="rtl" className="mt-4 text-[19px] font-semibold leading-[1.9] text-white/45">
-              السلطة العليا للصحافة والسمعيات البصرية
+              وزارة الثقافة والفنون والاتصالات والعلاقات مع البرلمان
             </p>
 
             <p className="mx-auto mt-6 max-w-lg text-[12.5px] leading-relaxed text-white/35">
-              Autorité de régulation chargée de la délivrance de la carte de
+              Ministère de la Culture chargé de la délivrance de la carte de
               presse aux journalistes exerçant en République Islamique de
               Mauritanie.
             </p>
@@ -151,7 +154,7 @@ export function PublicFooter() {
               <div className="mt-6 flex items-start gap-3 rounded-xl border border-white/10 bg-white/[0.04] p-4">
                 <ShieldCheck className="mt-0.5 h-4 w-4 flex-none text-[var(--green-500)]" />
                 <p className="text-[12.5px] leading-relaxed text-white/45">
-                  Vos informations sont traitées exclusivement par la HAPA, dans
+                  Vos informations sont traitées exclusivement par le Ministère, dans
                   le cadre de l&apos;instruction de votre demande
                   d&apos;accréditation.
                 </p>
@@ -162,8 +165,7 @@ export function PublicFooter() {
           {/* ══ colophon ══ */}
           <div className="mt-14 flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-6">
             <p className="text-[11.5px] text-white/30">
-              © {year} Haute Autorité de la Presse et de l&apos;Audiovisuel — Tous
-              droits réservés.
+              © {year}  Ministère de la Culture — Tous droits réservés.
             </p>
             <div className="flex items-center gap-3">
               <TricolorRule className="w-10 rounded-full opacity-70" thin />

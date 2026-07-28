@@ -123,7 +123,7 @@ export function OfficialSeal({
       </g>
       <text fill={color} fontSize="11.5" fontWeight="700" letterSpacing="3.4">
         <textPath href={`#${id}-top`} startOffset="50%" textAnchor="middle">
-          HAUTE AUTORITÉ DE LA PRESSE
+          MINISTÈRE DE LA CULTURE
         </textPath>
       </text>
       <text fill={color} fontSize="10.5" fontWeight="600" letterSpacing="2.6" opacity="0.85">
@@ -145,7 +145,7 @@ export function OfficialSeal({
    The hairline of repeated micro-text along a document's edge. Real
    security printing; here it doubles as a section divider. */
 export function MicroprintRule({
-  text = "HAPA · ACCRÉDITATION PRESSE · RÉPUBLIQUE ISLAMIQUE DE MAURITANIE · ",
+  text = "· ACCRÉDITATION PRESSE · RÉPUBLIQUE ISLAMIQUE DE MAURITANIE · ",
   className = "",
   repeat = 6,
 }: {

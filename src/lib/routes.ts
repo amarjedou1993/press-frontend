@@ -37,10 +37,15 @@ export const routes = {
   },
 
   /* ── reviewer space ─────────────────────────────────── */
+  // reviewer: {
+  //   pool: "/pool",                            // week 4
+  //   review: (applicationId: number | string) => `/review/${applicationId}`, // week 4
+  // },
+
   reviewer: {
-    pool: "/pool",                            // week 4
-    review: (applicationId: number | string) => `/review/${applicationId}`, // week 4
-  },
+      home: "/reviewer",
+      examination: (id: number) => `/reviewer/${id}`,
+    },
 
   /* ── admin space ────────────────────────────────────── */
   admin: {
@@ -59,7 +64,7 @@ export function homeForRole(role: "CANDIDATE" | "REVIEWER" | "SUPER_ADMIN"): str
     case "SUPER_ADMIN":
       return routes.admin.home;
     case "REVIEWER":
-      return routes.reviewer.pool;
+      return routes.reviewer.home;
     case "CANDIDATE":
     default:
       return routes.candidate.dashboard;

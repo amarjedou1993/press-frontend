@@ -101,7 +101,7 @@ export function AppSidebar({
             {!collapsed && (
               <div className="min-w-0">
                 <p className="truncate text-[13px] font-extrabold tracking-[0.1em] text-white">
-                  HAPA <span className="text-[var(--gold-500)]">/</span> PRESSE
+                  CARTE <span className="text-[var(--gold-500)]">/</span> PRESSE
                 </p>
                 <p className="truncate text-[9.5px] font-semibold uppercase tracking-[0.14em] text-white/45">
                   Accréditation
