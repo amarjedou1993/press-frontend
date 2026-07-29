@@ -1,18 +1,20 @@
 "use client";
 // src/components/reviewer/DocumentInspector.tsx
-// The evidence, viewable IN PLACE.
+// The evidence, viewable in place — now with VERSION HISTORY.
 //
-// A reviewer who must download each file, find it, open it, and come back
-// will not read them all — so the pieces are previewed beside the list.
-// Images render directly; PDFs go in an <object>, which uses the browser's
-// own viewer and needs no dependency.
+// After a correction round the dossier holds two rows for the same piece: the
+// original the commission rejected, and the replacement. Showing them as a
+// flat list would be actively misleading — the reviewer would see "two
+// attestations" and wonder which counts.
 //
-// Everything is fetched with the session token: these endpoints reject
-// unauthenticated requests, so a plain src attribute would show nothing.
+// So documents are GROUPED BY TYPE, the current version is selected by
+// default, and previous versions sit beneath it marked as superseded. On a
+// FINAL round that comparison is the reviewer's whole task: did the candidate
+// actually fix what was asked?
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
-  FileText, Link2, ExternalLink, Download, AlertTriangle, Eye, Loader2,
+  FileText, Link2, ExternalLink, Download, AlertTriangle, Eye, Loader2, History,
 } from "lucide-react";
 import { useAuthenticatedFile, openProtectedFile } from "@/lib/api/files";
 import { useAuthStore } from "@/lib/auth";
@@ -56,12 +58,8 @@ function Preview({ applicationId, document }: {
     );
   }
 
-  // The blob URL carries no filename, so sniff on the document type instead.
-  const isImage = /\.(jpe?g|png)$/i.test(document.docTypeLabelFr) || false;
-
   return (
     <object data={url} type="application/pdf" className="h-full w-full">
-      {/* Fallback covers images and any browser without a PDF viewer. */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={url} alt={document.docTypeLabelFr}
         className="mx-auto max-h-full max-w-full object-contain" />
@@ -77,7 +75,32 @@ export function DocumentInspector({
   documents: ReviewDocument[];
 }) {
   const token = useAuthStore((s) => s.token);
-  const [selected, setSelected] = useState<ReviewDocument | null>(documents[0] ?? null);
+
+  /**
+   * Group by type, newest version first. The list shows one entry per PIECE
+   * OF EVIDENCE, not one per stored row — which is what a reviewer means by
+   * "the attestation".
+   */
+  const groups = useMemo(() => {
+    const byType = new Map<string, ReviewDocument[]>();
+    for (const d of documents) {
+      const list = byType.get(d.docType) ?? [];
+      list.push(d);
+      byType.set(d.docType, list);
+    }
+    return [...byType.entries()].map(([docType, versions]) => ({
+      docType,
+      label: versions[0].docTypeLabelFr,
+      versions: versions.sort((a, b) => b.version - a.version),
+      current: versions[0],
+      hasHistory: versions.length > 1,
+    }));
+  }, [documents]);
+
+  const [selected, setSelected] = useState<ReviewDocument | null>(
+    groups[0]?.current ?? null
+  );
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   if (documents.length === 0) {
     return (
@@ -90,65 +113,115 @@ export function DocumentInspector({
     );
   }
 
+  const corrected = groups.filter((g) => g.hasHistory).length;
+
   return (
     <div className="overflow-hidden rounded-2xl border border-[var(--line)] bg-white">
       <div className="flex items-center gap-3 border-b border-[var(--line)] px-6 py-4">
         <span className="flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-[var(--green-tint)]">
           <FileText className="h-4 w-4 text-[var(--green-700)]" />
         </span>
-        <div>
+        <div className="min-w-0 flex-1">
           <p className="text-[14px] font-extrabold text-[var(--green-900)]">
             Pièces justificatives
           </p>
           <p className="text-[12px] text-[var(--slate)]">
-            {documents.length} pièce{documents.length > 1 ? "s" : ""} au dossier
+            {groups.length} pièce{groups.length > 1 ? "s" : ""}
+            {corrected > 0 && (
+              <> · {corrected} corrigée{corrected > 1 ? "s" : ""}</>
+            )}
           </p>
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-[260px_1fr]">
-        {/* ── the list ── */}
+      <div className="grid lg:grid-cols-[290px_1fr]">
+        {/* ── the list, one entry per piece ── */}
         <ul className="divide-y divide-[var(--line)] border-b border-[var(--line)] lg:border-b-0 lg:border-r">
-          {documents.map((d) => {
-            const active = selected?.id === d.id;
+          {groups.map((group) => {
+            const open = expanded.has(group.docType);
+            const currentActive = selected?.id === group.current.id;
+
             return (
-              <li key={d.id}>
+              <li key={group.docType}>
                 <button
                   type="button"
-                  onClick={() => setSelected(d)}
+                  onClick={() => setSelected(group.current)}
                   className="flex w-full items-start gap-3 px-4 py-3.5 text-left transition-colors"
-                  style={{ background: active ? "var(--green-tint)" : "transparent" }}
+                  style={{ background: currentActive ? "var(--green-tint)" : "transparent" }}
                 >
-                  <span
-                    className="mt-0.5 flex h-7 w-7 flex-none items-center justify-center rounded-lg"
+                  <span className="mt-0.5 flex h-7 w-7 flex-none items-center justify-center rounded-lg"
                     style={{
-                      background: d.needsCorrection ? "var(--gold-tint)" : "#eef1ef",
-                      color: d.needsCorrection ? "var(--gold-700)" : "var(--green-700)",
-                    }}
-                  >
-                    {d.kind === "FILE" ? <FileText className="h-3.5 w-3.5" />
-                                       : <Link2 className="h-3.5 w-3.5" />}
+                      background: group.current.needsCorrection ? "var(--gold-tint)" : "#eef1ef",
+                      color: group.current.needsCorrection ? "var(--gold-700)" : "var(--green-700)",
+                    }}>
+                    {group.current.kind === "FILE" ? <FileText className="h-3.5 w-3.5" />
+                                                   : <Link2 className="h-3.5 w-3.5" />}
                   </span>
+
                   <span className="min-w-0 flex-1">
                     <span className="block text-[13px] font-bold text-[var(--green-900)]">
-                      {d.docTypeLabelFr}
-                      {d.version > 1 && (
-                        <span className="ml-1.5 font-mono text-[10.5px] text-[var(--muted-fg)]">
-                          v{d.version}
-                        </span>
-                      )}
+                      {group.label}
                     </span>
                     <span className="block font-mono text-[10.5px] text-[var(--muted-fg)]">
-                      {new Date(d.uploadedAt).toLocaleDateString("fr-FR")}
+                      v{group.current.version} ·{" "}
+                      {new Date(group.current.uploadedAt).toLocaleDateString("fr-FR")}
                     </span>
-                    {d.needsCorrection && (
+                    {group.current.needsCorrection && (
                       <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-[var(--gold-tint)] px-1.5 py-0.5 text-[9.5px] font-bold text-[var(--gold-700)]">
-                        <AlertTriangle className="h-2.5 w-2.5" /> Correction demandée
+                        <AlertTriangle className="h-2.5 w-2.5" /> correction demandée
                       </span>
                     )}
                   </span>
-                  {active && <Eye className="mt-1 h-3.5 w-3.5 flex-none text-[var(--green-600)]" />}
+
+                  {currentActive && (
+                    <Eye className="mt-1 h-3.5 w-3.5 flex-none text-[var(--green-600)]" />
+                  )}
                 </button>
+
+                {/* ── previous versions ── */}
+                {group.hasHistory && (
+                  <div className="px-4 pb-3">
+                    <button
+                      type="button"
+                      onClick={() => setExpanded((set) => {
+                        const next = new Set(set);
+                        next.has(group.docType) ? next.delete(group.docType)
+                                                : next.add(group.docType);
+                        return next;
+                      })}
+                      className="inline-flex items-center gap-1.5 text-[11.5px] font-bold text-[var(--gold-700)] hover:text-[var(--gold-500)]"
+                    >
+                      <History className="h-3 w-3" />
+                      {open ? "Masquer" : "Voir"} la version précédente
+                      {group.versions.length > 2 && ` (${group.versions.length - 1})`}
+                    </button>
+
+                    {open && (
+                      <ul className="mt-2 space-y-1 border-l-2 border-[var(--line)] pl-3">
+                        {group.versions.slice(1).map((old) => (
+                          <li key={old.id}>
+                            <button
+                              type="button"
+                              onClick={() => setSelected(old)}
+                              className="w-full rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-[#f2f5f3]"
+                              style={{
+                                background: selected?.id === old.id ? "#eef1ef" : "transparent",
+                              }}
+                            >
+                              <span className="block font-mono text-[10.5px] text-[var(--muted-fg)]">
+                                v{old.version} ·{" "}
+                                {new Date(old.uploadedAt).toLocaleDateString("fr-FR")}
+                              </span>
+                              <span className="block text-[11px] font-semibold text-[var(--slate)]">
+                                Version remplacée
+                              </span>
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
               </li>
             );
           })}
@@ -159,17 +232,26 @@ export function DocumentInspector({
           {selected && (
             <>
               <div className="flex items-center justify-between gap-3 border-b border-[var(--line)] px-4 py-2.5">
-                <p className="truncate text-[12.5px] font-bold text-[var(--green-900)]">
+                <p className="flex min-w-0 items-center gap-2 truncate text-[12.5px] font-bold text-[var(--green-900)]">
                   {selected.docTypeLabelFr}
+                  <span className="flex-none rounded-full bg-[#eef1ef] px-2 py-0.5 font-mono text-[10px] text-[var(--slate)]">
+                    v{selected.version}
+                  </span>
+                  {/* A superseded version is the one the FIRST decision was
+                      taken on — saying so prevents it being read as current. */}
+                  {groups.find((g) => g.docType === selected.docType)?.current.id !== selected.id && (
+                    <span className="flex-none rounded-full bg-[var(--gold-tint)] px-2 py-0.5 text-[10px] font-bold text-[var(--gold-700)]">
+                      remplacée
+                    </span>
+                  )}
                 </p>
+
                 {selected.kind === "FILE" && (
-                  <button
-                    type="button"
+                  <button type="button"
                     onClick={() => openProtectedFile(
                       reviewerDocumentPath(applicationId, selected.id),
                       token, selected.docTypeLabelFr)}
-                    className="inline-flex flex-none items-center gap-1.5 rounded-lg border border-[var(--line)] bg-white px-2.5 py-1.5 text-[11.5px] font-semibold text-[var(--green-700)] hover:bg-[var(--green-tint)]"
-                  >
+                    className="inline-flex flex-none items-center gap-1.5 rounded-lg border border-[var(--line)] bg-white px-2.5 py-1.5 text-[11.5px] font-semibold text-[var(--green-700)] hover:bg-[var(--green-tint)]">
                     <Download className="h-3 w-3" /> Ouvrir
                   </button>
                 )}

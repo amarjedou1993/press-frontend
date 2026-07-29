@@ -14,8 +14,18 @@
 
 import { Search, X, LayoutGrid, Rows3, SlidersHorizontal } from "lucide-react";
 
-export type Scope = "pool" | "mine" | "all";
-export type SortKey = "waiting_desc" | "waiting_asc" | "name_asc" | "name_desc";
+/**
+ * Four questions, four tabs:
+ *   pool    — what can I take?
+ *   mine    — what must I decide?   (active only)
+ *   decided — what did I decide?    (my history)
+ *   all     — what is the commission doing?  (everything, incl. others')
+ */
+export type Scope = "pool" | "mine" | "decided" | "all";
+export type SortKey =
+  | "waiting_desc" | "waiting_asc"
+  | "decided_desc" | "decided_asc"
+  | "name_asc" | "name_desc";
 export type Density = "grid" | "list";
 export type UrgencyBand = "" | "fresh" | "ageing" | "late";
 
@@ -40,12 +50,21 @@ export const DEFAULT_FILTERS: PoolFilterState = {
 const SCOPES: { key: Scope; label: string }[] = [
   { key: "pool", label: "File commune" },
   { key: "mine", label: "Mes dossiers" },
+  { key: "decided", label: "Traités" },
   { key: "all", label: "Tous" },
 ];
 
 const SORTS: { key: SortKey; label: string }[] = [
   { key: "waiting_desc", label: "Attente la plus longue" },
   { key: "waiting_asc", label: "Plus récents d'abord" },
+  { key: "name_asc", label: "Nom (A → Z)" },
+  { key: "name_desc", label: "Nom (Z → A)" },
+];
+
+/** On a settled list, waiting time is meaningless — decision date is not. */
+const DECIDED_SORTS: { key: SortKey; label: string }[] = [
+  { key: "decided_desc", label: "Décision la plus récente" },
+  { key: "decided_asc", label: "Décision la plus ancienne" },
   { key: "name_asc", label: "Nom (A → Z)" },
   { key: "name_desc", label: "Nom (Z → A)" },
 ];
@@ -69,12 +88,14 @@ export function PoolFilters({
   onChange: (next: PoolFilterState) => void;
   categories: string[];
   rounds: string[];
-  counts: { pool: number; mine: number; all: number };
+  counts: { pool: number; mine: number; decided: number; all: number };
   density: Density;
   onDensityChange: (d: Density) => void;
 }) {
   const set = <K extends keyof PoolFilterState>(key: K, v: PoolFilterState[K]) =>
     onChange({ ...value, [key]: v });
+
+  const settled = value.scope === "decided";
 
   const chips: { key: keyof PoolFilterState; label: string }[] = [];
   if (value.search.trim()) chips.push({ key: "search", label: `« ${value.search.trim()} »` });
@@ -169,7 +190,8 @@ export function PoolFilters({
           aria-label="Trier"
           className="h-9 rounded-lg border border-[var(--line)] bg-white px-3 text-[13px] outline-none focus-visible:border-[var(--green-500)] focus-visible:ring-2 focus-visible:ring-[var(--green-500)]/25"
         >
-          {SORTS.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
+          {(value.scope === "decided" ? DECIDED_SORTS : SORTS)
+            .map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
         </select>
       </div>
 

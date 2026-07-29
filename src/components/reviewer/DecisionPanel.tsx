@@ -42,10 +42,12 @@ export function DecisionPanel({ examination }: { examination: Examination }) {
 
   const [dialog, setDialog] = useState<null | "approve" | "reject" | "correction">(null);
 
-  const refresh = (data: Examination) => {
+   const refresh = (data: Examination) => {
     qc.setQueryData(reviewKeys.examination(id), data);
     qc.invalidateQueries({ queryKey: reviewKeys.pool });
     qc.invalidateQueries({ queryKey: reviewKeys.myFiles });
+    qc.invalidateQueries({ queryKey: reviewKeys.myDecided });  
+    qc.invalidateQueries({ queryKey: reviewKeys.all });         
   };
 
   const fail = (e: unknown) =>
@@ -206,8 +208,11 @@ function ApproveDialog({ id, open, onClose, onDone }: {
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="sm:max-w-[480px]">
-        <DialogHeader>
+      {/* Fixed header, scrollable body, pinned footer. The confirm button
+          must never be pushed off-screen — a decision the reviewer cannot
+          reach is a decision they will take somewhere else, or not at all. */}
+      <DialogContent className="flex max-h-[85vh] flex-col sm:max-w-[480px]">
+        <DialogHeader className="flex-none">
           <DialogTitle>Accepter cette candidature ?</DialogTitle>
           <DialogDescription>
             Le dossier sera marqué accepté et le candidat informé par e-mail.
@@ -215,20 +220,22 @@ function ApproveDialog({ id, open, onClose, onDone }: {
           </DialogDescription>
         </DialogHeader>
 
-        <Field>
-          <FieldLabel htmlFor="approve-note">
-            Observation <span className="font-normal text-[var(--muted-fg)]">(facultative)</span>
-          </FieldLabel>
-          <Textarea id="approve-note" rows={3} value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder="Remarque à joindre à la décision…" />
-          <FieldDescription>
-            Elle figurera dans l&apos;historique du dossier et dans l&apos;e-mail
-            envoyé au candidat.
-          </FieldDescription>
-        </Field>
+        <div className="min-h-0 flex-1 overflow-y-auto px-1">
+          <Field>
+            <FieldLabel htmlFor="approve-note">
+              Observation <span className="font-normal text-[var(--muted-fg)]">(facultative)</span>
+            </FieldLabel>
+            <Textarea id="approve-note" rows={3} value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Remarque à joindre à la décision…" />
+            <FieldDescription>
+              Elle figurera dans l&apos;historique du dossier et dans l&apos;e-mail
+              envoyé au candidat.
+            </FieldDescription>
+          </Field>
+        </div>
 
-        <DialogFooter>
+        <DialogFooter className="flex-none border-t border-[var(--line)] pt-4">
           <Button variant="outline" onClick={onClose}>Annuler</Button>
           <Button onClick={() => approve.mutate()} disabled={approve.isPending}>
             {approve.isPending ? "Enregistrement…" : "Confirmer l'acceptation"}
@@ -285,8 +292,8 @@ function RejectDialog({ id, open, onClose, onDone }: {
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="sm:max-w-[560px]">
-        <DialogHeader>
+      <DialogContent className="flex max-h-[85vh] flex-col sm:max-w-[560px]">
+        <DialogHeader className="flex-none">
           <DialogTitle>Rejeter cette candidature</DialogTitle>
           <DialogDescription>
             Le candidat sera informé du motif et pourra déposer une
@@ -294,7 +301,9 @@ function RejectDialog({ id, open, onClose, onDone }: {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
+        {/* min-h-0 is load-bearing: without it a flex child refuses to
+            shrink below its content, and the body never scrolls. */}
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-1 py-1">
           {/* ── the grounds ── */}
           <Field>
             <FieldLabel>Motif du rejet</FieldLabel>
@@ -365,7 +374,7 @@ function RejectDialog({ id, open, onClose, onDone }: {
           </Field>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="flex-none border-t border-[var(--line)] pt-4">
           <Button variant="outline" onClick={onClose}>Annuler</Button>
           <Button
             className="bg-[var(--red-500)] text-white hover:bg-[var(--red-700)]"
@@ -457,8 +466,8 @@ function CorrectionDialog({ examination, open, onClose, onDone }: {
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-[600px]">
-        <DialogHeader>
+      <DialogContent className="flex max-h-[85vh] flex-col sm:max-w-[600px]">
+        <DialogHeader className="flex-none">
           <DialogTitle>Demander une correction</DialogTitle>
           <DialogDescription>
             Le dossier retourne au candidat, qui pourra remplacer UNIQUEMENT
@@ -467,7 +476,7 @@ function CorrectionDialog({ examination, open, onClose, onDone }: {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-5">
+        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-1 py-1">
           <Field>
             <FieldLabel htmlFor="correction-summary">
               Résumé <span className="text-[var(--red-500)]">*</span>
@@ -563,7 +572,7 @@ function CorrectionDialog({ examination, open, onClose, onDone }: {
           )}
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="flex-none border-t border-[var(--line)] pt-4">
           <Button variant="outline" onClick={onClose}>Annuler</Button>
           <Button
             className="bg-[var(--gold-700)] text-white hover:bg-[var(--gold-500)] hover:text-[var(--green-900)]"

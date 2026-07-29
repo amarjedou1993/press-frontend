@@ -33,6 +33,10 @@ export interface PoolItem {
   claimedByName: string | null;
   claimedAt: string | null;
   correctionCount: number;
+   /** What THIS reviewer decided, if anything. */
+  myDecision?: DecisionType | null;
+  myDecisionLabelFr?: string | null;
+  myDecidedAt?: string | null;
 }
 
 export interface CandidateIdentity {
@@ -117,6 +121,8 @@ export interface RejectionGroundOption {
 export const reviewKeys = {
   pool: ["review", "pool"] as const,
   myFiles: ["review", "my-files"] as const,
+  myDecided: ["review", "my-decided"] as const,      // ← ADD
+  all: ["review", "all"] as const,                    // ← ADD
   examination: (id: number) => ["review", "examination", id] as const,
   grounds: (id: number) => ["review", "grounds", id] as const,
 };
@@ -129,6 +135,16 @@ export function getPool() {
 
 export function getMyFiles() {
   return apiFetch<PoolItem[]>("/api/reviewer/my-files");
+}
+
+/** What this reviewer has already decided. */
+export function getMyDecided() {
+  return apiFetch<PoolItem[]>("/api/reviewer/my-decided");
+}
+
+/** Every submitted dossier — the session's whole picture. */
+export function getAllDossiers() {
+  return apiFetch<PoolItem[]>("/api/reviewer/all");
 }
 
 export function getExamination(id: number) {
@@ -153,6 +169,7 @@ export function approveApplication(id: number, note?: string) {
     body: JSON.stringify({ note: note ?? null }),
   });
 }
+
 
 export function rejectApplication(
   id: number,

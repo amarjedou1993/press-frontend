@@ -29,7 +29,8 @@ import {
   type PoolFilterState, type Density, type UrgencyBand,
 } from "@/components/reviewer/PoolFilters";
 import {
-  getPool, getMyFiles, claimApplication, reviewKeys, type PoolItem,
+  getPool, getMyFiles, getMyDecided, getAllDossiers,
+  claimApplication, reviewKeys, type PoolItem,
 } from "@/lib/api/review";
 import { ApiError } from "@/lib/api/client";
 import { routes } from "@/lib/routes";
@@ -54,10 +55,16 @@ export default function ReviewerHomePage() {
 
   const pool = useQuery({ queryKey: reviewKeys.pool, queryFn: getPool });
   const mine = useQuery({ queryKey: reviewKeys.myFiles, queryFn: getMyFiles });
+  const decided = useQuery({ queryKey: reviewKeys.myDecided, queryFn: getMyDecided });
+  // "Tous" is fetched from its own endpoint rather than stitched together in
+  // the browser: only the server can see dossiers claimed by OTHER members.
+  const everything = useQuery({ queryKey: reviewKeys.all, queryFn: getAllDossiers });
 
   const loading = pool.isLoading || mine.isLoading;
   const poolItems = useMemo(() => pool.data ?? [], [pool.data]);
   const myItems = useMemo(() => mine.data ?? [], [mine.data]);
+  const decidedItems = useMemo(() => decided.data ?? [], [decided.data]);
+  const allItemsFromServer = useMemo(() => everything.data ?? [], [everything.data]);
 
   const claim = useMutation({
     mutationFn: (id: number) => claimApplication(id),
@@ -78,11 +85,13 @@ export default function ReviewerHomePage() {
       }),
   });
 
-  // A claimed dossier leaves the pool, so "all" is a union, not a filter.
+  // Until /all resolves, fall back to what we already hold, so the counts
+  // and the filter options are never briefly empty.
   const allItems = useMemo(() => {
+    if (allItemsFromServer.length > 0) return allItemsFromServer;
     const seen = new Set(myItems.map((i) => i.applicationId));
     return [...myItems, ...poolItems.filter((i) => !seen.has(i.applicationId))];
-  }, [myItems, poolItems]);
+  }, [allItemsFromServer, myItems, poolItems]);
 
   const myIds = useMemo(
     () => new Set(myItems.map((i) => i.applicationId)), [myItems]);
@@ -90,6 +99,7 @@ export default function ReviewerHomePage() {
   const source: PoolItem[] =
     filters.scope === "mine" ? myItems
     : filters.scope === "pool" ? poolItems
+    : filters.scope === "decided" ? decidedItems
     : allItems;
 
   // Options come FROM THE DATA, so a filter can never offer an empty result.
@@ -114,9 +124,14 @@ export default function ReviewerHomePage() {
       return true;
     });
 
+    const decidedAt = (i: PoolItem) =>
+      i.myDecidedAt ? new Date(i.myDecidedAt).getTime() : 0;
+
     return result.sort((a, b) => {
       switch (filters.sort) {
         case "waiting_asc": return a.waitingDays - b.waitingDays;
+        case "decided_desc": return decidedAt(b) - decidedAt(a);
+        case "decided_asc": return decidedAt(a) - decidedAt(b);
         case "name_asc":
           return a.candidateFullName.localeCompare(b.candidateFullName, "fr");
         case "name_desc":
@@ -131,6 +146,15 @@ export default function ReviewerHomePage() {
   const visible = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
 
   const changeFilters = (next: PoolFilterState) => {
+    // A sort only valid on one kind of list must not survive the switch:
+    // "attente la plus longue" is meaningless once everything is decided,
+    // and "décision la plus récente" is meaningless before anything is.
+    const enteringDecided = next.scope === "decided" && filters.scope !== "decided";
+    const leavingDecided = next.scope !== "decided" && filters.scope === "decided";
+
+    if (enteringDecided) next = { ...next, sort: "decided_desc", urgency: "" };
+    if (leavingDecided) next = { ...next, sort: "waiting_desc" };
+
     setFilters(next);
     setPage(1);
     setFocusIndex(-1);
@@ -165,7 +189,7 @@ export default function ReviewerHomePage() {
         case "c":
         case "C": {
           const item = visible[focusIndex];
-          if (item && item.claimedBy === null) {
+          if (item && item.claimedBy === null && !item.myDecision) {
             event.preventDefault();
             claim.mutate(item.applicationId);
           }
@@ -244,8 +268,8 @@ export default function ReviewerHomePage() {
         </div>
       </section>
 
-      {/* ── the shape of the queue ── */}
-      {!loading && (
+      {/* ── the shape of the queue (only where waiting still means something) ── */}
+      {!loading && filters.scope !== "decided" && (
         <PoolStats
           items={poolItems}
           onFocusBand={(band) =>
@@ -259,7 +283,12 @@ export default function ReviewerHomePage() {
         onChange={changeFilters}
         categories={categories}
         rounds={rounds}
-        counts={{ pool: poolItems.length, mine: myItems.length, all: allItems.length }}
+        counts={{
+          pool: poolItems.length,
+          mine: myItems.length,
+          decided: decidedItems.length,
+          all: allItems.length,
+        }}
         density={density}
         onDensityChange={(d) => { setDensity(d); setFocusIndex(-1); }}
       />
@@ -356,6 +385,21 @@ function EmptyState({
   scope: string;
   onReset: () => void;
 }) {
+  if (scope === "decided" && !hasSource) {
+    return (
+      <div className="rounded-2xl border border-dashed border-[var(--line)] bg-white p-14 text-center">
+        <Scale className="mx-auto h-9 w-9 text-[var(--muted-fg)] opacity-40" />
+        <p className="mt-4 text-[15px] font-extrabold text-[var(--green-900)]">
+          Aucune décision enregistrée
+        </p>
+        <p className="mt-2 text-[13.5px] text-[var(--slate)]">
+          Les dossiers sur lesquels vous vous serez prononcé apparaîtront ici,
+          avec votre décision.
+        </p>
+      </div>
+    );
+  }
+
   if (hasSource) {
     return (
       <div className="rounded-2xl border border-dashed border-[var(--line)] bg-white p-14 text-center">

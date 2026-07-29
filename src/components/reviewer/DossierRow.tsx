@@ -11,6 +11,7 @@ import { forwardRef } from "react";
 import { Clock, Hand, PenLine, Lock, ArrowRight } from "lucide-react";
 import type { PoolItem } from "@/lib/api/review";
 import { waitingTone } from "./DossierCard";
+import { OutcomeBadge } from "./OutcomeBadge";
 
 export const DossierRow = forwardRef<HTMLDivElement, {
   item: PoolItem;
@@ -25,7 +26,8 @@ export const DossierRow = forwardRef<HTMLDivElement, {
 ) {
   const tone = waitingTone(item.waitingDays);
   const claimedByOther = item.claimedBy !== null && !mine;
-  const claimable = item.claimedBy === null && !!onClaim;
+  const settled = !!item.myDecision;
+  const claimable = item.claimedBy === null && !!onClaim && !settled;
 
   return (
     <div
@@ -41,7 +43,7 @@ export const DossierRow = forwardRef<HTMLDivElement, {
       style={{ background: focused ? "var(--green-tint)" : undefined }}
     >
       <span className="absolute inset-y-0 left-0 w-1"
-        style={{ background: tone.edge }} aria-hidden="true" />
+        style={{ background: settled ? "var(--line)" : tone.edge }} aria-hidden="true" />
 
       <span
         className="ml-1 h-2 w-2 flex-none rounded-full"
@@ -78,13 +80,18 @@ export const DossierRow = forwardRef<HTMLDivElement, {
         )}
       </span>
 
-      <span
-        className="inline-flex flex-none items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-bold"
-        style={{ background: tone.bg, color: tone.fg }}
-      >
-        <Clock className="h-2.5 w-2.5" />
-        {item.waitingDays === 0 ? "auj." : `${item.waitingDays} j`}
-      </span>
+      {settled ? (
+        <OutcomeBadge decision={item.myDecision!} label={item.myDecisionLabelFr}
+          at={item.myDecidedAt} />
+      ) : (
+        <span
+          className="inline-flex flex-none items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-bold"
+          style={{ background: tone.bg, color: tone.fg }}
+        >
+          <Clock className="h-2.5 w-2.5" />
+          {item.waitingDays === 0 ? "auj." : `${item.waitingDays} j`}
+        </span>
+      )}
 
       {claimable ? (
         <button

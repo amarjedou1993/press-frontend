@@ -25,6 +25,7 @@ import {
   Clock, Hand, ArrowRight, PenLine, Lock, Layers, Scale,
 } from "lucide-react";
 import type { PoolItem } from "@/lib/api/review";
+import { OutcomeBadge } from "./OutcomeBadge";
 
 function initials(fullName: string) {
   return fullName.split(/\s+/).filter(Boolean).slice(0, 2)
@@ -53,7 +54,10 @@ export const DossierCard = forwardRef<HTMLDivElement, {
 ) {
   const tone = waitingTone(item.waitingDays);
   const claimedByOther = item.claimedBy !== null && !mine;
-  const claimable = item.claimedBy === null && !!onClaim;
+  const claimable = item.claimedBy === null && !!onClaim && !item.myDecision;
+  // Once a file is settled, WAITING TIME is meaningless and the OUTCOME is
+  // the only thing worth showing. The card swaps one for the other.
+  const settled = !!item.myDecision;
 
   return (
     <div
@@ -79,7 +83,7 @@ export const DossierCard = forwardRef<HTMLDivElement, {
       {/* ── urgency edge ── */}
       <span
         className="absolute inset-y-0 left-0 w-1"
-        style={{ background: tone.edge }}
+        style={{ background: settled ? "var(--line)" : tone.edge }}
         aria-hidden="true"
       />
 
@@ -113,14 +117,22 @@ export const DossierCard = forwardRef<HTMLDivElement, {
             </p>
           </div>
 
-          <span
-            className="inline-flex flex-none items-center gap-1 rounded-full px-2 py-1 text-[10.5px] font-bold"
-            style={{ background: tone.bg, color: tone.fg }}
-            title={`En attente depuis ${item.waitingDays} jour(s)`}
-          >
-            <Clock className="h-2.5 w-2.5" />
-            {item.waitingDays === 0 ? "auj." : `${item.waitingDays} j`}
-          </span>
+          {settled ? (
+            <OutcomeBadge
+              decision={item.myDecision!}
+              label={item.myDecisionLabelFr}
+              at={item.myDecidedAt}
+            />
+          ) : (
+            <span
+              className="inline-flex flex-none items-center gap-1 rounded-full px-2 py-1 text-[10.5px] font-bold"
+              style={{ background: tone.bg, color: tone.fg }}
+              title={`En attente depuis ${item.waitingDays} jour(s)`}
+            >
+              <Clock className="h-2.5 w-2.5" />
+              {item.waitingDays === 0 ? "auj." : `${item.waitingDays} j`}
+            </span>
+          )}
         </div>
 
         {/* ── facts ── */}
@@ -175,9 +187,15 @@ export const DossierCard = forwardRef<HTMLDivElement, {
       {/* ── actions ── */}
       <div className="relative mt-auto flex items-center gap-2 border-t border-[var(--line)] px-5 py-3 pl-6">
         <span className="inline-flex items-center gap-1 text-[12.5px] font-bold text-[var(--green-700)]">
-          {mine ? "Reprendre" : claimedByOther ? "Consulter" : "Examiner"}
+          {settled ? "Consulter" : mine ? "Reprendre" : claimedByOther ? "Consulter" : "Examiner"}
           <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
         </span>
+
+        {settled && item.myDecidedAt && (
+          <span className="ml-auto font-mono text-[10.5px] text-[var(--muted-fg)]">
+            {new Date(item.myDecidedAt).toLocaleDateString("fr-FR")}
+          </span>
+        )}
 
         {claimable && (
           <button

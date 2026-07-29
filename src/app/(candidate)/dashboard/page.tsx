@@ -10,11 +10,15 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import {
   ArrowRight, CalendarClock, FileText, User, AlertCircle, Clock, Check,
+  X, IdCard, Gavel, Scale, PenLine,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { VerificationBanner } from "@/components/candidate/VerificationBanner";
 import { DossierProgress } from "@/components/candidate/DossierProgress";
-import { listMyApplications, applicationKeys, STATUS_KIND } from "@/lib/api/applications";
+import {
+  listMyApplications, applicationKeys, STATUS_KIND,
+  type ApplicationStatus,
+} from "@/lib/api/applications";
 import { listOpenSessions, catalogKeys } from "@/lib/api/sessions-public";
 import { getMe, accountKeys } from "@/lib/api/account";
 import { routes } from "@/lib/routes";
@@ -29,6 +33,72 @@ function daysUntil(iso: string) {
   const now = new Date().setHours(0, 0, 0, 0);
   return Math.round((end - now) / 86_400_000);
 }
+
+
+/**
+ * What the hero says, per state.
+ *
+ * The dashboard previously read "Suivre mon dossier" whatever had happened —
+ * including after an acceptance or a rejection, where there is nothing left
+ * to follow and something specific to be told. A decision that reaches the
+ * candidate as an unchanged screen has not really reached them.
+ */
+const HERO: Record<ApplicationStatus, {
+  headline: string;
+  body: string;
+  cta: string;
+  /** Set to colour the button; otherwise it stays white on the green hero. */
+  ctaSolid?: string;
+}> = {
+  DRAFT: {
+    headline: "Dossier en préparation",
+    body: "Complétez les pièces demandées, puis soumettez votre dossier à la commission.",
+    cta: "Compléter mon dossier",
+  },
+  UNDER_REVIEW: {
+    headline: "Dossier en cours d'examen",
+    body: "Votre dossier est entre les mains de la commission. Vous serez informé par e-mail de sa décision.",
+    cta: "Suivre mon dossier",
+  },
+  CORRECTION_REQUESTED: {
+    headline: "Corrections demandées",
+    body: "La commission a signalé des pièces à corriger. Remplacez-les avant la fin du délai, faute de quoi votre dossier sera rejeté.",
+    cta: "Corriger mon dossier",
+    ctaSolid: "var(--gold-700)",
+  },
+  UNDER_FINAL_REVIEW: {
+    headline: "Examen final en cours",
+    body: "Vos corrections ont été reçues. La commission procède à l'examen final de votre dossier.",
+    cta: "Suivre mon dossier",
+  },
+  ACCEPTED: {
+    headline: "Demande acceptée",
+    body: "La commission a reconnu votre qualité de journaliste professionnel. Votre carte de presse sera éditée par la HAPA.",
+    cta: "Voir la décision",
+  },
+  CARD_ISSUED: {
+    headline: "Carte de presse éditée",
+    body: "Votre carte a été établie par la HAPA et porte un numéro officiel.",
+    cta: "Voir ma carte",
+  },
+  REJECTED: {
+    headline: "Demande non retenue",
+    body: "La commission n'a pas donné une suite favorable à votre demande. Vous pouvez contester cette décision.",
+    cta: "Consulter la décision",
+    ctaSolid: "var(--red-500)",
+  },
+  UNDER_RECLAMATION: {
+    headline: "Réclamation en cours",
+    body: "Votre contestation est examinée par un autre membre de la commission que celui ayant rendu la décision initiale.",
+    cta: "Suivre ma réclamation",
+  },
+  FINAL_REJECTION: {
+    headline: "Décision définitive",
+    body: "Après réexamen, la décision de rejet est confirmée. Vous pourrez déposer une nouvelle demande lors d'une prochaine session.",
+    cta: "Consulter la décision",
+    ctaSolid: "var(--red-500)",
+  },
+};
 
 export default function DashboardPage() {
   const me = useQuery({ queryKey: accountKeys.me, queryFn: getMe });
@@ -82,18 +152,14 @@ export default function DashboardPage() {
                   <>
                     <div className="mt-2.5 flex flex-wrap items-center gap-3">
                       <h2 className="text-[26px] font-extrabold leading-tight">
-                        {current.statusLabelFr}
+                        {HERO[current.status].headline}
                       </h2>
                       <span className="font-mono text-[11.5px] text-white/40">
                         n° {current.id}
                       </span>
                     </div>
                     <p className="mt-2 max-w-lg text-[14px] leading-relaxed text-white/65">
-                      {current.status === "DRAFT"
-                        ? "Votre dossier est en préparation. Complétez les pièces demandées puis soumettez-le à la commission."
-                        : current.status === "CORRECTION_REQUESTED"
-                          ? "La commission demande des corrections. Consultez les observations et remplacez les pièces signalées."
-                          : "Votre dossier suit son instruction. Vous serez informé par e-mail à chaque étape."}
+                      {HERO[current.status].body}
                     </p>
                   </>
                 ) : openSession ? (
@@ -146,13 +212,13 @@ export default function DashboardPage() {
               {current ? (
                 <Link
                   href={routes.candidate.application}
-                  className="group inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3 text-[14px] font-bold text-[var(--green-900)] transition-transform hover:-translate-y-0.5"
+                  className="group inline-flex items-center gap-2 rounded-xl px-6 py-3 text-[14px] font-bold transition-transform hover:-translate-y-0.5"
+                  style={{
+                    background: HERO[current.status].ctaSolid ?? "#fff",
+                    color: HERO[current.status].ctaSolid ? "#fff" : "var(--green-900)",
+                  }}
                 >
-                  {current.status === "DRAFT"
-                    ? "Compléter mon dossier"
-                    : current.status === "CORRECTION_REQUESTED"
-                      ? "Corriger mon dossier"
-                      : "Suivre mon dossier"}
+                  {HERO[current.status].cta}
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                 </Link>
               ) : openSession ? (
