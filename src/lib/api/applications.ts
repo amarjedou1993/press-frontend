@@ -29,6 +29,8 @@ export interface ApplicationResponse {
   submittedAt?: string | null;
   createdAt: string;
   editable: boolean;
+   specialisationId?: number | null;
+  institution?: string | null; 
 }
 
 export interface DocumentResponse {

@@ -31,7 +31,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               active: path === routes.admin.reviewers },
             { label: "Cartes", href: routes.admin.cards,
               icon: <IdCard className="h-[17px] w-[17px]" />,
-              disabled: true, badge: "S6" },
+              },
           ],
         },
       ]}

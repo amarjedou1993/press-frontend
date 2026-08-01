@@ -50,6 +50,8 @@ export interface CandidateIdentity {
   birthplace?: string | null;
   hasPhoto: boolean;
   photoAgeing: boolean;
+  specialisationLabelFr?: string | null;
+  institution?: string | null;
 }
 
 export interface ReviewDocument {
@@ -76,14 +78,37 @@ export interface DecisionHistoryEntry {
   at: string;
 }
 
+// export interface AvailableActions {
+//   canClaim: boolean;
+//   canRelease: boolean;
+//   canDecide: boolean;
+//   canRequestCorrection: boolean;
+//   canRejectAsIncomplete: boolean;
+//   correctionUnavailableReason?: string | null;
+//   incompleteRejectionUnavailableReason?: string | null;
+// }
+
+export interface ObjectionSummary {
+  reasonLabelFr?: string | null;
+  reasonLabelAr?: string | null;
+  argument: string;
+  filedAt?: string | null;
+  contestedJustification?: string | null;
+  contestedGroundLabelFr?: string | null;
+  contestedByName?: string | null;
+}
+
 export interface AvailableActions {
   canClaim: boolean;
   canRelease: boolean;
   canDecide: boolean;
   canRequestCorrection: boolean;
   canRejectAsIncomplete: boolean;
+  /** True when this reviewer authored the contested decision (V1.3 §J). */
+  barredAsAuthor: boolean;
   correctionUnavailableReason?: string | null;
   incompleteRejectionUnavailableReason?: string | null;
+  barredReason?: string | null;
 }
 
 export interface Examination {
@@ -105,6 +130,8 @@ export interface Examination {
   documents: ReviewDocument[];
   completeness: ReadinessResponse;
   history: DecisionHistoryEntry[];
+   /** Present only on a RECLAMATION round. */
+  objection?: ObjectionSummary | null;
   actions: AvailableActions;
 }
 

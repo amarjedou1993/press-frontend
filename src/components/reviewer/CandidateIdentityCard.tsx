@@ -8,7 +8,7 @@
 // the session token, because a bare <img src> to a protected endpoint just
 // returns 401.
 
-import { User, Mail, Phone, IdCard, CalendarDays, MapPin, AlertTriangle } from "lucide-react";
+import { User, Mail, Phone, IdCard, CalendarDays, MapPin, AlertTriangle, Briefcase, Building2 } from "lucide-react";
 import { useAuthenticatedFile } from "@/lib/api/files";
 import { reviewerPhotoPath, type CandidateIdentity } from "@/lib/api/review";
 
@@ -119,6 +119,10 @@ export function CandidateIdentityCard({
                 ? new Date(candidate.birthdate).toLocaleDateString("fr-FR")
                 : null} />
             <Row icon={MapPin} label="Lieu" value={candidate.birthplace} />
+            <Row icon={Briefcase} label="Spécialité"
+              value={candidate.specialisationLabelFr} />
+            <Row icon={Building2} label="Organe de presse"
+              value={candidate.institution} />
             <Row icon={Phone} label="Téléphone" value={candidate.phone} mono />
             <Row icon={Mail} label="E-mail" value={candidate.email} />
           </div>

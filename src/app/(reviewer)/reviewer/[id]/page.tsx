@@ -20,6 +20,7 @@ import { CandidateIdentityCard } from "@/components/reviewer/CandidateIdentityCa
 import { DocumentInspector } from "@/components/reviewer/DocumentInspector";
 import { DecisionPanel } from "@/components/reviewer/DecisionPanel";
 import { DecisionHistory } from "@/components/reviewer/DecisionHistory";
+import { ObjectionBrief } from "@/components/reviewer/ObjectionBrief";
 import { RequirementChecklist } from "@/components/candidate/RequirementChecklist";
 import { getExamination, reviewKeys } from "@/lib/api/review";
 import { STATUS_KIND, type ApplicationStatus } from "@/lib/api/applications";
@@ -159,6 +160,11 @@ export default function ExaminationPage({
       <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
         {/* ── the evidence ── */}
         <div className="space-y-6">
+          {/* On a reclamation this is the FRAMING for everything below it:
+              the question is not "is this dossier sound" but "was a
+              colleague's refusal right". It goes first for that reason. */}
+          {e.objection && <ObjectionBrief objection={e.objection} />}
+
           <CandidateIdentityCard
             applicationId={e.applicationId}
             candidate={e.candidate}

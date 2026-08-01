@@ -19,7 +19,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
-  Check, X, PenLine, Lock, Hand, Undo2, AlertTriangle, Camera, Scale,
+  Check, X, PenLine, Lock, Hand, Undo2, AlertTriangle, Camera, Scale, Gavel,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -42,12 +42,13 @@ export function DecisionPanel({ examination }: { examination: Examination }) {
 
   const [dialog, setDialog] = useState<null | "approve" | "reject" | "correction">(null);
 
-   const refresh = (data: Examination) => {
+  /** On this round the decision is terminal, and the buttons say so. */
+  const reclamation = examination.status === "UNDER_RECLAMATION";
+
+  const refresh = (data: Examination) => {
     qc.setQueryData(reviewKeys.examination(id), data);
     qc.invalidateQueries({ queryKey: reviewKeys.pool });
     qc.invalidateQueries({ queryKey: reviewKeys.myFiles });
-    qc.invalidateQueries({ queryKey: reviewKeys.myDecided });  
-    qc.invalidateQueries({ queryKey: reviewKeys.all });         
   };
 
   const fail = (e: unknown) =>
@@ -89,7 +90,30 @@ export function DecisionPanel({ examination }: { examination: Examination }) {
           </div>
         </div>
 
-        {actions.canClaim ? (
+        {/* Three states, in order of precedence: BARRED by V1.3 §J, free to
+            claim, or held by someone else. The barred case comes first
+            because it is a rule about WHO may decide, not about availability
+            — and a reviewer must see the reason, not a button that silently
+            refuses. */}
+        {actions.barredAsAuthor ? (
+          <div className="mt-4 flex items-start gap-2.5 rounded-xl border border-[var(--red-500)]/30 bg-[var(--red-tint)] p-4">
+            <Gavel className="mt-0.5 h-4 w-4 flex-none text-[var(--red-700)]" />
+            <div>
+              <p className="text-[12.5px] font-extrabold text-[var(--red-700)]">
+                Vous ne pouvez pas examiner cette réclamation
+              </p>
+              <p className="mt-1 text-[13px] leading-relaxed text-[var(--red-700)]">
+                {actions.barredReason
+                  ?? "Vous avez rendu la décision contestée. Le règlement impose "
+                   + "qu'une réclamation soit examinée par un autre membre de la "
+                   + "commission."}
+              </p>
+              <p className="mt-2 text-[12.5px] text-[var(--red-700)]/80">
+                Vous conservez l&apos;accès au dossier en consultation.
+              </p>
+            </div>
+          </div>
+        ) : actions.canClaim ? (
           <>
             <p className="mt-4 text-[13px] leading-relaxed text-[var(--slate)]">
               Prenez ce dossier en charge pour pouvoir vous prononcer. Il sera
@@ -138,21 +162,28 @@ export function DecisionPanel({ examination }: { examination: Examination }) {
         <div className="mt-5 space-y-2.5">
           <Button className="w-full justify-start" size="lg"
             onClick={() => setDialog("approve")}>
-            <Check className="h-4 w-4" /> Accepter la candidature
+            <Check className="h-4 w-4" />
+            {reclamation ? "Annuler le rejet et accepter" : "Accepter la candidature"}
           </Button>
 
-          <Button
-            className="w-full justify-start border-[var(--gold-500)] text-[var(--gold-700)] hover:bg-[var(--gold-tint)]"
-            variant="outline" size="lg"
-            disabled={!actions.canRequestCorrection}
-            onClick={() => setDialog("correction")}
-          >
-            <PenLine className="h-4 w-4" /> Demander une correction
-          </Button>
-          {!actions.canRequestCorrection && actions.correctionUnavailableReason && (
-            <p className="px-1 text-[11.5px] leading-snug text-[var(--muted-fg)]">
-              {actions.correctionUnavailableReason}
-            </p>
+          {/* Not offered on a reclamation: the single correction round was
+              spent long before the objection was filed. */}
+          {!reclamation && (
+            <>
+              <Button
+                className="w-full justify-start border-[var(--gold-500)] text-[var(--gold-700)] hover:bg-[var(--gold-tint)]"
+                variant="outline" size="lg"
+                disabled={!actions.canRequestCorrection}
+                onClick={() => setDialog("correction")}
+              >
+                <PenLine className="h-4 w-4" /> Demander une correction
+              </Button>
+              {!actions.canRequestCorrection && actions.correctionUnavailableReason && (
+                <p className="px-1 text-[11.5px] leading-snug text-[var(--muted-fg)]">
+                  {actions.correctionUnavailableReason}
+                </p>
+              )}
+            </>
           )}
 
           <Button
@@ -160,7 +191,8 @@ export function DecisionPanel({ examination }: { examination: Examination }) {
             variant="outline" size="lg"
             onClick={() => setDialog("reject")}
           >
-            <X className="h-4 w-4" /> Rejeter la candidature
+            <X className="h-4 w-4" />
+            {reclamation ? "Confirmer le rejet (définitif)" : "Rejeter la candidature"}
           </Button>
         </div>
 
@@ -178,7 +210,7 @@ export function DecisionPanel({ examination }: { examination: Examination }) {
       <ApproveDialog id={id} open={dialog === "approve"}
         onClose={() => setDialog(null)} onDone={refresh} />
       <RejectDialog id={id} open={dialog === "reject"}
-        onClose={() => setDialog(null)} onDone={refresh} />
+        onClose={() => setDialog(null)} onDone={refresh} final={reclamation} />
       <CorrectionDialog examination={examination} open={dialog === "correction"}
         onClose={() => setDialog(null)} onDone={refresh} />
     </>
@@ -248,9 +280,11 @@ function ApproveDialog({ id, open, onClose, onDone }: {
 
 /* ══════════════════ reject ══════════════════ */
 
-function RejectDialog({ id, open, onClose, onDone }: {
+function RejectDialog({ id, open, onClose, onDone, final = false }: {
   id: number; open: boolean; onClose: () => void;
   onDone: (d: Examination) => void;
+  /** True on a reclamation: the rejection is terminal. */
+  final?: boolean;
 }) {
   const [ground, setGround] = useState<RejectionGroundName | null>(null);
   const [justification, setJustification] = useState("");
@@ -269,8 +303,10 @@ function RejectDialog({ id, open, onClose, onDone }: {
     onSuccess: (d) => {
       onDone(d); onClose();
       setGround(null); setJustification(""); setError(undefined);
-      toast.success("Candidature rejetée", {
-        description: "Le candidat a été informé, avec le motif et son droit de réclamation.",
+      toast.success(final ? "Rejet définitif enregistré" : "Candidature rejetée", {
+        description: final
+          ? "Le candidat a été informé. L'instruction du dossier est close."
+          : "Le candidat a été informé, avec le motif et son droit de réclamation.",
       });
     },
     onError: (e) =>
@@ -294,10 +330,15 @@ function RejectDialog({ id, open, onClose, onDone }: {
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="flex max-h-[85vh] flex-col sm:max-w-[560px]">
         <DialogHeader className="flex-none">
-          <DialogTitle>Rejeter cette candidature</DialogTitle>
+          <DialogTitle>
+            {final ? "Confirmer le rejet définitivement" : "Rejeter cette candidature"}
+          </DialogTitle>
           <DialogDescription>
-            Le candidat sera informé du motif et pourra déposer une
-            réclamation, qui sera examinée par un autre membre de la commission.
+            {final
+              ? "Le rejet deviendra DÉFINITIF. Le droit de réclamation a été "
+                + "exercé et aucun autre examen n'est prévu pour cette session."
+              : "Le candidat sera informé du motif et pourra déposer une "
+                + "réclamation, qui sera examinée par un autre membre de la commission."}
           </DialogDescription>
         </DialogHeader>
 

@@ -37,6 +37,7 @@ import { DossierArchive } from "@/components/candidate/DossierArchive";
 import { CorrectionPanel } from "@/components/candidate/CorrectionPanel";
 import { DecisionOutcome } from "@/components/candidate/DecisionOutcome";
 import { IssuedCardPreview } from "@/components/candidate/IssuedCardPreview";
+import { EmploymentCard } from "@/components/candidate/EmploymentCard";
 import {
   listMyApplications, getApplication, removeDocument, submitApplication,
   applicationKeys, STATUS_KIND, type DocumentType,
@@ -46,6 +47,7 @@ import { openProtectedFile } from "@/lib/api/files";
 import { useAuthStore } from "@/lib/auth";
 import { ApiError } from "@/lib/api/client";
 import { routes } from "@/lib/routes";
+import { ObjectionPanel } from "@/components/candidate/ObjectionPanel";
 
 export default function ApplicationPage() {
   const router = useRouter();
@@ -230,6 +232,15 @@ export default function ApplicationPage() {
         applicationId={application.id}
       />
 
+        {/* The right to contest, beneath the decision it contests. The panel
+          fetches its own eligibility and renders nothing when none applies. */}
+      
+      <ObjectionPanel
+        applicationId={application.id}
+        visible={application.status === "REJECTED"}
+      />
+
+
       {/* ══ the correction round — renders nothing unless one is open ══ */}
       <CorrectionPanel applicationId={application.id} />
 
@@ -247,6 +258,19 @@ export default function ApplicationPage() {
             />
           ) : (
             <>
+             {/* Specialisation and institution — printed on the card, and
+                  nothing else in the system asks for them. Above the
+                  documents because they take thirty seconds and the
+                  documents take an afternoon. */}
+              {!correcting && (
+                <EmploymentCard
+                  applicationId={application.id}
+                  editable={editable}
+                  currentSpecialisationId={application.specialisationId}
+                  currentInstitution={application.institution}
+                />
+              )}
+
               {/* ── pieces ── */}
               {!correcting && (
                 <div className="rounded-2xl border border-[var(--line)] bg-white p-6">
