@@ -47,7 +47,8 @@ export interface BatchResult {
 }
 
 /** INTERLEAVED for an office duplex; SEQUENTIAL for a card printer. */
-export type PageLayout = "INTERLEAVED" | "SEQUENTIAL";
+// export type PageLayout = "INTERLEAVED" | "SEQUENTIAL";
+export type PageLayout = "INTERLEAVED" | "SEQUENTIAL" | "SHARED_BACK";
 
 export const cardKeys = {
   issuable: ["cards", "issuable"] as const,

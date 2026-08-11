@@ -53,7 +53,7 @@ function Seal({ className, stroke, label }: {
         ))}
       </g>
       <text fill={stroke} fontSize="13" fontWeight="800" letterSpacing="3"
-        textAnchor="middle" x="100" y="96">HAPA</text>
+        textAnchor="middle" x="100" y="96">MCACRP</text>
       <text fill={stroke} fontSize="7.5" fontWeight="700" letterSpacing="1.6"
         textAnchor="middle" x="100" y="112">{label}</text>
     </svg>
@@ -116,8 +116,7 @@ function outcomeFor(status: ApplicationStatus): Outcome | null {
         kicker: "Notification de décision",
         title: "Votre demande a été acceptée",
         lede: "La commission d'examen a reconnu votre qualité de journaliste "
-            + "professionnel. Votre carte de presse sera éditée par la Haute "
-            + "Autorité.",
+            + "professionnel. Votre carte de presse sera éditée par le MCACRP ",
         reasonLabel: "Observation de la commission",
         next: {
           heading: "Suite de la procédure",
@@ -132,7 +131,7 @@ function outcomeFor(status: ApplicationStatus): Outcome | null {
         palette: ACCEPTED_PALETTE, Icon: IdCard, sealLabel: "ÉMISE",
         kicker: "Carte de presse",
         title: "Votre carte a été éditée",
-        lede: "Votre carte de presse a été établie par la Haute Autorité et "
+        lede: "Votre carte de presse a été établie par le MCACRP et "
             + "porte un numéro officiel.",
         next: {
           heading: "Retrait de votre carte",
@@ -185,7 +184,7 @@ function outcomeFor(status: ApplicationStatus): Outcome | null {
           heading: "Prochaine session",
           text: "Vous pourrez déposer une nouvelle demande lors d'une prochaine "
               + "session de candidature. Les conditions et le calendrier seront "
-              + "publiés sur le site de la Haute Autorité.",
+              + "publiés sur le site de le MCACRP.",
         },
       };
 
@@ -231,7 +230,7 @@ export function DecisionOutcome({
 
   // A decision reference, as an administrative act carries.
   const reference = applicationId && decisive?.at
-    ? `HAPA/${new Date(decisive.at).getFullYear()}/${String(applicationId).padStart(5, "0")}`
+    ? `MCACRP/${new Date(decisive.at).getFullYear()}/${String(applicationId).padStart(5, "0")}`
     : null;
 
   return (
@@ -260,7 +259,9 @@ export function DecisionOutcome({
             </span>
             <span className="h-3 w-px" style={{ background: `${p.accent}66` }} aria-hidden="true" />
             <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/45">
-              Haute Autorité de la Presse et de l&apos;Audiovisuel
+              Ministère de la Culture, des Arts,
+de la Communication et des
+Relations avec le Parlement
             </span>
           </div>
 

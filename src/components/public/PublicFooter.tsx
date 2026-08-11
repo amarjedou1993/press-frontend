@@ -1,14 +1,3 @@
-// src/components/public/PublicFooter.tsx
-// The colophon — how an official document ends.
-//
-// Composition:
-//   · a centred EMBLEM LOCKUP: the seal flanked by foil rules, the authority's
-//     name in gold foil, and the Arabic name beneath at display size
-//   · three columns of substance (identity · accréditation · contact)
-//   · a GIANT WORDMARK watermark bleeding off the bottom edge
-//   · engraved guilloche, a woven band, and a microprint edge
-// Server component: zero client JS.
-
 import Link from "next/link";
 import { Mail, MapPin, ArrowUpRight, ShieldCheck } from "lucide-react";
 import { routes } from "@/lib/routes";
@@ -90,7 +79,7 @@ export function PublicFooter() {
                 Accréditation
               </p>
               <span className="foil-rule mt-3 block h-px w-12 opacity-60" aria-hidden="true" />
-              <ul className="mt-6 space-y-3.5 text-[13px]">
+              {/* <ul className="mt-6 space-y-3.5 text-[13px]">
                 {[
                   { label: "Sessions ouvertes", href: routes.publicSessions },
                   { label: "Déposer une demande", href: routes.auth.register },
@@ -117,6 +106,27 @@ export function PublicFooter() {
                     </span>
                   </span>
                 </li>
+              </ul> */}
+              <ul className="mt-6 space-y-3.5 text-[13px]">
+                {[
+                  { label: "Journalistes accrédités", href: routes.publicJournalists },
+                  { label: "Sessions ouvertes", href: routes.publicSessions },
+                  { label: "Déposer une demande", href: routes.auth.register },
+                  { label: "Espace candidat", href: routes.auth.login },
+                ].map((l) => (
+                  <li key={l.label}>
+                    <Link
+                      href={l.href}
+                      className="group inline-flex items-center gap-1.5 text-white/55 transition-colors hover:text-white"
+                    >
+                      <span className="relative">
+                        {l.label}
+                        <span className="absolute inset-x-0 -bottom-0.5 h-px origin-left scale-x-0 bg-[var(--gold-500)] transition-transform duration-300 group-hover:scale-x-100" />
+                      </span>
+                      <ArrowUpRight className="h-3 w-3 -translate-y-px opacity-0 transition-opacity group-hover:opacity-100" />
+                    </Link>
+                  </li>
+                ))}
               </ul>
             </nav>
 

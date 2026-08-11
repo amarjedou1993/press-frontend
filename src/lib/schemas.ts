@@ -29,6 +29,12 @@ export const createSessionSchema = z
     reviewDays: days("examen"),
     correctionDays: days("correction"),
     reclamationDays: days("réclamation"),
+     /* The expiry printed on every card from this session — an accreditation
+       runs in cycles, so all holders renew together. The "after the session
+       ends" rule is enforced by the date picker, the service and a DB CHECK;
+       recomputing the phase calendar here would be a fourth implementation
+       of the same date arithmetic. */
+    cardExpiryDate: z.string().min(1, "Indiquez la date d'expiration des cartes."),
   })
   .refine(
     (v) => {

@@ -79,10 +79,15 @@ export function IssuedCardPreview({
           <div className="flex items-start justify-between gap-3 border-b-2 border-[var(--green-500)] pb-2">
             <div>
               <p className="text-[12px] font-extrabold tracking-[0.12em] text-[var(--green-700)]">
-                HAPA
+                MCACRP
               </p>
               <p className="mt-0.5 max-w-[170px] text-[6px] font-bold uppercase leading-[1.5] tracking-[0.09em] text-[var(--muted-fg)]">
-                Haute Autorité de la Presse et de l&apos;Audiovisuel
+                Ministère de la Culture, des Arts,
+                <br />
+                 de la Communication et des
+                 <br />
+                 Relations avec le Parlement
+
               </p>
             </div>
             <div className="text-right">
@@ -135,7 +140,7 @@ export function IssuedCardPreview({
 
           {/* ── machine line ── */}
           <p className="mt-1.5 overflow-hidden whitespace-nowrap font-mono text-[6.5px] tracking-[0.2em] text-[var(--muted-fg)]">
-            HAPA&lt;RIM&lt;PRESSE&lt;&lt;{(fullName || "").toUpperCase().replace(/\s+/g, "<") || "SPECIMEN"}
+            MCACPR&lt;RIM&lt;PRESSE&lt;&lt;{(fullName || "").toUpperCase().replace(/\s+/g, "<") || "SPECIMEN"}
           </p>
         </div>
 
@@ -149,8 +154,8 @@ export function IssuedCardPreview({
 
       <p className="mt-4 text-[12px] leading-relaxed text-[var(--slate)]">
         {issued
-          ? "Votre carte porte un numéro officiel et engage la Haute Autorité."
-          : "Aperçu indicatif. La carte définitive est éditée par la HAPA, avec un "
+          ? "Votre carte porte un numéro officiel et engage le MCACRP."
+          : "Aperçu indicatif. La carte définitive est éditée par le MCACPR, avec un "
             + "numéro officiel et une date de validité."}
       </p>
     </div>

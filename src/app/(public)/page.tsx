@@ -16,9 +16,9 @@ import {
 export const revalidate = 60;
 
 export const metadata = {
-  title: "HAPA — Accréditation presse | République Islamique de Mauritanie",
+  title: "MCACRP — Accréditation presse | République Islamique de Mauritanie",
   description:
-    "Demandez votre carte de presse auprès de la Haute Autorité de la Presse et de l'Audiovisuel. Dépôt en ligne, suivi de dossier, délivrance officielle.",
+    "Demandez votre carte de presse auprès de Ministère de la Culture, des Arts,de la Communication et des Relations avec le Parlement . Dépôt en ligne, suivi de dossier, délivrance officielle.",
 };
 
 function fmtLong(iso: string) {
@@ -29,13 +29,13 @@ function fmtLong(iso: string) {
 
 const STEPS = [
   { n: "01", t: "Ouverture d'une session", ar: "فتح الدورة",
-    d: "La HAPA ouvre une session de candidature et en publie le calendrier." },
+    d: "La MCACPR ouvre une session de candidature et en publie le calendrier." },
   { n: "02", t: "Dépôt du dossier", ar: "إيداع الملف",
     d: "Vous créez votre compte et soumettez vos pièces justificatives en ligne." },
   { n: "03", t: "Examen par la commission", ar: "دراسة اللجنة",
     d: "La commission étudie votre dossier ; une correction peut être demandée." },
   { n: "04", t: "Délivrance de la carte", ar: "تسليم البطاقة",
-    d: "En cas d'acceptation, votre carte bilingue est éditée par la HAPA." },
+    d: "En cas d'acceptation, votre carte bilingue est éditée par le MCACPR." },
 ];
 
 export default async function LandingPage() {
@@ -99,7 +99,7 @@ export default async function LandingPage() {
               </div>
 
               <p className="mt-7 max-w-xl text-[16px] leading-[1.75] text-white/65">
-                La Haute Autorité de la Presse et de l&apos;Audiovisuel délivre la
+                Ministère de la Culture, des Arts, de la Communication et des Relations avec le Parlement délivre la
                 carte de presse aux journalistes exerçant en Mauritanie. Déposez
                 votre demande en ligne et suivez chaque étape de son instruction.
               </p>
@@ -236,11 +236,11 @@ export default async function LandingPage() {
         <div className="mt-10 grid gap-10 md:grid-cols-3">
           {[
             { Icon: ShieldCheck, t: "Données protégées", ar: "بيانات محمية",
-              d: "Vos informations sont traitées exclusivement par la HAPA, dans le cadre de l'instruction de votre dossier." },
+              d: "Vos informations sont traitées exclusivement par le MCACPR, dans le cadre de l'instruction de votre dossier." },
             { Icon: Languages, t: "Bilingue français · arabe", ar: "ثنائي اللغة",
               d: "Le service et la carte délivrée sont disponibles dans les deux langues officielles de la République." },
             { Icon: BadgeCheck, t: "Registre officiel", ar: "سجل رسمي",
-              d: "Chaque carte délivrée est enregistrée et vérifiable auprès de la Haute Autorité." },
+              d: "Chaque carte délivrée est enregistrée et vérifiable auprès du MCACRP." },
           ].map(({ Icon, t, ar, d }) => (
             <div key={t}>
               <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--green-tint)]">

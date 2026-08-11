@@ -13,7 +13,7 @@
 // white/45 + a lock icon + a week badge. An earlier version used white/25,
 // which was invisible on the dark rail and looked like a missing item.
 //
-// Styling is HAPA's: deep-green rail, gold accents, the national mark, a
+// Styling is MCACRP's: deep-green rail, gold accents, the national mark, a
 // framed brand block, grouped navigation with active indicator, and a user
 // card with role and sign-out.
 

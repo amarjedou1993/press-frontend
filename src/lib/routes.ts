@@ -16,7 +16,7 @@ export const routes = {
   /* ── public ─────────────────────────────────────────── */
   home: "/",
   publicSessions: "/sessions",
-  publicJournalists: "/journalists",          // week 7
+  publicJournalists: "/journalistes",          // week 7
 
   /* ── auth (anonymous only) ──────────────────────────── */
   auth: {
@@ -44,6 +44,7 @@ export const routes = {
 
   reviewer: {
       home: "/reviewer",
+      cards: "/reviewer/cartes", 
       examination: (id: number) => `/reviewer/${id}`,
     },
 
@@ -54,7 +55,9 @@ export const routes = {
     newSession: "/admin/sessions/new",
     session: (id: number | string) => `/admin/sessions/${id}`,   // week 3: results
     reviewers: "/admin/users",
-    cards: "/admin/cards",                    // week 6
+    cards: "/admin/cards",
+    revocations: "/admin/cards/revocations",
+    sessionResults: (id: number | string) => `/admin/sessions/${id}/resultats`,                  
   },
 } as const;
 

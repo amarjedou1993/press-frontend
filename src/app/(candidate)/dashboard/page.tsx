@@ -73,12 +73,12 @@ const HERO: Record<ApplicationStatus, {
   },
   ACCEPTED: {
     headline: "Demande acceptée",
-    body: "La commission a reconnu votre qualité de journaliste professionnel. Votre carte de presse sera éditée par la HAPA.",
+    body: "La commission a reconnu votre qualité de journaliste professionnel. Votre carte de presse sera éditée par le MCACRP.",
     cta: "Voir la décision",
   },
   CARD_ISSUED: {
     headline: "Carte de presse éditée",
-    body: "Votre carte a été établie par la HAPA et porte un numéro officiel.",
+    body: "Votre carte a été établie par le MCACRP et porte un numéro officiel.",
     cta: "Voir ma carte",
   },
   REJECTED: {

@@ -1,13 +1,4 @@
 "use client";
-// src/app/(admin)/admin/sessions/new/page.tsx
-// Session creation: <Field> family + react-hook-form <Controller>.
-//
-// Two version-proofing decisions:
-//  1. The date field uses the SHARED <DatePicker> (components/ui/date-picker),
-//     so admin and candidate forms pick dates the same way. Inside it, the
-//     PopoverTrigger IS the button — no asChild, so nothing nests.
-//  2. The resolver argument is cast, and the number inputs convert on change,
-//     so zod v4's types line up with @hookform/resolvers.
 
 import { useMemo } from "react";
 import { useRouter } from "next/navigation";
@@ -17,7 +8,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { ArrowLeft, Inbox, Gavel, PenLine, Scale, CalendarClock, Info } from "lucide-react";
+import {
+  ArrowLeft, Inbox, Gavel, PenLine, Scale, CalendarClock, Info, IdCard,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -53,9 +46,6 @@ export default function NewSessionPage() {
   const router = useRouter();
   const qc = useQueryClient();
 
-  // The spacing rule is fetched BEFORE the admin fills anything in. A rule
-  // that blocks an action should be visible while the action is being taken,
-  // not explained by a toast afterwards.
   const rules = useQuery({
     queryKey: sessionKeys.schedulingRules,
     queryFn: getSchedulingRules,
@@ -65,13 +55,15 @@ export default function NewSessionPage() {
     // Cast the ARGUMENT (not the result): zod v4's inferred schema type
     // doesn't match any resolver overload directly.
     resolver: zodResolver(createSessionSchema as any) as Resolver<CreateSessionValues>,
-    mode: "onBlur",
+    // mode: "onBlur",
+    mode: "onTouched",
     defaultValues: {
       startDate: "",
       receivingDays: 10,
       reviewDays: 8,
       correctionDays: 7,
       reclamationDays: 5,
+      cardExpiryDate: "",
     },
   });
 
@@ -135,7 +127,8 @@ export default function NewSessionPage() {
             Nouvelle session de candidature
           </h2>
           <p className="text-sm text-[var(--slate)]">
-            Définissez la date de début et la durée de chaque phase.
+            Définissez la date de début, la durée de chaque phase et la validité
+            des cartes.
           </p>
         </div>
       </div>
@@ -190,7 +183,7 @@ export default function NewSessionPage() {
                       name={field.name}
                       value={field.value ?? ""}
                       onChange={field.onChange}
-                      onBlur={field.onBlur}
+                      // onBlur={field.onBlur}
                       invalid={fieldState.invalid}
                       placeholder="Choisir une date"
                       // Impossible dates are GREYED OUT rather than refused
@@ -289,7 +282,71 @@ export default function NewSessionPage() {
           </CardContent>
         </Card>
 
-        <div className="flex items-center justify-between rounded-2xl px-6 py-5 text-white"
+        {/* ══ the cards' validity ══
+            Its own card, and AFTER the phases: it depends on where the session
+            ends, and it answers a different question from the phase durations
+            — "how long is this accreditation good for" rather than "how long
+            does each stage run". */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-sm font-extrabold text-[var(--green-900)]">
+              <IdCard className="h-4 w-4 text-[var(--green-600)]" />
+              Validité des cartes
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Controller
+              name="cardExpiryDate"
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor={field.name}>
+                    Date d&apos;expiration des cartes
+                  </FieldLabel>
+                  <div className="max-w-[280px]">
+                    <DatePicker
+                      id={field.name}
+                      name={field.name}
+                      value={field.value ?? ""}
+                      onChange={field.onChange}
+                      // onBlur={field.onBlur}
+                      invalid={fieldState.invalid}
+                      placeholder="Choisir une date"
+                      // A card cannot lapse before the session that granted
+                      // it, so everything up to reclamationEnd is disabled.
+                      // Until the phases are filled in there is no floor yet,
+                      // so tomorrow stands in.
+                      disabled={(d) => {
+                        const floor = derived.reclamationEnd
+                          ? new Date(derived.reclamationEnd + "T00:00:00")
+                          : new Date(new Date().setHours(0, 0, 0, 0));
+                        return d <= floor;
+                      }}
+                      defaultMonth={
+                        derived.reclamationEnd
+                          ? new Date(addDays(derived.reclamationEnd, 365) + "T00:00:00")
+                          : undefined
+                      }
+                      fromYear={new Date().getFullYear()}
+                      toYear={new Date().getFullYear() + 6}
+                    />
+                  </div>
+                  <FieldDescription>
+                    Toutes les cartes de cette session porteront cette date.
+                    Une accréditation vaut pour un cycle : les titulaires la
+                    renouvellent ensemble.
+                    {derived.reclamationEnd && (
+                      <> Au plus tôt après le {longFr(derived.reclamationEnd)}.</>
+                    )}
+                  </FieldDescription>
+                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                </Field>
+              )}
+            />
+          </CardContent>
+        </Card>
+
+        <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl px-6 py-5 text-white"
           style={{ background: "linear-gradient(160deg, var(--green-900), #0e3d29)" }}>
           <div>
             <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--gold-500)]">
@@ -298,6 +355,14 @@ export default function NewSessionPage() {
             <p className="mt-1 text-xs text-white/65">
               Du {longFr(values.startDate)} au {longFr(derived.reclamationEnd)}
             </p>
+            {values.cardExpiryDate && (
+              <p className="mt-1 text-xs text-white/65">
+                Cartes valables jusqu&apos;au{" "}
+                <b className="font-semibold text-white/85">
+                  {longFr(values.cardExpiryDate)}
+                </b>
+              </p>
+            )}
           </div>
           <p className="text-4xl font-extrabold">
             {total}<span className="ml-1.5 text-base font-semibold text-white/70">jours</span>

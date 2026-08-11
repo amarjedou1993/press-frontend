@@ -13,6 +13,8 @@ import { toast } from "sonner";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
   Plus, ChevronRight, CalendarDays, CheckCircle2, Archive, CalendarClock,
+  BarChart3,
+  AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -113,6 +115,22 @@ export default function SessionsPage() {
         <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--st-accepted-bg)] px-2.5 py-1 text-[11px] font-bold text-[var(--st-accepted-fg)]">
           <CheckCircle2 className="h-3 w-3" /> Clôturée
         </span>
+      ),
+    },
+    {
+      id: "actions",
+      header: "",
+      size: 120,
+      enableSorting: false,
+      cell: ({ row }) => (
+        <Button
+          size="sm"
+          variant="ghost"
+          className="text-[var(--green-700)]"
+          onClick={() => router.push(routes.admin.sessionResults(row.original.id))}
+        >
+          <BarChart3 className="h-3.5 w-3.5" /> Résultats
+        </Button>
       ),
     },
   ];
@@ -247,21 +265,74 @@ export default function SessionsPage() {
                 </div>
 
                 {/* Action */}
-                <div className="flex flex-wrap items-center justify-between gap-3">
+                {/* <div className="flex flex-wrap items-center justify-between gap-3">
                   <p className="max-w-md text-xs text-white/55">
                     Les phases se clôturent <b className="font-semibold text-white/75">manuellement</b>.
                     Chaque phase conserve sa durée allouée : ouvrir une phase en
                     avance décale le calendrier, sans jamais raccourcir la phase.
                   </p>
-                  {s.nextPhase && (
+                  <div className="flex flex-wrap items-center gap-2">
                     <Button
-                      onClick={() => setConfirming(s)}
-                      className="bg-white text-[var(--green-900)] hover:bg-white/90"
+                      variant="ghost"
+                      className="text-white hover:bg-white/10"
+                      onClick={() => router.push(routes.admin.sessionResults(s.id))}
                     >
-                      Passer à : {PHASE_LABELS[s.nextPhase as SessionResponse["status"]]}
-                      <ChevronRight className="h-4 w-4" />
+                      <BarChart3 className="h-4 w-4" /> Résultats
                     </Button>
-                  )}
+
+                    {s.nextPhase && (
+                      <Button
+                        onClick={() => setConfirming(s)}
+                        className="bg-white text-[var(--green-900)] hover:bg-white/90"
+                      >
+                        Passer à : {PHASE_LABELS[s.nextPhase as SessionResponse["status"]]}
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                </div> */}
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                  <p className="max-w-md text-xs leading-relaxed text-white/55">
+                    Les phases se clôturent <b className="font-semibold text-white/75">manuellement</b>.
+                    Chaque phase conserve sa durée allouée : ouvrir une phase en
+                    avance décale le calendrier, sans jamais raccourcir la phase.
+                  </p>
+
+                  <div className="flex flex-none flex-wrap items-center gap-2.5">
+                    {/* SECONDARY — visible at rest, not only on hover. A ghost
+                        button on a dark gradient is a button nobody finds:
+                        the ring is what makes it readable as an affordance
+                        before the pointer arrives. */}
+                    <button
+                      type="button"
+                      onClick={() => router.push(routes.admin.sessionResults(s.id))}
+                      className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.07] px-4 text-[13px] font-bold text-white/85
+                                 ring-1 ring-inset ring-white/20 transition-all
+                                 hover:bg-white/[0.14] hover:text-white hover:ring-white/35
+                                 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold-500)]"
+                    >
+                      <BarChart3 className="h-4 w-4" />
+                      Résultats
+                    </button>
+
+                    {/* PRIMARY — gold, because advancing a phase is the one
+                        consequential act on this card and it should carry the
+                        colour the eye already goes to. White would read as
+                        "confirm"; gold reads as "this is the decision". */}
+                    {s.nextPhase && (
+                      <button
+                        type="button"
+                        onClick={() => setConfirming(s)}
+                        className="group inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--gold-500)] px-4 text-[13px] font-extrabold text-[var(--green-900)]
+                                   shadow-[0_6px_20px_-8px_rgba(255,215,0,.6)] transition-all
+                                   hover:bg-[#ffe14d] hover:shadow-[0_8px_26px_-8px_rgba(255,215,0,.75)]
+                                   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--green-900)]"
+                      >
+                        Passer à : {PHASE_LABELS[s.nextPhase as SessionResponse["status"]]}
+                        <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -296,7 +367,17 @@ export default function SessionsPage() {
         />
       </section>
 
-      {/* Transition confirmation */}
+            {/* ══ Transition confirmation ══
+
+          A phase advance looks like a calendar action and is not: leaving the
+          correction phase REJECTS every dossier still awaiting its candidate's
+          answer. That is correct — the window closed, the file is incomplete —
+          but it ends accreditations, and it is taken by someone who believes
+          they are moving a date forward.
+
+          So the dialog states the count before the question is answered. It
+          does not change the outcome; it changes whether the administrator
+          chose it. */}
       <AlertDialog open={!!confirming} onOpenChange={(o) => !o && setConfirming(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -308,19 +389,61 @@ export default function SessionsPage() {
                 « {confirming?.nextPhase &&
                     PHASE_LABELS[confirming.nextPhase as SessionResponse["status"]]} »
               </b>.
-              <br />
-              <span className="mt-2 block font-medium text-[var(--red-500)]">
-                Cette action est irréversible : une phase clôturée ne peut pas être rouverte.
-              </span>
             </AlertDialogDescription>
           </AlertDialogHeader>
+
+          {/* OUTSIDE the description, deliberately. This is not a description
+              of the action — it is a warning about a consequence the action's
+              name does not carry, and it belongs in its own block rather than
+              nested in a paragraph. It also avoids putting a <div> inside the
+              <p> that AlertDialogDescription renders. */}
+          {confirming?.status === "CORRECTION" &&
+           (confirming.awaitingCorrection ?? 0) > 0 && (
+            <div className="flex items-start gap-2.5 rounded-xl border border-[var(--red-500)]/40 bg-[var(--red-tint)] p-3.5">
+              <AlertTriangle className="mt-0.5 h-4 w-4 flex-none text-[var(--red-700)]" />
+              <p className="text-[13px] leading-relaxed text-[var(--red-700)]">
+                <b>
+                  {confirming.awaitingCorrection} dossier
+                  {confirming.awaitingCorrection > 1 ? "s" : ""} n&apos;
+                  {confirming.awaitingCorrection > 1 ? "ont" : "a"} pas encore
+                  reçu les corrections demandées.
+                </b>{" "}
+                En avançant maintenant,{" "}
+                {confirming.awaitingCorrection > 1
+                  ? "ils seront rejetés" : "il sera rejeté"}{" "}
+                automatiquement, la demande de correction restée sans réponse
+                tenant lieu de motif.{" "}
+                {confirming.awaitingCorrection > 1
+                  ? "Ces candidats pourront" : "Ce candidat pourra"}{" "}
+                former une réclamation.
+              </p>
+            </div>
+          )}
+
+          <p className="text-[13px] font-medium text-[var(--red-500)]">
+            Cette action est irréversible : une phase clôturée ne peut pas être
+            rouverte.
+          </p>
+
           <AlertDialogFooter>
             <AlertDialogCancel>Annuler</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => confirming && advance.mutate(confirming.id)}
               disabled={advance.isPending}
+              className={
+                confirming?.status === "CORRECTION" &&
+                (confirming.awaitingCorrection ?? 0) > 0
+                  ? "bg-[var(--red-500)] text-white hover:bg-[var(--red-700)]"
+                  : undefined
+              }
             >
-              {advance.isPending ? "Transition…" : "Confirmer la transition"}
+              {advance.isPending
+                ? "Transition…"
+                : confirming?.status === "CORRECTION" &&
+                  (confirming.awaitingCorrection ?? 0) > 0
+                  ? `Avancer et rejeter ${confirming.awaitingCorrection} dossier${
+                      confirming.awaitingCorrection > 1 ? "s" : ""}`
+                  : "Confirmer la transition"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

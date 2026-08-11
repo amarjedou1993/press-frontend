@@ -12,9 +12,9 @@ import {
 export const revalidate = 60;
 
 export const metadata = {
-  title: "Sessions de candidature — HAPA",
+  title: "Sessions de candidature — MCACRP",
   description:
-    "Sessions d'accréditation ouvertes pour la carte de presse en Mauritanie. Consultez les dates et déposez votre demande auprès de la HAPA.",
+    "Sessions d'accréditation ouvertes pour la carte de presse en Mauritanie. Consultez les dates et déposez votre demande auprès de le MCACRP.",
 };
 
 function fmtLong(iso: string) {
@@ -70,7 +70,7 @@ export default async function PublicSessionsPage() {
             </p>
           </div>
           <p className="mt-5 max-w-2xl text-[15px] leading-[1.75] text-white/65">
-            La HAPA ouvre périodiquement des sessions durant lesquelles les
+            Le MCACRP ouvre périodiquement des sessions durant lesquelles les
             journalistes peuvent déposer une demande de carte de presse. Seules
             les sessions en cours de réception des dossiers figurent ci-dessous.
           </p>

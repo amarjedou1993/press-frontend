@@ -248,7 +248,7 @@ function ApproveDialog({ id, open, onClose, onDone }: {
           <DialogTitle>Accepter cette candidature ?</DialogTitle>
           <DialogDescription>
             Le dossier sera marqué accepté et le candidat informé par e-mail.
-            Sa carte pourra ensuite être éditée par la HAPA.
+            Sa carte pourra ensuite être éditée par le MCACRP.
           </DialogDescription>
         </DialogHeader>
 

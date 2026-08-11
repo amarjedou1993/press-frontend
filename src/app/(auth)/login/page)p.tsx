@@ -1,48 +1,36 @@
 "use client";
 // src/app/(auth)/login/page.tsx
+// Guarded against already-authenticated visitors: if a logged-in user lands
+// here (via the Back button, a bookmark, or typing /login), they're bounced
+// to their role's home instead of being shown the login form again.
 
-import { Suspense, useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { AuthShell, Field, FormError, PasswordField, SubmitButton } from "@/components/AuthShell";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
-import { validateLogin } from "@/lib/validation";
-import { homeForRole } from "@/lib/routes";
+import { routes, homeForRole } from "@/lib/routes";
 import { ApiError } from "@/lib/api/client";
-import { routes } from "@/lib/routes";
+import { validateLogin } from "@/lib/validation";
+import {
+  AuthShell,
+  Field,
+  PasswordField,
+  SubmitButton,
+  FormError,
+} from "@/components/AuthShell";
 
-/**
- * The page shell.
- *
- * useSearchParams() must sit inside a SUSPENSE BOUNDARY: Next renders the page
- * on the server, where the query string is not yet known, and fills it in on
- * the client. Without the boundary the two trees disagree and React discards
- * the server's — which is exactly the hydration error the previous version
- * produced by reading window.location.search inside useState.
- *
- * The fallback is the same shell without the banner, so the transition is a
- * banner appearing rather than the whole form flashing.
- */
 export default function LoginPage() {
-  return (
-    <Suspense fallback={<LoginForm />}>
-      <LoginForm readsQuery />
-    </Suspense>
-  );
-}
-
-function LoginForm({ readsQuery = false }: { readsQuery?: boolean }) {
   const { login, user, ready } = useAuth();
   const router = useRouter();
-
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>();
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-  // Read only in the Suspense-wrapped instance; the fallback renders without
-  // it, so both trees are consistent with what the server produced.
-  const params = useSearchParams();
-  const sessionExpired = readsQuery && params.has("expired");
+  const [sessionExpired] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).has("expired")
+  );
 
   // Already logged in? Don't show the form — go to the role's home.
   // Runs on mount and whenever auth state settles, so Back-button and
@@ -78,7 +66,7 @@ function LoginForm({ readsQuery = false }: { readsQuery?: boolean }) {
       if (e instanceof ApiError && e.problem.status === 401) {
         setError("E-mail ou mot de passe incorrect.");
       } else {
-        setError("Connexion impossible. Vérifiez que le serveur est démarré.");
+        setError("Connexion impossible. Verifiez que le serveur est demarre.");
       }
       setLoading(false);
     }
@@ -90,31 +78,23 @@ function LoginForm({ readsQuery = false }: { readsQuery?: boolean }) {
   return (
     <AuthShell
       title="Connexion"
-      subtitle="Accédez à votre espace d'accréditation."
+      subtitle="Accedez a votre espace d'accreditation."
       footer={
         <>
           Pas encore de compte ?{" "}
-          <Link
-            href={routes.auth.register}
-            className="font-bold text-[var(--green-700)] underline underline-offset-2"
-          >
-            Créer un compte candidat
+          <Link href={routes.auth.register} className="font-bold text-[var(--green-700)] underline underline-offset-2">
+            Creer un compte candidat
           </Link>
         </>
       }
     >
       {sessionExpired && (
-        <p
-          role="status"
-          className="mb-5 rounded-xl border border-[var(--gold-500)]/40 bg-[var(--gold-tint)] px-4 py-3 text-sm font-medium text-[var(--gold-700)]"
-        >
-          Votre session a expiré. Veuillez vous reconnecter.
+        <p role="status" className="mb-5 rounded-xl border border-[var(--gold-500)]/40 bg-[var(--gold-tint)] px-4 py-3 text-sm font-medium text-[var(--gold-700)]">
+          Votre session a expire. Veuillez vous reconnecter.
         </p>
       )}
-
       <form onSubmit={onSubmit} noValidate>
         <FormError message={error} />
-
         <Field
           label="Adresse e-mail"
           name="email"
@@ -122,7 +102,6 @@ function LoginForm({ readsQuery = false }: { readsQuery?: boolean }) {
           autoComplete="email"
           error={fieldErrors.email}
         />
-
         <PasswordField
           label="Mot de passe"
           name="password"

@@ -35,6 +35,22 @@ export interface SessionResponse {
   allottedDaysInPhase?: number | null;
   daysRemainingInPhase?: number | null;   // negative = overdue
   nextPhase?: SessionStatus | null;
+  cardExpiryDate?: string | null; 
+
+    /** The phase as HAPA names it, from the server. */
+  statusLabelFr: string;
+
+  /**
+   * Dossiers still awaiting their candidate's corrections.
+   *
+   * Zero outside the CORRECTION phase. A primitive `long` on the wire, so
+   * unlike the countdown fields it is never omitted by non_null — but the
+   * `?? 0` at the use site costs nothing and survives the field being made
+   * nullable later.
+   */
+  awaitingCorrection: number;
+
+
 }
 
 export interface CreateSessionRequest {
@@ -43,6 +59,7 @@ export interface CreateSessionRequest {
   reviewDays: number;
   correctionDays: number;
   reclamationDays: number;
+  cardExpiryDate: string;
 }
 
 export interface SessionSchedulingRules {

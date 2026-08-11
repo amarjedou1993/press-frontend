@@ -316,7 +316,7 @@ export default function ProfilePage() {
                   Coordonnées
                 </p>
                 <p className="text-[12px] text-[var(--slate)]">
-                  Comment la HAPA vous contacte
+                  Comment le MCACRP vous contacte
                 </p>
               </div>
             </div>
@@ -504,7 +504,7 @@ export default function ProfilePage() {
             </div>
 
             <p className="mt-4 text-[12px] leading-relaxed text-[var(--slate)]">
-              Aperçu indicatif. La carte définitive est éditée par la HAPA après
+              Aperçu indicatif. La carte définitive est éditée par le MCACRP après
               acceptation de votre dossier, avec votre photographie et un
               numéro officiel.
             </p>

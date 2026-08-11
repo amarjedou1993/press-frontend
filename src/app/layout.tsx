@@ -26,9 +26,9 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "HAPA — Accréditation Presse",
+  title: "MCACRP — Accréditation Presse",
   description:
-    "Dépôt et suivi des demandes de carte de presse — Haute Autorité de la Presse et de l'Audiovisuel",
+    "Dépôt et suivi des demandes de carte de presse — Ministère de la Culture, des Arts, de la Communication et des Relations avec le Parlement",
 };
 
 export default function RootLayout({

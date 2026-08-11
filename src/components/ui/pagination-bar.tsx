@@ -1,11 +1,4 @@
 "use client";
-// src/components/ui/pagination-bar.tsx
-// A pagination bar for any filtered collection. Generic on purpose — the
-// reviewer pool needs it now, the admin's accredited-journalists registry
-// will need the same thing in week 7.
-//
-// It reports what it is showing ("21–40 sur 137"), because a page number
-// alone does not tell someone whether they have seen everything.
 
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
 

@@ -32,13 +32,16 @@ function PressCardSpecimen() {
     >
       <div className="flex items-start justify-between gap-3 border-b-2 border-[var(--green-500)] pb-2">
         <div>
-          <p className="text-[11px] font-extrabold tracking-[0.08em] text-[var(--green-700)]">HAPA</p>
+          <p className="text-[11px] font-extrabold tracking-[0.08em] text-[var(--green-700)]">MCACRP</p>
           <p className="mt-0.5 max-w-[150px] text-[6.5px] font-semibold uppercase leading-[1.4] tracking-[0.08em] text-[var(--muted-fg)]">
-            Haute Autorite de la Presse et de l&apos;Audiovisuel
+            Ministère de la Culture, des Arts, de la Communication et des Relations avec le Parlement
           </p>
         </div>
         <p dir="rtl" className="text-right text-[10px] leading-snug text-[var(--green-700)]">
-          &#1575;&#1604;&#1587;&#1604;&#1591;&#1577; &#1575;&#1604;&#1593;&#1604;&#1610;&#1575; &#1604;&#1604;&#1589;&#1581;&#1575;&#1601;&#1577;<br />&#1608;&#1575;&#1604;&#1587;&#1605;&#1593;&#1610;&#1575;&#1578; &#1575;&#1604;&#1576;&#1589;&#1585;&#1610;&#1577;
+          {/* &#1575;&#1604;&#1587;&#1604;&#1591;&#1577; &#1575;&#1604;&#1593;&#1604;&#1610;&#1575; &#1604;&#1604;&#1589;&#1581;&#1575;&#1601;&#1577;<br />&#1608;&#1575;&#1604;&#1587;&#1605;&#1593;&#1610;&#1575;&#1578; &#1575;&#1604;&#1576;&#1589;&#1585;&#1610;&#1577; */}
+        وزارة الثقافة والفنون
+        <br />
+         والاتصالات والعلاقات مع البرلمان
         </p>
       </div>
       <div className="h-px w-full bg-[var(--gold-500)]/70" aria-hidden="true" />
@@ -54,7 +57,7 @@ function PressCardSpecimen() {
             <span dir="rtl" className="text-[12px] font-semibold text-[var(--green-900)]">&#1576;&#1591;&#1575;&#1602;&#1577; &#1589;&#1581;&#1601;&#1610;&#1577;</span>
           </div>
           <dl className="mt-2.5 space-y-1.5">
-            {[["Nom", "\u2014\u2014\u2014\u2014\u2014"], ["N", "HAPA-2026-000000"], ["Validite", "12 / 2027"]].map(([l, v]) => (
+            {[["Nom", "\u2014\u2014\u2014\u2014\u2014"], ["N", "MCACRP-2026-000000"], ["Validite", "12 / 2027"]].map(([l, v]) => (
               <div key={l} className="flex items-baseline gap-2">
                 <dt className="w-14 flex-none text-[7.5px] font-bold uppercase tracking-[0.14em] text-[var(--green-700)]/80">{l}</dt>
                 <dd className="font-mono text-[9.5px] text-[var(--ink)]/85">{v}</dd>
@@ -70,7 +73,7 @@ function PressCardSpecimen() {
         </div>
       </div>
       <p className="absolute bottom-3 left-5 right-5 overflow-hidden whitespace-nowrap font-mono text-[8.5px] tracking-[0.32em] text-[var(--muted-fg)]" aria-hidden="true">
-        HAPA&lt;RIM&lt;PRESSE&lt;&lt;SPECIMEN
+        MCACRP&lt;RIM&lt;PRESSE&lt;&lt;SPECIMEN
       </p>
       <div className="absolute inset-x-0 bottom-0 flex h-1.5" aria-hidden="true">
         <i className="flex-1 bg-[var(--green-500)]" /><i className="flex-1 bg-[var(--gold-500)]" /><i className="flex-1 bg-[var(--red-500)]" />
@@ -103,7 +106,7 @@ export function AuthShell({
             </p>
           </div>
           <p className="mt-7 text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--gold-500)]">
-            Haute Autorite de la Presse et de l&apos;Audiovisuel
+            Ministère de la Culture, des Arts, de la Communication et des Relations avec le Parlement
           </p>
           <h1 className="mt-3 text-[38px] font-extrabold leading-[1.1] xl:text-[44px]">
             La carte de presse<br />
@@ -125,7 +128,7 @@ export function AuthShell({
             </span>
           </div>
           <p className="mt-4 max-w-md text-xs leading-relaxed text-white/45">
-            Espace securise - vos informations sont traitees par la HAPA dans le cadre de l&apos;accreditation des journalistes.
+            Espace securise - vos informations sont traitees par le MCACRP dans le cadre de l&apos;accreditation des journalistes.
           </p>
         </footer>
       </section>
@@ -137,11 +140,11 @@ export function AuthShell({
           <div className="mb-10 flex items-center gap-3 lg:hidden">
             <NationalMark />
             <span className="text-sm font-extrabold tracking-[0.1em] text-[var(--green-900)]">
-              HAPA <span className="text-[var(--gold-700)]">/</span> ACCREDITATION PRESSE
+              MCACRP <span className="text-[var(--gold-700)]">/</span> ACCREDITATION PRESSE
             </span>
           </div>
           <p className="text-[10.5px] font-bold uppercase tracking-[0.2em] text-[var(--muted-fg)]">
-            HAPA - Accreditation presse
+            MCACRP - Accreditation presse
           </p>
           <h2 className="mt-2 text-[30px] font-extrabold leading-tight text-[var(--green-900)]">{title}</h2>
           <p className="mt-2 text-[15px] text-[var(--slate)]">{subtitle}</p>

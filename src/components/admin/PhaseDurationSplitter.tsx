@@ -1,7 +1,7 @@
 "use client";
 // src/components/admin/PhaseDurationSplitter.tsx
 // APPLICATION-LAYER component (the 20% tier): composes shadcn Inputs but the
-// live phase-date derivation is HAPA domain logic.
+// live phase-date derivation is MCACRP domain logic.
 //
 // The admin enters a start date + four per-phase day counts. This mirrors
 // the backend's math (start + receivingDays -> receivingEnd, then +reviewDays,

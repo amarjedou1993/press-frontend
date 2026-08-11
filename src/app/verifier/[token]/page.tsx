@@ -1,26 +1,3 @@
-// src/app/verifier/[token]/page.tsx
-// What a scanned QR resolves to.
-//
-// A SERVER COMPONENT, deliberately. Whoever reaches this page is standing at a
-// door with a phone, often on a poor connection, and wants one answer in under
-// a second. Rendering on the server means the verdict is in the first paint —
-// no JavaScript bundle, no loading spinner, no client-side fetch.
-//
-// PUBLIC — no authentication, and there never will be. A police officer or an
-// event organiser checking a card has no account.
-//
-// WHAT IT SHOWS, AND WHY THE LIST IS SHORT. Whoever scans is HOLDING the card,
-// so they can already read the name, number and dates printed on it. This page
-// adds exactly two things the plastic cannot give them:
-//
-//   · the LIVE STATUS — valide, suspendue, retirée, expirée
-//   · the PHOTOGRAPH — which is what lets them confirm the person in front of
-//     them is the holder
-//
-// Nothing else. No e-mail, no telephone, no NNI, no dossier history — none of
-// which a verifier needs, all of which would turn a scan into a data leak.
-
-import Image from "next/image";
 import { ShieldCheck, ShieldAlert, ShieldX, Clock, HelpCircle } from "lucide-react";
 
 export const dynamic = "force-dynamic";   // a status must never be cached
@@ -96,7 +73,7 @@ export default async function VerificationPage({
 
         <div className="relative mx-auto max-w-lg px-6 pb-8 pt-10 text-center text-white">
           <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-white/55">
-            Haute Autorité de la Presse et de l&apos;Audiovisuel
+            Ministère de la Culture, des Arts, de la Communication et des Relations avec le Parlement
           </p>
 
           <span className="mt-6 inline-flex h-20 w-20 items-center justify-center rounded-full"
@@ -130,7 +107,7 @@ export default async function VerificationPage({
               </p>
               <p className="mx-auto mt-4 max-w-sm text-[14px] leading-relaxed text-white/75">
                 Aucune carte ne correspond à ce code. Vérifiez que le code a été
-                scanné entièrement, ou signalez la carte à la HAPA.
+                scanné entièrement, ou signalez la carte à le MCACPR.
               </p>
             </>
           )}
@@ -190,21 +167,21 @@ export default async function VerificationPage({
 
             {/* The signature check is EVIDENCE, not the security of the lookup
                 — that is the opaque token. It answers a different question:
-                did HAPA issue this exact card, provably. */}
+                did MCACPR issue this exact card, provably. */}
             <div className="flex items-center gap-2.5 border-t border-[#e6eae8] px-6 py-3.5"
               style={{ background: result!.signatureValid ? "#f2fbf6" : "#fdf3f3" }}>
               {result!.signatureValid ? (
                 <>
                   <ShieldCheck className="h-4 w-4 flex-none text-[#0d7a44]" />
                   <p className="text-[12.5px] font-semibold text-[#0d7a44]">
-                    Signature électronique vérifiée — carte émise par la HAPA
+                    Signature électronique vérifiée — carte émise par le MCACPR
                   </p>
                 </>
               ) : (
                 <>
                   <ShieldAlert className="h-4 w-4 flex-none text-[#a3151a]" />
                   <p className="text-[12.5px] font-semibold text-[#a3151a]">
-                    Signature électronique non vérifiée — signalez cette carte à la HAPA
+                    Signature électronique non vérifiée — signalez cette carte à la MCACPR
                   </p>
                 </>
               )}
@@ -215,11 +192,11 @@ export default async function VerificationPage({
 
       {/* ══ what this page is ══ */}
       <p className="mx-auto mt-6 max-w-lg px-6 text-center text-[12px] leading-relaxed text-[#5b6b63]">
-        Cette page confirme la validité d&apos;une carte de presse auprès de la
-        Haute Autorité. Elle n&apos;est accessible qu&apos;en scannant le code
+        Cette page confirme la validité d&apos;une carte de presse auprès du
+        MCACRP Autorité. Elle n&apos;est accessible qu&apos;en scannant le code
         figurant au dos de la carte.
         <span dir="rtl" lang="ar" className="mt-1.5 block">
-          تؤكد هذه الصفحة صلاحية البطاقة الصحفية لدى السلطة العليا للصحافة والسمعيات البصرية.
+          تؤكد هذه الصفحة صلاحية البطاقة الصحفية لدى وزارة الثقافة والفنون والاتصالات والعلاقات مع البرلمان.
         </span>
       </p>
     </main>

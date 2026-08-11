@@ -148,8 +148,8 @@ export interface RejectionGroundOption {
 export const reviewKeys = {
   pool: ["review", "pool"] as const,
   myFiles: ["review", "my-files"] as const,
-  myDecided: ["review", "my-decided"] as const,      // ← ADD
-  all: ["review", "all"] as const,                    // ← ADD
+  myDecided: ["review", "my-decided"] as const,     
+  all: ["review", "all"] as const,                    
   examination: (id: number) => ["review", "examination", id] as const,
   grounds: (id: number) => ["review", "grounds", id] as const,
 };

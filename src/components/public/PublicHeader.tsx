@@ -1,17 +1,3 @@
-// src/components/public/PublicHeader.tsx
-// The masthead of an official publication.
-//
-// Four tiers:
-//   1. state strip — the Republic, both languages, on a foil rule
-//   2. masthead — the seal as emblem, the wordmark in gold foil, the
-//      authority's name in both scripts, navigation, primary action
-//   3. LIVE STATUS RIBBON — reads the open session from the API, so the
-//      masthead reports the state of the institution rather than decorating
-//   4. microprint seam + the national rule
-//
-// Async server component: the fetch is cached by Next (ISR), so this costs
-// the backend one request per minute across the whole site.
-
 import Link from "next/link";
 import { ArrowRight, CalendarCheck2 } from "lucide-react";
 import { routes } from "@/lib/routes";
@@ -21,7 +7,7 @@ import { OfficialSeal, MicroprintRule, TricolorRule } from "./patterns";
 const NAV = [
   { label: "Accueil", href: routes.home },
   { label: "Sessions", href: routes.publicSessions },
-  { label: "Journalistes accrédités", href: routes.publicJournalists, soon: true },
+  { label: "Journalistes accrédités", href: routes.publicJournalists },
 ];
 
 function fmtShort(iso: string) {
@@ -99,7 +85,7 @@ export async function PublicHeader() {
 
           {/* navigation */}
           <nav className="flex items-center gap-1">
-            {NAV.map((item) =>
+            {/* {NAV.map((item) =>
               item.soon ? (
                 <span
                   key={item.label}
@@ -120,7 +106,17 @@ export async function PublicHeader() {
                   {item.label}
                 </Link>
               )
-            )}
+            )} */}
+
+            {NAV.map((item) => (
+              <Link
+                key={item.label}
+                href={item.href}
+                className="relative hidden px-3.5 py-2 text-[13px] font-semibold text-[var(--slate)] transition-colors hover:text-[var(--green-900)] after:absolute after:inset-x-3.5 after:bottom-0 after:h-[2px] after:origin-left after:scale-x-0 after:rounded-full after:bg-[var(--gold-500)] after:transition-transform after:duration-300 hover:after:scale-x-100 sm:block"
+              >
+                {item.label}
+              </Link>
+            ))}
 
             <span className="mx-2 hidden h-6 w-px bg-[var(--line)] sm:block" aria-hidden="true" />
 
