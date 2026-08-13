@@ -1,6 +1,12 @@
 "use client";
-// src/app/journalistes/page.tsx
-// The public register of accredited journalists.
+// src/app/(public)/journalistes/page.tsx
+//
+// ⚠️ MOVED — this file was at src/app/journalistes/, OUTSIDE the (public)
+// route group, so it rendered without the header and footer: a public page
+// with no way back to anything. Inside (public) it inherits both.
+//
+// Consequently it returns a FRAGMENT, not <main>: the layout already provides
+// one, and a nested <main> is invalid.
 //
 // ───────────────────────────────────────────────────────────────────────
 // IT IS A REGISTER, AND IT IS BUILT LIKE ONE.
@@ -10,18 +16,12 @@
 // alphabet rail, engraved section initials, and entries set in two columns
 // like a printed record.
 //
-// The site's security-print vocabulary — guilloche, foil rules, microprint,
-// the state seal — is load-bearing here. This page's purpose is to say "the
-// Authority vouches for this person", and a page that looked like a search
-// widget would say it less convincingly than the card in the journalist's
-// pocket does.
+// SEARCH FIRST, BROWSE SECOND. The real question is almost never "show me
+// everyone" — it is "is THIS person accredited", asked by an editor about a
+// freelancer or a ministry about someone at a door.
 //
-// TWO WAYS IN, because two people arrive with different questions:
-//   PAR NOM     — a ministry looking for one person
-//   PAR ORGANE  — an editor looking at their own newsroom
-//
-// AND NO PHOTOGRAPHS anywhere. The verification page shows one, to somebody
-// already holding the card. A public list of faces, sortable by outlet, is a
+// AND NO PHOTOGRAPHS. The verification page shows one, to somebody already
+// holding the card. A public list of faces, sortable by outlet, is a
 // directory of every journalist in Mauritania.
 // ───────────────────────────────────────────────────────────────────────
 
@@ -33,7 +33,7 @@ import {
   LayoutList, Users2,
 } from "lucide-react";
 import {
-  Guilloche, GuillocheBand, OfficialSeal, MicroprintRule, TricolorRule,
+  Guilloche, GuillocheBand, OfficialSeal, MicroprintRule, TricolorRule, Overline,
 } from "@/components/public/patterns";
 import { getPublicRegistry, type PublicJournalist } from "@/lib/api/journalists";
 import { routes } from "@/lib/routes";
@@ -83,7 +83,6 @@ export default function PublicRegistryPage() {
 
   const searching = search.trim().length > 0;
 
-  /** Grouped by initial, in alphabetical order — the register's own order. */
   const byLetter = useMemo(() => {
     const map = new Map<string, PublicJournalist[]>();
     for (const j of all) {
@@ -99,7 +98,6 @@ export default function PublicRegistryPage() {
     [byLetter]
   );
 
-  /** By outlet — how an editor thinks about their own newsroom. */
   const byInstitution = useMemo(() => {
     const map = new Map<string, PublicJournalist[]>();
     for (const j of all) {
@@ -112,70 +110,67 @@ export default function PublicRegistryPage() {
   }, [all]);
 
   return (
-    <main className="min-h-screen bg-[var(--paper,#f4f6f5)]">
-
+    <>
       {/* ══════════════════════════════════════════════════════════
-          THE REGISTER'S HEAD
+          THE REGISTER'S HEAD — same shape as /sessions, so the
+          public section reads as one publication.
           ══════════════════════════════════════════════════════════ */}
       <section
         className="relative overflow-hidden text-white"
         style={{
           background:
-            "radial-gradient(900px 460px at 50% -18%, rgba(255,215,0,.13), transparent 62%), radial-gradient(700px 380px at 88% 120%, rgba(0,169,92,.14), transparent 60%), linear-gradient(168deg, var(--green-900) 0%, #071f16 100%)",
+            "radial-gradient(800px 380px at 82% -30%, rgba(255,215,0,.12), transparent 62%), linear-gradient(166deg, #08251a, var(--green-900) 70%)",
         }}
       >
         <Guilloche
-          className="pointer-events-none absolute -left-52 -top-44 h-[600px] w-[600px] text-white opacity-[0.05]"
-          rings={48}
+          className="pointer-events-none absolute -right-32 -top-40 h-[520px] w-[520px] text-white opacity-[0.055]"
+          rings={44}
         />
         <Guilloche
-          className="pointer-events-none absolute -right-40 -bottom-56 h-[440px] w-[440px] text-[var(--gold-500)] opacity-[0.045]"
+          className="pointer-events-none absolute -left-40 -bottom-52 h-[420px] w-[420px] text-[var(--gold-500)] opacity-[0.045]"
           rings={32}
         />
         <div
-          className="pointer-events-none absolute inset-0 opacity-[0.04]"
+          className="pointer-events-none absolute inset-0 opacity-[0.05]"
           style={{ backgroundImage: "repeating-linear-gradient(112deg,#fff 0 1px,transparent 1px 13px)" }}
           aria-hidden="true"
         />
 
-        <div className="relative z-10 mx-auto max-w-4xl px-6 pb-14 pt-14 text-center">
-          <div className="mx-auto flex max-w-md items-center gap-5">
-            <span className="foil-rule h-px flex-1 opacity-40" aria-hidden="true" />
-            <span className="relative flex h-[64px] w-[64px] flex-none items-center justify-center">
-              <span
-                className="absolute inset-0 rounded-full"
-                style={{ background: "radial-gradient(circle, rgba(255,215,0,.20), transparent 70%)" }}
-                aria-hidden="true"
-              />
-              <OfficialSeal className="relative h-full w-full"
-                color="var(--gold-500)" id="registry-seal" />
+        <div className="relative z-10 mx-auto max-w-5xl px-6 py-16">
+          <div className="flex items-center gap-3">
+            <span className="inline-flex items-center gap-[3px]" aria-hidden="true">
+              <i className="h-3.5 w-1.5 rounded-full bg-[var(--green-500)]" />
+              <i className="h-3.5 w-1.5 rounded-full bg-[var(--gold-500)]" />
+              <i className="h-3.5 w-1.5 rounded-full bg-[var(--red-500)]" />
             </span>
-            <span className="foil-rule h-px flex-1 opacity-40" aria-hidden="true" />
+            <p className="text-[10.5px] font-bold uppercase tracking-[0.22em] text-white/55">
+              Registre officiel
+            </p>
           </div>
 
-          <p className="mt-6 text-[9.5px] font-bold uppercase tracking-[0.24em] text-[var(--gold-500)]">
-            Registre officiel
-          </p>
+          <div className="mt-6 flex items-end justify-between gap-8">
+            <h1 className="text-[clamp(32px,5vw,52px)] font-extrabold leading-[1.02] tracking-[-0.02em]">
+              Journalistes
+              <br />
+              accrédités
+            </h1>
+            <p dir="rtl" lang="ar" className="hidden pb-2 text-[17px] font-semibold text-white/40 sm:block">
+              الصحفيون المعتمدون
+            </p>
+          </div>
 
-          <h1 className="mt-4 text-[32px] font-extrabold leading-[1.12] tracking-tight sm:text-[38px]">
-            Journalistes accrédités
-          </h1>
-          <p dir="rtl" lang="ar" className="mt-2.5 text-[21px] font-semibold text-white/50">
-            سجل الصحفيين المعتمدين
-          </p>
-
-          <p className="mx-auto mt-5 max-w-xl text-[14px] leading-relaxed text-white/45">
+          <p className="mt-5 max-w-2xl text-[15px] leading-[1.75] text-white/65">
             Vérifiez qu&apos;une personne est titulaire d&apos;une carte de
-            presse en cours de validité.
+            presse en cours de validité, délivrée par le Ministère.
           </p>
 
-          <div className="relative mx-auto mt-9 max-w-xl">
+          {/* ── the field: the page's centre of gravity ── */}
+          <div className="relative mt-9 max-w-2xl">
             <Search className="pointer-events-none absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--green-900)]/35" />
             <input
               type="search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              autoFocus
               placeholder="Nom, organe de presse, n° de carte…"
               aria-label="Rechercher un journaliste accrédité"
               className="h-14 w-full rounded-2xl bg-white pl-14 pr-12 text-[15.5px] text-[var(--ink)] shadow-[0_20px_50px_-26px_rgba(0,0,0,.8)] outline-none
@@ -192,7 +187,7 @@ export default function PublicRegistryPage() {
           </div>
 
           {!registry.isLoading && (
-            <p className="mt-5 font-mono text-[11px] uppercase tracking-[0.14em] text-white/30">
+            <p className="mt-4 font-mono text-[11px] uppercase tracking-[0.14em] text-white/35">
               {registry.data?.total ?? 0} inscrit
               {(registry.data?.total ?? 0) > 1 ? "s" : ""}
               {" · arrêté au "}{longFr(registry.data?.compiledAt)}
@@ -201,15 +196,21 @@ export default function PublicRegistryPage() {
         </div>
 
         <GuillocheBand
-          className="pointer-events-none absolute inset-x-0 bottom-3 h-14 text-white opacity-[0.06]"
-          lines={8}
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-16 text-white opacity-[0.08]"
+          lines={7}
         />
-        <MicroprintRule className="relative z-10 pb-1.5 text-center text-white opacity-[0.14]"
-          repeat={16} />
+        <TricolorRule className="absolute inset-x-0 bottom-0" />
       </section>
-      <TricolorRule thin />
 
-      <div className="mx-auto max-w-4xl px-6 pb-24 pt-9">
+      <MicroprintRule
+        className="border-b border-[var(--line)] bg-white py-1.5 text-[var(--green-700)] opacity-30"
+        repeat={14}
+      />
+
+      {/* ══════════════════════════════════════════════════════════
+          THE ROLL
+          ══════════════════════════════════════════════════════════ */}
+      <section className="mx-auto max-w-5xl px-6 py-14">
 
         {registry.isLoading && (
           <div className="space-y-3">
@@ -226,35 +227,33 @@ export default function PublicRegistryPage() {
           </p>
         )}
 
-        {/* ══ search results ══ */}
+        {/* ── search results ── */}
         {!registry.isLoading && searching && (
           <>
-            <div className="flex items-center gap-4 pb-4">
-              <p className="text-[11.5px] font-bold uppercase tracking-[0.16em] text-[var(--green-700)]">
-                {results.length === 0
-                  ? "Aucune inscription"
-                  : `${results.length} inscription${results.length > 1 ? "s" : ""}`}
-              </p>
-              <span className="foil-rule h-px flex-1 opacity-30" aria-hidden="true" />
-            </div>
+            <Overline index="01">
+              {results.length === 0
+                ? "Aucune inscription"
+                : `${results.length} inscription${results.length > 1 ? "s" : ""}`}
+            </Overline>
 
-            {results.length === 0 ? (
-              <EmptyResult />
-            ) : (
-              <ul className="space-y-3">
-                {results.map((j) => <RegisterEntry key={j.cardNumber} journalist={j} />)}
-              </ul>
-            )}
+            <div className="mt-8">
+              {results.length === 0 ? (
+                <EmptyResult />
+              ) : (
+                <ul className="space-y-3">
+                  {results.map((j) => <RegisterEntry key={j.cardNumber} journalist={j} />)}
+                </ul>
+              )}
+            </div>
           </>
         )}
 
-        {/* ══════════════════════════════════════════════════════════
-            BROWSE — the register proper
-            ══════════════════════════════════════════════════════════ */}
+        {/* ── browse ── */}
         {!registry.isLoading && !searching && all.length > 0 && (
           <>
-            {/* the two ways in */}
-            <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+            <Overline index="01">Consulter le registre</Overline>
+
+            <div className="mt-8 mb-7 flex flex-wrap items-center justify-between gap-4">
               <div className="inline-flex rounded-xl bg-white p-1 ring-1 ring-inset ring-[var(--line)]">
                 {([
                   { key: "name" as const, label: "Par nom", Icon: LayoutList },
@@ -290,13 +289,13 @@ export default function PublicRegistryPage() {
             {view === "name" ? (
               <>
                 {/* ── the alphabet rail ──
-                    A register's signature interaction. Sticky, so it stays
-                    reachable however far down the roll you are; letters with
-                    no entry are dimmed rather than hidden, because their
-                    absence is itself information. */}
+                    A register's signature interaction. Sticky beneath the
+                    header, so it stays reachable however far down the roll
+                    you are; letters with no entry are dimmed rather than
+                    hidden, because their absence is itself information. */}
                 <nav
                   aria-label="Index alphabétique"
-                  className="sticky top-[124px] z-20 -mx-2 mb-7 rounded-2xl border border-[var(--line)] bg-white/85 px-2 py-2 backdrop-blur-md"
+                  className="sticky top-4 z-20 -mx-2 mb-8 rounded-2xl border border-[var(--line)] bg-white/85 px-2 py-2 backdrop-blur-md"
                 >
                   <ul className="flex flex-wrap justify-center gap-0.5">
                     {ALPHABET.map((letter) => {
@@ -324,13 +323,12 @@ export default function PublicRegistryPage() {
                   </ul>
                 </nav>
 
-                {/* ── the roll, letter by letter ── */}
                 <div className="space-y-10">
                   {byLetter.map(([letter, members]) => (
-                    <section key={letter} id={`lettre-${letter}`} className="scroll-mt-[190px]">
+                    <section key={letter} id={`lettre-${letter}`} className="scroll-mt-24">
                       {/* the engraved initial — the page's strongest
-                          typographic moment, and the thing that makes this
-                          read as a printed register rather than a list */}
+                          typographic moment, and what makes this read as a
+                          printed register rather than a list */}
                       <div className="flex items-center gap-5">
                         <span className="relative flex-none">
                           <span
@@ -369,14 +367,9 @@ export default function PublicRegistryPage() {
                 </div>
               </>
             ) : (
-              /* ── by outlet ── */
               <ul className="space-y-4">
                 {byInstitution.map(([institution, members]) => (
-                  <OutletCard
-                    key={institution}
-                    institution={institution}
-                    members={members}
-                  />
+                  <OutletCard key={institution} institution={institution} members={members} />
                 ))}
               </ul>
             )}
@@ -384,7 +377,7 @@ export default function PublicRegistryPage() {
         )}
 
         {!registry.isLoading && !searching && all.length === 0 && (
-          <div className="rounded-2xl border border-[var(--line)] bg-white p-12 text-center">
+          <div className="rounded-2xl border border-[var(--line)] bg-white p-14 text-center">
             <Info className="mx-auto h-8 w-8 text-[var(--muted-fg)]" />
             <p className="mt-4 text-[15px] font-extrabold text-[var(--green-900)]">
               Le registre est encore vide
@@ -395,20 +388,24 @@ export default function PublicRegistryPage() {
             </p>
           </div>
         )}
+      </section>
 
-        {/* ══ what this register is, and is not ══ */}
-        <div className="relative mt-14 overflow-hidden rounded-2xl border border-[var(--line)] bg-white p-6">
+      {/* ══ what this register is, and is not ══ */}
+      <section className="mx-auto max-w-5xl px-6 pb-20">
+        <Overline index="02">Portée du registre</Overline>
+
+        <div className="relative mt-8 overflow-hidden rounded-2xl border border-[var(--line)] bg-white p-7">
           <Guilloche
             className="pointer-events-none absolute -bottom-28 -right-24 h-72 w-72 text-[var(--green-900)] opacity-[0.03]"
             rings={30}
           />
-          <div className="relative z-10 flex items-start gap-3.5">
+          <div className="relative z-10 flex items-start gap-4">
             <ShieldCheck className="mt-0.5 h-5 w-5 flex-none text-[var(--green-600)]" />
             <div>
-              <p className="text-[13.5px] font-extrabold text-[var(--green-900)]">
+              <p className="text-[14px] font-extrabold text-[var(--green-900)]">
                 Ce que contient ce registre
               </p>
-              <p className="mt-2 text-[13px] leading-relaxed text-[var(--slate)]">
+              <p className="mt-2 max-w-2xl text-[13.5px] leading-relaxed text-[var(--slate)]">
                 Les titulaires d&apos;une carte de presse <b>en cours de
                 validité</b> à la date indiquée. Les cartes expirées,
                 suspendues ou retirées n&apos;y figurent pas. Le registre ne
@@ -416,22 +413,24 @@ export default function PublicRegistryPage() {
                 l&apos;identité du porteur d&apos;une carte,{" "}
                 <b>scannez le code figurant au recto</b>.
               </p>
-              <p dir="rtl" lang="ar" className="mt-3.5 text-[13px] leading-[1.9] text-[var(--slate)]">
+              <p dir="rtl" lang="ar" className="mt-4 max-w-2xl text-[13.5px] leading-[1.9] text-[var(--slate)]">
                 يتضمن هذا السجل حاملي البطاقة الصحفية السارية المفعول. للتحقق من
                 هوية حامل البطاقة، امسح الرمز الموجود على وجهها.
               </p>
-              <p className="mt-4 text-[12.5px] text-[var(--muted-fg)]">
-                Une question sur une accréditation ?{" "}
-                <Link href={routes.publicSessions}
-                  className="font-semibold text-[var(--green-700)] underline underline-offset-2">
-                  Consulter les sessions
+              <p className="mt-5 text-[12.5px] text-[var(--muted-fg)]">
+                Vous exercez le journalisme en Mauritanie ?{" "}
+                <Link
+                  href={routes.publicSessions}
+                  className="font-semibold text-[var(--green-700)] underline underline-offset-2"
+                >
+                  Consulter les sessions de candidature
                 </Link>
               </p>
             </div>
           </div>
         </div>
-      </div>
-    </main>
+      </section>
+    </>
   );
 }
 
@@ -439,14 +438,12 @@ export default function PublicRegistryPage() {
    ONE ENTRY IN THE ROLL — compact, two per row
 
    Deliberately quieter than a search result: this is a name being SCANNED
-   past, not an answer being read. The seal and the full record appear only
-   when it is the thing you were looking for.
+   past, not an answer being read.
    ══════════════════════════════════════════════════════════════════ */
 
 function RollEntry({ journalist }: { journalist: PublicJournalist }) {
   return (
     <li className="group relative overflow-hidden rounded-xl border border-[var(--line)] bg-white px-4 py-3 transition-all hover:-translate-y-px hover:border-[var(--green-500)]/45 hover:shadow-[0_12px_28px_-20px_rgba(11,46,31,.65)]">
-      {/* the edge lights on hover — the register acknowledging the entry */}
       <span
         className="absolute inset-y-0 left-0 w-[2.5px] origin-top scale-y-0 transition-transform duration-300 group-hover:scale-y-100"
         style={{ background: "linear-gradient(180deg, var(--gold-500), var(--green-500))" }}
@@ -493,7 +490,6 @@ function OutletCard({
         rings={24}
       />
 
-      {/* the masthead band */}
       <div
         className="relative flex items-center gap-3.5 px-5 py-4 text-white"
         style={{

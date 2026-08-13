@@ -1,26 +1,12 @@
 "use client";
-// src/app/(candidate)/application/page.tsx
-// The dossier, across its whole life.
-//
-// FOUR FACES, ONE PAGE — and which one shows is decided by the SERVER's
-// status and `editable` flag, never by the frontend's own reading:
-//
-//   IN PROGRESS   hero · pieces · timeline · checklist
-//   CORRECTION    hero · correction panel · timeline
-//   ACCEPTED      NOTICE · card preview · archive (folded)
-//   REFUSED       NOTICE · archive (open)
-//
-// Once a decision exists the hero disappears: the notice already carries the
-// outcome, the reference and the date, and two headers announcing one thing
-// is worse than one. The evidence folds into a single section — present for
-// anyone writing a reclamation, quiet for everyone else.
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
-  FileText, Link2, Trash2, Send, Download, History,
+  FileText, Link2, Trash2, Download, History, Send, Check, AlertCircle,
+  CalendarClock, ShieldCheck, ShieldAlert, QrCode,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -29,25 +15,41 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { VerificationBanner } from "@/components/candidate/VerificationBanner";
-import { RequirementChecklist } from "@/components/candidate/RequirementChecklist";
-import { StatusTimeline } from "@/components/candidate/StatusTimeline";
 import { DossierProgress } from "@/components/candidate/DossierProgress";
+import { RequirementChecklist } from "@/components/candidate/RequirementChecklist";
 import { DocumentUploader } from "@/components/candidate/DocumentUploader";
+import { StatusTimeline } from "@/components/candidate/StatusTimeline";
+import { DecisionOutcome } from "@/components/candidate/DecisionOutcome";
 import { DossierArchive } from "@/components/candidate/DossierArchive";
 import { CorrectionPanel } from "@/components/candidate/CorrectionPanel";
-import { DecisionOutcome } from "@/components/candidate/DecisionOutcome";
+import { ObjectionPanel } from "@/components/candidate/ObjectionPanel";
 import { IssuedCardPreview } from "@/components/candidate/IssuedCardPreview";
 import { EmploymentCard } from "@/components/candidate/EmploymentCard";
+import { Guilloche, OfficialSeal, MicroprintRule } from "@/components/public/patterns";
 import {
   listMyApplications, getApplication, removeDocument, submitApplication,
   applicationKeys, STATUS_KIND, type DocumentType,
 } from "@/lib/api/applications";
+import { getMyCard, myCardKeys } from "@/lib/api/my-card";
+import { listOpenSessions, catalogKeys } from "@/lib/api/sessions-public";
 import { getMe, accountKeys } from "@/lib/api/account";
 import { openProtectedFile } from "@/lib/api/files";
 import { useAuthStore } from "@/lib/auth";
 import { ApiError } from "@/lib/api/client";
 import { routes } from "@/lib/routes";
-import { ObjectionPanel } from "@/components/candidate/ObjectionPanel";
+
+function fmtLong(iso?: string | null) {
+  if (!iso) return "—";
+  const d = new Date(iso.length === 10 ? iso + "T00:00:00" : iso);
+  return isNaN(d.getTime()) ? "—" : d.toLocaleDateString("fr-FR", {
+    day: "numeric", month: "long", year: "numeric",
+  });
+}
+function daysUntil(iso: string) {
+  const end = new Date(iso + "T00:00:00").getTime();
+  const now = new Date().setHours(0, 0, 0, 0);
+  return Math.round((end - now) / 86_400_000);
+}
 
 export default function ApplicationPage() {
   const router = useRouter();
@@ -62,11 +64,22 @@ export default function ApplicationPage() {
   const list = useQuery({ queryKey: applicationKeys.all, queryFn: listMyApplications });
   const currentId = list.data?.[0]?.id;
   const me = useQuery({ queryKey: accountKeys.me, queryFn: getMe });
+  const sessions = useQuery({ queryKey: catalogKeys.openSessions, queryFn: listOpenSessions });
 
   const detail = useQuery({
     queryKey: applicationKeys.detail(currentId!),
     queryFn: () => getApplication(currentId!),
     enabled: !!currentId,
+  });
+
+  const status = detail.data?.application.status;
+  const favourable = status === "ACCEPTED" || status === "CARD_ISSUED";
+
+  /* The holder's own card — number, category and validity. */
+  const myCard = useQuery({
+    queryKey: myCardKeys.card,
+    queryFn: getMyCard,
+    enabled: favourable,
   });
 
   const refresh = () => {
@@ -118,18 +131,24 @@ export default function ApplicationPage() {
     return (
       <div className="mx-auto max-w-4xl space-y-6">
         <VerificationBanner />
-        <div className="rounded-2xl border border-dashed border-[var(--line)] bg-white p-14 text-center">
-          <FileText className="mx-auto h-9 w-9 text-[var(--muted-fg)]" />
-          <p className="mt-4 text-[15px] font-extrabold text-[var(--green-900)]">
-            Aucune demande en cours
-          </p>
-          <p className="mt-2 text-[13.5px] text-[var(--slate)]">
-            Vous n&apos;avez pas encore déposé de demande de carte de presse.
-          </p>
-          <Button className="mt-5"
-            onClick={() => router.push(routes.candidate.newApplication)}>
-            Déposer une demande
-          </Button>
+        <div className="relative overflow-hidden rounded-2xl border border-dashed border-[var(--line)] bg-white p-14 text-center">
+          <Guilloche
+            className="pointer-events-none absolute left-1/2 top-1/2 h-[320px] w-[320px] -translate-x-1/2 -translate-y-1/2 text-[var(--green-900)] opacity-[0.035]"
+            rings={28}
+          />
+          <div className="relative">
+            <FileText className="mx-auto h-9 w-9 text-[var(--muted-fg)]" />
+            <p className="mt-4 text-[15px] font-extrabold text-[var(--green-900)]">
+              Aucune demande en cours
+            </p>
+            <p className="mt-2 text-[13.5px] text-[var(--slate)]">
+              Vous n&apos;avez pas encore déposé de demande de carte de presse.
+            </p>
+            <Button className="mt-5"
+              onClick={() => router.push(routes.candidate.newApplication)}>
+              Déposer une demande
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -138,16 +157,20 @@ export default function ApplicationPage() {
   const { application, documents, timeline, readiness } = detail.data;
   const kind = STATUS_KIND[application.status];
   const editable = application.editable;
+  const card = myCard.data;
 
-  /** A decision exists: the notice takes over from the hero. */
   const decided = ["ACCEPTED", "CARD_ISSUED", "REJECTED", "FINAL_REJECTION"]
     .includes(application.status);
-  /** Refused — the archive opens by default, since a reclamation is written from it. */
   const refused = ["REJECTED", "FINAL_REJECTION"].includes(application.status);
-  /** Favourable — the column shows the credential instead of a checklist. */
-  const favourable = ["ACCEPTED", "CARD_ISSUED"].includes(application.status);
-  /** During a correction round the CorrectionPanel is the working surface. */
   const correcting = application.status === "CORRECTION_REQUESTED";
+
+  const blockerCount = readiness.blockers?.length ?? 0;
+  const canSubmit = readiness.canSubmit;
+
+  /* The deposit deadline — relevant only while the dossier is unsubmitted. */
+  const openSession = sessions.data?.[0];
+  const left = editable && openSession ? daysUntil(openSession.receivingEnd) : null;
+  const urgent = left !== null && left <= 3;
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -156,10 +179,11 @@ export default function ApplicationPage() {
       {/* ══ header — only while the dossier is still in progress ══ */}
       {!decided && (
         <section
-          className="relative overflow-hidden rounded-2xl text-white shadow-[0_20px_50px_-30px_rgba(11,46,31,.8)]"
+          className="relative overflow-hidden rounded-[20px] text-white shadow-[0_24px_60px_-34px_rgba(11,46,31,.85)]"
           style={{
-            background:
-              "radial-gradient(700px 340px at 90% -25%, rgba(255,215,0,.15), transparent 60%), linear-gradient(158deg, var(--green-900) 0%, #0e3d29 60%, #0b3524 100%)",
+            background: correcting
+              ? "radial-gradient(700px 340px at 88% -25%, rgba(255,215,0,.26), transparent 60%), linear-gradient(158deg, #33290a 0%, #2c2408 60%, #1f1a06 100%)"
+              : "radial-gradient(700px 340px at 90% -25%, rgba(255,215,0,.15), transparent 60%), linear-gradient(158deg, var(--green-900) 0%, #0e3d29 60%, #0b3524 100%)",
           }}
         >
           <div
@@ -167,56 +191,81 @@ export default function ApplicationPage() {
             style={{ backgroundImage: "repeating-linear-gradient(115deg,#fff 0 1px,transparent 1px 12px)" }}
             aria-hidden="true"
           />
-          <svg className="pointer-events-none absolute -right-24 -top-28 h-80 w-80 opacity-[0.06]"
-            viewBox="0 0 400 400" fill="none" aria-hidden="true">
-            <g stroke="#fff" strokeWidth="0.6">
-              {Array.from({ length: 30 }).map((_, i) => (
-                <ellipse key={i} cx="200" cy="200" rx="180" ry="62"
-                  transform={`rotate(${(i * 180) / 30} 200 200)`} />
-              ))}
-            </g>
-          </svg>
+          <Guilloche
+            className="pointer-events-none absolute -right-24 -top-28 h-[340px] w-[340px] text-white opacity-[0.06]"
+            rings={34}
+          />
 
           <div className="relative z-10 p-7">
             <div className="flex flex-wrap items-start justify-between gap-5">
-              <div>
-                <p className="text-[10.5px] font-bold uppercase tracking-[0.2em] text-[var(--gold-500)]">
-                  Dossier de candidature
-                </p>
-                <div className="mt-2.5 flex flex-wrap items-center gap-3">
-                  <h2 className="text-[26px] font-extrabold leading-tight">
-                    {application.statusLabelFr}
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2.5">
+                  <OfficialSeal
+                    className="h-5 w-5 flex-none opacity-80"
+                    color="var(--gold-500)"
+                    id="app-seal"
+                  />
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--gold-500)]">
+                    Dossier de candidature
+                  </p>
+                </div>
+
+                {/* The heading names the DOSSIER; the pill carries the status.
+                    They used to print the same string twice. */}
+                <div className="mt-3 flex flex-wrap items-baseline gap-3">
+                  <h2 className="engraved-dark text-[27px] font-extrabold leading-tight tracking-tight">
+                    Dossier n° {application.id}
                   </h2>
-                  <span className="font-mono text-[11.5px] text-white/40">
-                    n° {application.id}
+                  <span
+                    className="rounded-full px-3.5 py-1 text-[11.5px] font-extrabold"
+                    style={{
+                      background: `var(--st-${kind}-bg)`,
+                      color: `var(--st-${kind}-fg)`,
+                    }}
+                  >
+                    {application.statusLabelFr}
                   </span>
                 </div>
-                {application.submittedAt && (
-                  <p className="mt-2 text-[13px] text-white/60">
-                    Soumis le{" "}
-                    {new Date(application.submittedAt).toLocaleDateString("fr-FR", {
-                      day: "numeric", month: "long", year: "numeric",
-                    })}
-                  </p>
-                )}
+
+                <p className="mt-2 text-[13px] text-white/55">
+                  {application.submittedAt
+                    ? <>Soumis le {fmtLong(application.submittedAt)}</>
+                    : <>Ouvert le {fmtLong(application.createdAt)} — pas encore soumis</>}
+                </p>
               </div>
 
-              <span
-                className="rounded-full px-4 py-1.5 text-[12px] font-extrabold"
-                style={{
-                  background: `var(--st-${kind}-bg)`,
-                  color: `var(--st-${kind}-fg)`,
-                }}
-              >
-                {application.statusLabelFr}
-              </span>
+              {/* THE DEADLINE, on the page where the work happens. */}
+              {left !== null && left >= 0 && (
+                <div
+                  className="flex-none rounded-xl px-5 py-4 text-center"
+                  style={{
+                    background: urgent ? "rgba(208,28,31,.20)" : "rgba(0,0,0,.22)",
+                    boxShadow: `inset 0 0 0 1px ${urgent ? "rgba(208,28,31,.5)" : "rgba(255,255,255,.14)"}`,
+                  }}
+                >
+                  <p className="font-mono text-[30px] font-extrabold leading-none"
+                    style={{ color: urgent ? "#ff9b9d" : "#fff" }}>
+                    {left}
+                  </p>
+                  <p className="mt-1.5 text-[9px] font-bold uppercase tracking-[0.14em] text-white/50">
+                    {left === 0 ? "dernier jour" : `jour${left > 1 ? "s" : ""} restant${left > 1 ? "s" : ""}`}
+                  </p>
+                  <p className="mt-2 border-t border-white/15 pt-2 text-[9px] font-semibold uppercase tracking-wide text-white/40">
+                    pour déposer
+                  </p>
+                </div>
+              )}
             </div>
 
-            <div className="mt-7 rounded-xl bg-black/20 px-5 py-5">
+            <div className="mt-7 rounded-xl bg-black/25 px-5 py-5">
               <DossierProgress status={application.status} />
             </div>
           </div>
 
+          <MicroprintRule
+            className="relative z-10 pb-1 text-center text-white opacity-[0.12]"
+            repeat={14}
+          />
           <div className="flex h-1.5" aria-hidden="true">
             <i className="flex-1 bg-[var(--green-500)]" />
             <i className="flex-1 bg-[var(--gold-500)]" />
@@ -232,14 +281,12 @@ export default function ApplicationPage() {
         applicationId={application.id}
       />
 
-        {/* The right to contest, beneath the decision it contests. The panel
+      {/* The right to contest, beneath the decision it contests. The panel
           fetches its own eligibility and renders nothing when none applies. */}
-      
       <ObjectionPanel
         applicationId={application.id}
         visible={application.status === "REJECTED"}
       />
-
 
       {/* ══ the correction round — renders nothing unless one is open ══ */}
       <CorrectionPanel applicationId={application.id} />
@@ -248,8 +295,6 @@ export default function ApplicationPage() {
         {/* ══ left column ══ */}
         <div className="space-y-6">
           {decided ? (
-            /* One folded section: present for anyone writing a reclamation,
-               quiet for everyone else. Open by default after a refusal. */
             <DossierArchive
               applicationId={application.id}
               documents={documents}
@@ -258,7 +303,7 @@ export default function ApplicationPage() {
             />
           ) : (
             <>
-             {/* Specialisation and institution — printed on the card, and
+              {/* Specialisation and institution — printed on the card, and
                   nothing else in the system asks for them. Above the
                   documents because they take thirty seconds and the
                   documents take an afternoon. */}
@@ -273,20 +318,30 @@ export default function ApplicationPage() {
 
               {/* ── pieces ── */}
               {!correcting && (
-                <div className="rounded-2xl border border-[var(--line)] bg-white p-6">
-                  <p className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-[var(--green-700)]">
-                    Pièces jointes
-                  </p>
+                <div className="overflow-hidden rounded-2xl border border-[var(--line)] bg-white">
+                  <div className="flex items-center gap-3 border-b border-[var(--line)] px-6 py-4">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--green-700)]">
+                      Pièces jointes
+                    </p>
+                    <span className="foil-rule h-px flex-1 opacity-35" aria-hidden="true" />
+                    {documents.length > 0 && (
+                      <span className="font-mono text-[11px] text-[var(--muted-fg)]">
+                        {documents.length}
+                      </span>
+                    )}
+                  </div>
 
                   {documents.length === 0 ? (
-                    <p className="mt-4 text-[13.5px] text-[var(--slate)]">
-                      Aucune pièce pour le moment. Utilisez la liste des exigences
-                      pour ajouter les documents demandés.
+                    <p className="px-6 py-8 text-center text-[13.5px] leading-relaxed text-[var(--slate)]">
+                      Aucune pièce pour le moment.
+                      <br />
+                      Utilisez la liste ci-contre pour ajouter les documents
+                      demandés.
                     </p>
                   ) : (
-                    <ul className="mt-4 divide-y divide-[var(--line)]">
+                    <ul className="divide-y divide-[var(--line)]">
                       {documents.map((d) => (
-                        <li key={d.id} className="flex items-start gap-3 py-3.5">
+                        <li key={d.id} className="flex items-start gap-3 px-6 py-3.5">
                           <span
                             className="mt-0.5 flex h-8 w-8 flex-none items-center justify-center rounded-lg"
                             style={{
@@ -310,7 +365,7 @@ export default function ApplicationPage() {
 
                             {d.url ? (
                               <a href={d.url} target="_blank" rel="noopener noreferrer"
-                                className="truncate text-[12.5px] text-[var(--green-700)] underline underline-offset-2">
+                                className="block truncate text-[12.5px] text-[var(--green-700)] underline underline-offset-2">
                                 {d.url}
                               </a>
                             ) : (
@@ -358,11 +413,15 @@ export default function ApplicationPage() {
 
               {/* ── timeline ── */}
               {timeline.length > 0 && (
-                <div className="rounded-2xl border border-[var(--line)] bg-white p-6">
-                  <p className="flex items-center gap-2 text-[10.5px] font-bold uppercase tracking-[0.16em] text-[var(--green-700)]">
-                    <History className="h-3.5 w-3.5" /> Historique
-                  </p>
-                  <div className="mt-5">
+                <div className="overflow-hidden rounded-2xl border border-[var(--line)] bg-white">
+                  <div className="flex items-center gap-3 border-b border-[var(--line)] px-6 py-4">
+                    <History className="h-3.5 w-3.5 text-[var(--green-700)]" />
+                    <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--green-700)]">
+                      Historique
+                    </p>
+                    <span className="foil-rule h-px flex-1 opacity-35" aria-hidden="true" />
+                  </div>
+                  <div className="p-6">
                     <StatusTimeline entries={timeline} />
                   </div>
                 </div>
@@ -378,19 +437,76 @@ export default function ApplicationPage() {
             wonder what they got wrong. */}
         <div className="space-y-6 lg:sticky lg:top-24 lg:self-start">
           {favourable ? (
-            <IssuedCardPreview
-              fullName={me.data?.fullName ?? ""}
-              nni={me.data?.profile?.nni ?? me.data?.profile?.passportNo}
-              categoryLabel={null}
-              issued={application.status === "CARD_ISSUED"}
-            />
-          ) : !decided ? (
-            <div className="rounded-2xl border border-[var(--line)] bg-white p-6">
-              <p className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-[var(--green-700)]">
-                {editable ? "Ce qu'il vous reste à faire" : "Pièces du dossier"}
-              </p>
+            <div className="overflow-hidden rounded-2xl border border-[var(--line)] bg-white">
+              <div className="flex items-center gap-2.5 border-b border-[var(--line)] px-5 py-3.5">
+                <OfficialSeal
+                  className="h-4 w-4 flex-none"
+                  color="var(--green-700)"
+                  id="app-card-seal"
+                />
+                <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--green-700)]">
+                  {application.status === "CARD_ISSUED"
+                    ? "Votre carte de presse"
+                    : "Votre carte, à l'édition"}
+                </p>
+              </div>
 
-              <div className="mt-4">
+              <div className="p-5">
+                <IssuedCardPreview
+                  fullName={me.data?.fullName ?? ""}
+                  nni={me.data?.profile?.nni ?? me.data?.profile?.passportNo}
+                  categoryLabel={card?.categoryLabelFr}
+                  cardNumber={card?.cardNumber}
+                  validUntil={card?.expiresAt}
+                  issued={application.status === "CARD_ISSUED"}
+                />
+
+                {card && (
+                  <>
+                    <dl className="mt-5 divide-y divide-[var(--line)] rounded-xl border border-[var(--line)]">
+                      <Detail label="N° de carte" value={card.cardNumber} mono />
+                      <Detail label="Valable jusqu'au" value={fmtLong(card.expiresAt)} />
+                    </dl>
+
+                    <div
+                      className="mt-3 flex items-start gap-2.5 rounded-xl px-4 py-3"
+                      style={{ background: card.usable ? "var(--green-tint)" : "var(--red-tint)" }}
+                    >
+                      {card.usable
+                        ? <ShieldCheck className="mt-0.5 h-4 w-4 flex-none text-[var(--green-700)]" />
+                        : <ShieldAlert className="mt-0.5 h-4 w-4 flex-none text-[var(--red-700)]" />}
+                      <div className="min-w-0">
+                        <p className="text-[12.5px] font-extrabold"
+                          style={{ color: card.usable ? "var(--green-700)" : "var(--red-700)" }}>
+                          Carte {card.statusLabelFr.toLowerCase()}
+                        </p>
+                        {card.statusReason && (
+                          <p className="mt-0.5 text-[12px] leading-relaxed text-[var(--red-700)]">
+                            {card.statusReason}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <p className="mt-3 flex items-start gap-2 text-[11.5px] leading-relaxed text-[var(--muted-fg)]">
+                      <QrCode className="mt-0.5 h-3.5 w-3.5 flex-none" />
+                      Le code figurant sur votre carte permet à quiconque
+                      d&apos;en vérifier l&apos;état auprès du Ministère.
+                    </p>
+                  </>
+                )}
+              </div>
+            </div>
+          ) : !decided ? (
+            <div className="overflow-hidden rounded-2xl border border-[var(--line)] bg-white">
+              <div className="flex items-center gap-3 border-b border-[var(--line)] px-6 py-4">
+                <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--green-700)]">
+                  {editable ? "Ce qu'il vous reste à faire" : "Pièces du dossier"}
+                </p>
+                <span className="foil-rule h-px flex-1 opacity-35" aria-hidden="true" />
+              </div>
+
+              <div className="p-6">
                 <RequirementChecklist
                   readiness={readiness}
                   editable={editable}
@@ -414,16 +530,72 @@ export default function ApplicationPage() {
                 />
               </div>
 
+              {/* ══ THE ACT THIS PAGE EXISTS FOR ══
+                  Set apart from the checklist rather than appended to it, and
+                  it EXPLAINS ITSELF: a candidate looking at a dead button
+                  should not have to look elsewhere to learn what it is
+                  waiting for. Gold the moment it can be pressed. */}
               {editable && (
-                <Button
-                  className="mt-6 w-full"
-                  size="lg"
-                  disabled={!readiness.canSubmit || submit.isPending}
-                  onClick={() => setConfirmSubmit(true)}
+                <div
+                  className="border-t px-6 py-5"
+                  style={{
+                    borderColor: canSubmit ? "var(--gold-500)" : "var(--line)",
+                    background: canSubmit ? "var(--gold-tint)" : "#fbfcfb",
+                  }}
                 >
-                  <Send className="h-4 w-4" />
-                  Soumettre mon dossier
-                </Button>
+                  {canSubmit ? (
+                    <>
+                      <p className="flex items-center gap-2 text-[12.5px] font-extrabold text-[var(--gold-700)]">
+                        <Check className="h-3.5 w-3.5" />
+                        Votre dossier est complet
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setConfirmSubmit(true)}
+                        disabled={submit.isPending}
+                        className="group mt-3 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[var(--gold-500)] text-[14px] font-extrabold text-[var(--green-900)]
+                                   shadow-[0_12px_28px_-12px_rgba(255,215,0,.85)] transition-all
+                                   hover:-translate-y-px hover:bg-[#ffe14d]
+                                   disabled:cursor-not-allowed disabled:opacity-60
+                                   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--green-700)] focus-visible:ring-offset-2"
+                      >
+                        <Send className="h-4 w-4" />
+                        Soumettre mon dossier
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <p className="flex items-start gap-2 text-[12.5px] leading-relaxed text-[var(--slate)]">
+                        <AlertCircle className="mt-0.5 h-3.5 w-3.5 flex-none text-[var(--gold-700)]" />
+                        <span>
+                          <b className="font-bold text-[var(--gold-700)]">
+                            {blockerCount} condition{blockerCount > 1 ? "s" : ""}
+                          </b>{" "}
+                          rest{blockerCount > 1 ? "ent" : "e"} à remplir avant
+                          de pouvoir soumettre.
+                        </span>
+                      </p>
+                      <button
+                        type="button"
+                        disabled
+                        className="mt-3 inline-flex h-12 w-full cursor-not-allowed items-center justify-center gap-2 rounded-xl border border-[var(--line)] bg-white text-[14px] font-bold text-[var(--muted-fg)]"
+                      >
+                        <Send className="h-4 w-4" />
+                        Soumettre mon dossier
+                      </button>
+                    </>
+                  )}
+
+                  {left !== null && left >= 0 && (
+                    <p className="mt-3 flex items-center gap-1.5 text-[11.5px] font-semibold"
+                      style={{ color: urgent ? "var(--red-700)" : "var(--muted-fg)" }}>
+                      <CalendarClock className="h-3 w-3" />
+                      {left === 0
+                        ? "Dernier jour pour déposer"
+                        : `Encore ${left} jour${left > 1 ? "s" : ""} pour déposer`}
+                    </p>
+                  )}
+                </div>
               )}
             </div>
           ) : null}
@@ -465,14 +637,16 @@ export default function ApplicationPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Soumettre votre dossier ?</AlertDialogTitle>
             <AlertDialogDescription>
-              Votre dossier sera transmis à la commission d&apos;examen.
-              <br />
-              <span className="mt-2 block font-medium text-[var(--red-500)]">
-                Après soumission, vous ne pourrez plus modifier vos pièces —
-                sauf si la commission vous demande une correction.
-              </span>
+              Votre dossier sera transmis à la commission d&apos;examen, qui
+              statuera sur votre demande.
             </AlertDialogDescription>
           </AlertDialogHeader>
+
+          <p className="text-[13px] font-medium leading-relaxed text-[var(--red-500)]">
+            Après soumission, vous ne pourrez plus modifier vos pièces — sauf
+            si la commission vous demande une correction.
+          </p>
+
           <AlertDialogFooter>
             <AlertDialogCancel>Annuler</AlertDialogCancel>
             <AlertDialogAction
@@ -484,6 +658,23 @@ export default function ApplicationPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </div>
+  );
+}
+
+/* ══ one line of the record ══ */
+
+function Detail({ label, value, mono = false }: {
+  label: string; value?: string | null; mono?: boolean;
+}) {
+  return (
+    <div className="flex items-baseline justify-between gap-4 px-4 py-2.5">
+      <dt className="flex-none text-[11.5px] font-semibold text-[var(--slate)]">
+        {label}
+      </dt>
+      <dd className={`min-w-0 truncate text-right text-[13px] font-bold text-[var(--green-900)] ${mono ? "font-mono tracking-tight" : ""}`}>
+        {value || "—"}
+      </dd>
     </div>
   );
 }

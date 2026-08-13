@@ -1,24 +1,41 @@
 "use client";
 // src/app/(candidate)/profile/page.tsx
+//
 // Identity and contact details, presented as what they are: the record that
-// will appear on an official credential.
+// will appear on an official credential. This lives on the PERSON, not on each
+// application — a journalist applying again next year re-types nothing.
 //
-// The page is built around that idea — a live press-card preview showing the
-// candidate their own data in the shape it will take, an institutional hero
-// carrying the completion state, and two clearly separated records
-// (coordonnées vs identité) because they answer different questions and
-// carry different weight.
+// Built in the same structural language as the dossier page: bordered header
+// bars with a foil rule, content in its own padding, and the action on a
+// tinted footer. A form where the submit button has the same visual weight as
+// a field label is a form people abandon halfway.
 //
-// This lives on the PERSON, not on each application: a journalist applying
-// again next year re-types nothing.
+// ───────────────────────────────────────────────────────────────────────
+// THREE THINGS CHANGED.
+//
+// 1. THE PHOTOGRAPH WAS LAST ON THE PAGE, beneath two forms — and it is the
+//    most-forgotten requirement, the one that blocks ISSUANCE after a
+//    commission has already approved a dossier. It now sits directly above
+//    the card it will be printed on, so a candidate uploads it and watches it
+//    land where it belongs.
+//
+// 2. ⚠️ THE PREVIEW SHOWED FIELDS THE REAL CARD DOES NOT HAVE. The local
+//    CardPreview listed Naissance and Lieu; the adopted card carries الإسم,
+//    الفئة, التخصص, المؤسسة and the national number. It now renders the
+//    shared <IssuedCardPreview/> — the same specimen as the dashboard and the
+//    dossier, so all three show the card that will actually be printed.
+//
+// 3. "À COMPLÉTER" DID NOT SAY WHAT. A badge naming no missing field sends
+//    the candidate scanning two forms for the one empty input.
+// ───────────────────────────────────────────────────────────────────────
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm, Controller, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import {
-  Check, ShieldCheck, IdCard, Mail, Phone, User as UserIcon, CalendarDays, MapPin,
+  Check, ShieldCheck, IdCard, Mail, Phone, CalendarDays, MapPin, Camera,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,107 +44,14 @@ import { Field, FieldLabel, FieldDescription, FieldError } from "@/components/ui
 import { DatePicker } from "@/components/ui/date-picker";
 import { VerificationBanner } from "@/components/candidate/VerificationBanner";
 import { PhotoUpload, photoKeys } from "@/components/candidate/PhotoUpload";
-import { useAuthenticatedFile } from "@/lib/api/files";
+import { IssuedCardPreview } from "@/components/candidate/IssuedCardPreview";
+import { Guilloche, OfficialSeal, MicroprintRule } from "@/components/public/patterns";
 import { getMe, updateAccount, updateProfile, accountKeys } from "@/lib/api/account";
 import {
   profileSchema, accountSchema, type ProfileValues, type AccountValues,
 } from "@/lib/schemas-candidate";
 import { ApiError } from "@/lib/api/client";
 import { useAuthStore } from "@/lib/auth";
-
-/* ── the card preview: their data, in its eventual shape ── */
-function CardPreview({
-  fullName, nni, passportNo, birthdate, birthplace, photoUrl,
-}: {
-  fullName?: string;
-  nni?: string | null;
-  passportNo?: string | null;
-  birthdate?: string | null;
-  birthplace?: string | null;
-  /** The real photograph — this is the credential taking shape. */
-  photoUrl?: string | null;
-}) {
-  const identity = nni?.trim() || passportNo?.trim();
-  const dash = "—————————";
-
-  return (
-    <div
-      className="relative aspect-[1.586] w-full overflow-hidden rounded-2xl bg-white p-5"
-      style={{ boxShadow: "0 24px 50px -28px rgba(11,46,31,.55), inset 0 0 0 1px rgba(11,46,31,.07)" }}
-      role="img"
-      aria-label="Aperçu de votre carte de presse"
-    >
-      {/* guilloche */}
-      <svg className="pointer-events-none absolute -right-12 -top-16 h-56 w-56 opacity-[0.07]"
-        viewBox="0 0 400 400" fill="none" aria-hidden="true">
-        <g stroke="var(--green-700)" strokeWidth="0.7">
-          {Array.from({ length: 26 }).map((_, i) => (
-            <ellipse key={i} cx="200" cy="200" rx="180" ry="60"
-              transform={`rotate(${(i * 180) / 26} 200 200)`} />
-          ))}
-        </g>
-      </svg>
-
-      <div className="relative flex h-full flex-col">
-        <div className="flex items-start justify-between gap-3 border-b-2 border-[var(--green-500)] pb-2">
-          <div>
-            <p className="text-[11px] font-extrabold tracking-[0.1em] text-[var(--green-700)]">RIM</p>
-            <p className="mt-0.5 max-w-[140px] text-[5.5px] font-bold uppercase leading-[1.5] tracking-[0.1em] text-[var(--muted-fg)]">
-              République Islamique de Mauritanie
-            </p>
-          </div>
-          <p dir="rtl" className="text-right text-[9px] font-semibold leading-snug text-[var(--green-700)]">
-            بطاقة صحفية
-          </p>
-        </div>
-        <div className="h-px w-full bg-[var(--gold-500)]/70" aria-hidden="true" />
-
-        <div className="mt-3 flex flex-1 gap-3.5">
-          <div className="h-[74px] w-[58px] flex-none overflow-hidden rounded-lg border border-[var(--green-500)]/30 bg-[var(--green-tint)]">
-            {photoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={photoUrl} alt="" className="h-full w-full object-cover" />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center">
-                <UserIcon className="h-6 w-6 text-[var(--green-600)] opacity-50" />
-              </div>
-            )}
-          </div>
-
-          <dl className="min-w-0 flex-1 space-y-[5px]">
-            {[
-              ["Nom", fullName || dash],
-              ["Identité", identity || dash],
-              ["Naissance", birthdate
-                ? new Date(birthdate).toLocaleDateString("fr-FR")
-                : dash],
-              ["Lieu", birthplace || dash],
-            ].map(([label, value]) => (
-              <div key={label} className="flex items-baseline gap-2 border-b border-dotted border-[var(--line)] pb-[2px]">
-                <dt className="w-[54px] flex-none text-[6px] font-bold uppercase tracking-[0.13em] text-[var(--green-700)]/70">
-                  {label}
-                </dt>
-                <dd className={`truncate font-mono text-[8.5px] ${value === dash ? "text-[var(--muted-fg)]" : "text-[var(--ink)]/85"}`}>
-                  {value}
-                </dd>
-              </div>
-            ))}
-          </dl>
-        </div>
-
-        <p className="mt-1.5 overflow-hidden whitespace-nowrap font-mono text-[6.5px] tracking-[0.22em] text-[var(--muted-fg)]">
-          CARTE&lt;RIM&lt;PRESSE&lt;&lt;SPECIMEN
-        </p>
-      </div>
-
-      <div className="absolute inset-x-0 bottom-0 flex h-1.5" aria-hidden="true">
-        <i className="flex-1 bg-[var(--green-500)]" />
-        <i className="flex-1 bg-[var(--gold-500)]" />
-        <i className="flex-1 bg-[var(--red-500)]" />
-      </div>
-    </div>
-  );
-}
 
 export default function ProfilePage() {
   const qc = useQueryClient();
@@ -162,7 +86,7 @@ export default function ProfilePage() {
     });
   }, [me.data, accountForm, profileForm]);
 
-  // The preview follows what is being typed, not only what is saved.
+  // The preview follows what is being TYPED, not only what is saved.
   const liveAccount = accountForm.watch();
   const liveProfile = profileForm.watch();
 
@@ -179,10 +103,6 @@ export default function ProfilePage() {
       return res.json() as Promise<{ hasPhoto: boolean; uploadedAt: string | null; ageing: boolean }>;
     },
   });
-  const { url: photoUrl } = useAuthenticatedFile(
-    photoStatus.data?.hasPhoto ? "/api/me/photo" : null,
-    photoStatus.dataUpdatedAt
-  );
 
   const errText = (e: unknown) =>
     e instanceof ApiError ? (e.problem.detail ?? e.message) : "Réessayez.";
@@ -225,6 +145,25 @@ export default function ProfilePage() {
     },
   });
 
+  /**
+   * What is still missing, BY NAME.
+   *
+   * The same conditions CandidateProfile.isComplete() applies, in the order
+   * they appear on this page. The photograph is included — it is part of
+   * completeness and was invisible in the old badge.
+   */
+  const missing = useMemo(() => {
+    if (!me.data) return [];
+    const p = me.data.profile;
+    const gaps: string[] = [];
+    if (!me.data.fullName?.trim()) gaps.push("nom complet");
+    if (!p?.nni && !p?.passportNo) gaps.push("NNI ou passeport");
+    if (!p?.birthdate) gaps.push("date de naissance");
+    if (!p?.birthplace) gaps.push("lieu de naissance");
+    if (!photoStatus.data?.hasPhoto) gaps.push("photographie");
+    return gaps;
+  }, [me.data, photoStatus.data]);
+
   if (me.isLoading) {
     return (
       <div className="mx-auto max-w-4xl space-y-6">
@@ -234,7 +173,7 @@ export default function ProfilePage() {
     );
   }
 
-  const complete = me.data?.profileComplete ?? false;
+  const complete = (me.data?.profileComplete ?? false) && missing.length === 0;
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -242,7 +181,7 @@ export default function ProfilePage() {
 
       {/* ══ hero ══ */}
       <section
-        className="relative overflow-hidden rounded-2xl text-white shadow-[0_20px_50px_-30px_rgba(11,46,31,.8)]"
+        className="relative overflow-hidden rounded-[20px] text-white shadow-[0_24px_60px_-34px_rgba(11,46,31,.85)]"
         style={{
           background:
             "radial-gradient(700px 340px at 88% -25%, rgba(255,215,0,.15), transparent 60%), linear-gradient(158deg, var(--green-900) 0%, #0e3d29 60%, #0b3524 100%)",
@@ -253,45 +192,78 @@ export default function ProfilePage() {
           style={{ backgroundImage: "repeating-linear-gradient(115deg,#fff 0 1px,transparent 1px 12px)" }}
           aria-hidden="true"
         />
-        <div className="relative z-10 flex flex-wrap items-start justify-between gap-5 p-7">
-          <div className="min-w-0">
-            <p className="text-[10.5px] font-bold uppercase tracking-[0.2em] text-[var(--gold-500)]">
-              Mon profil
-            </p>
-            <h2 className="mt-2.5 text-[26px] font-extrabold leading-tight">
-              Votre identité
-            </h2>
-            <p className="mt-2 max-w-lg text-[14px] leading-relaxed text-white/65">
-              Ces informations identifient le titulaire de la carte de presse et
-              figureront sur le document délivré. Elles sont conservées pour vos
-              demandes futures.
-            </p>
-          </div>
+        <Guilloche
+          className="pointer-events-none absolute -right-24 -top-28 h-[330px] w-[330px] text-white opacity-[0.06]"
+          rings={34}
+        />
 
-          <div
-            className="flex items-center gap-2.5 rounded-xl px-4 py-3 ring-1"
-            style={{
-              background: complete ? "rgba(0,169,92,.16)" : "rgba(255,215,0,.14)",
-              boxShadow: `inset 0 0 0 1px ${complete ? "rgba(0,169,92,.4)" : "rgba(255,215,0,.4)"}`,
-            }}
-          >
-            {complete ? (
-              <>
-                <Check className="h-4 w-4 flex-none text-[var(--green-500)]" />
-                <span className="text-[12.5px] font-bold text-[var(--green-500)]">
-                  Profil complet
-                </span>
-              </>
-            ) : (
-              <>
-                <IdCard className="h-4 w-4 flex-none text-[var(--gold-500)]" />
-                <span className="text-[12.5px] font-bold text-[var(--gold-500)]">
-                  À compléter
-                </span>
-              </>
-            )}
+        <div className="relative z-10 p-7">
+          <div className="flex flex-wrap items-start justify-between gap-5">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2.5">
+                <OfficialSeal
+                  className="h-5 w-5 flex-none opacity-80"
+                  color="var(--gold-500)"
+                  id="profile-seal"
+                />
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--gold-500)]">
+                  Mon profil
+                </p>
+              </div>
+
+              <h2 className="engraved-dark mt-3 text-[27px] font-extrabold leading-tight tracking-tight">
+                Votre identité
+              </h2>
+              <p className="mt-2.5 max-w-lg text-[14px] leading-relaxed text-white/60">
+                Ces informations identifient le titulaire de la carte de presse
+                et figureront sur le document délivré. Elles sont conservées
+                pour vos demandes futures.
+              </p>
+            </div>
+
+            {/* Sized like the dossier page's countdown, so the two heroes
+                balance the same way. */}
+            <div
+              className="w-full flex-none rounded-xl px-5 py-4 sm:w-auto sm:max-w-[236px]"
+              style={{
+                background: complete ? "rgba(0,169,92,.18)" : "rgba(255,215,0,.14)",
+                boxShadow: `inset 0 0 0 1px ${complete ? "rgba(0,169,92,.42)" : "rgba(255,215,0,.4)"}`,
+              }}
+            >
+              {complete ? (
+                <>
+                  <Check className="h-6 w-6 text-[var(--green-500)]" />
+                  <p className="mt-2 text-[12.5px] font-extrabold text-[var(--green-500)]">
+                    Profil complet
+                  </p>
+                  <p className="mt-1 text-[11.5px] leading-relaxed text-white/45">
+                    Rien ne vous empêche de déposer un dossier.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="font-mono text-[28px] font-extrabold leading-none text-[var(--gold-500)]">
+                    {missing.length}
+                  </p>
+                  <p className="mt-1.5 text-[9px] font-bold uppercase tracking-[0.14em] text-white/50">
+                    élément{missing.length > 1 ? "s" : ""} manquant
+                    {missing.length > 1 ? "s" : ""}
+                  </p>
+                  {/* NAMED, not merely counted — otherwise the candidate scans
+                      two forms hunting for the empty field. */}
+                  <p className="mt-2.5 border-t border-white/15 pt-2.5 text-[11px] leading-relaxed text-white/55">
+                    {missing.join(" · ")}
+                  </p>
+                </>
+              )}
+            </div>
           </div>
         </div>
+
+        <MicroprintRule
+          className="relative z-10 pb-1 text-center text-white opacity-[0.12]"
+          repeat={14}
+        />
         <div className="flex h-1.5" aria-hidden="true">
           <i className="flex-1 bg-[var(--green-500)]" />
           <i className="flex-1 bg-[var(--gold-500)]" />
@@ -299,29 +271,31 @@ export default function ProfilePage() {
         </div>
       </section>
 
-      <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
-        {/* ══ forms ══ */}
-        <div className="space-y-6">
+      <div className="grid gap-6 lg:grid-cols-[1.3fr_1fr]">
+        {/* ══ left column — the record being entered ══ */}
+        <div className="min-w-0 space-y-6">
+
           {/* ── coordonnées ── */}
           <form
             onSubmit={accountForm.handleSubmit((v) => saveAccount.mutate(v))}
-            className="rounded-2xl border border-[var(--line)] bg-white p-6"
+            className="overflow-hidden rounded-2xl border border-[var(--line)] bg-white"
           >
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 border-b border-[var(--line)] px-6 py-4">
               <span className="flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-[var(--green-tint)]">
                 <Phone className="h-4 w-4 text-[var(--green-700)]" />
               </span>
-              <div>
-                <p className="text-[14px] font-extrabold text-[var(--green-900)]">
+              <div className="min-w-0 flex-1">
+                <p className="text-[13.5px] font-extrabold text-[var(--green-900)]">
                   Coordonnées
                 </p>
                 <p className="text-[12px] text-[var(--slate)]">
-                  Comment le MCACRP vous contacte
+                  Comment le Ministère vous contacte
                 </p>
               </div>
+              <span className="foil-rule hidden h-px flex-1 opacity-35 sm:block" aria-hidden="true" />
             </div>
 
-            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 p-6 sm:grid-cols-2">
               <Controller
                 name="fullName"
                 control={accountForm.control}
@@ -329,6 +303,9 @@ export default function ProfilePage() {
                   <Field data-invalid={fieldState.invalid}>
                     <FieldLabel htmlFor={field.name}>Nom complet</FieldLabel>
                     <Input {...field} id={field.name} aria-invalid={fieldState.invalid} />
+                    <FieldDescription>
+                      Tel qu&apos;il figurera sur la carte.
+                    </FieldDescription>
                     {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                   </Field>
                 )}
@@ -347,12 +324,12 @@ export default function ProfilePage() {
               />
             </div>
 
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--line)] pt-4">
-              <p className="flex items-center gap-2 text-[12.5px] text-[var(--slate)]">
-                <Mail className="h-3.5 w-3.5 text-[var(--muted-fg)]" />
-                {me.data?.email}
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--line)] bg-[#fbfcfb] px-6 py-3.5">
+              <p className="flex min-w-0 items-center gap-2 text-[12.5px] text-[var(--slate)]">
+                <Mail className="h-3.5 w-3.5 flex-none text-[var(--muted-fg)]" />
+                <span className="truncate">{me.data?.email}</span>
                 {me.data?.emailVerified && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-[var(--green-tint)] px-2 py-0.5 text-[10.5px] font-bold text-[var(--green-700)]">
+                  <span className="inline-flex flex-none items-center gap-1 rounded-full bg-[var(--green-tint)] px-2 py-0.5 text-[10.5px] font-bold text-[var(--green-700)]">
                     <Check className="h-2.5 w-2.5" /> Vérifiée
                   </span>
                 )}
@@ -366,148 +343,189 @@ export default function ProfilePage() {
           {/* ── identité ── */}
           <form
             onSubmit={profileForm.handleSubmit((v) => saveProfile.mutate(v))}
-            className="rounded-2xl border border-[var(--line)] bg-white p-6"
+            className="overflow-hidden rounded-2xl border border-[var(--line)] bg-white"
           >
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 border-b border-[var(--line)] px-6 py-4">
               <span className="flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-[var(--green-tint)]">
                 <IdCard className="h-4 w-4 text-[var(--green-700)]" />
               </span>
-              <div>
-                <p className="text-[14px] font-extrabold text-[var(--green-900)]">
+              <div className="min-w-0 flex-1">
+                <p className="text-[13.5px] font-extrabold text-[var(--green-900)]">
                   Identité officielle
                 </p>
                 <p className="text-[12px] text-[var(--slate)]">
                   Requise avant toute soumission de dossier
                 </p>
               </div>
+              <span className="foil-rule hidden h-px flex-1 opacity-35 sm:block" aria-hidden="true" />
             </div>
 
-            <p className="mt-4 flex items-start gap-2 rounded-lg bg-[var(--green-tint)] px-3.5 py-2.5 text-[12.5px] leading-relaxed text-[var(--green-700)]">
-              <ShieldCheck className="mt-0.5 h-3.5 w-3.5 flex-none" />
-              Renseignez votre NNI <b className="font-bold">ou</b> votre numéro
-              de passeport — l&apos;un des deux suffit.
-            </p>
+            <div className="p-6">
+              <p className="flex items-start gap-2 rounded-xl bg-[var(--green-tint)] px-4 py-3 text-[12.5px] leading-relaxed text-[var(--green-700)]">
+                <ShieldCheck className="mt-0.5 h-3.5 w-3.5 flex-none" />
+                <span>
+                  Renseignez votre NNI <b className="font-bold">ou</b> votre
+                  numéro de passeport — l&apos;un des deux suffit.
+                </span>
+              </p>
 
-            <div className="mt-5 grid gap-4 sm:grid-cols-2">
-              <Controller
-                name="nni"
-                control={profileForm.control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor={field.name}>
-                      Numéro national d&apos;identité
-                    </FieldLabel>
-                    <Input {...field} value={field.value ?? ""} id={field.name}
-                      inputMode="numeric" placeholder="1234567890"
-                      className="font-mono" aria-invalid={fieldState.invalid} />
-                    <FieldDescription>10 chiffres</FieldDescription>
-                    {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-                  </Field>
-                )}
-              />
-              <Controller
-                name="passportNo"
-                control={profileForm.control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor={field.name}>
-                      Passeport{" "}
-                      <span className="font-normal text-[var(--muted-fg)]">
-                        (si pas de NNI)
-                      </span>
-                    </FieldLabel>
-                    <Input {...field} value={field.value ?? ""} id={field.name}
-                      className="font-mono" aria-invalid={fieldState.invalid} />
-                    {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-                  </Field>
-                )}
-              />
-              <Controller
-                name="birthdate"
-                control={profileForm.control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor={field.name}>
-                      <CalendarDays className="mr-1 inline h-3.5 w-3.5 align-[-2px] text-[var(--green-600)]" />
-                      Date de naissance
-                    </FieldLabel>
-                    <DatePicker
-                      id={field.name}
-                      name={field.name}
-                      value={field.value ?? ""}
-                      onChange={field.onChange}
-                      onBlur={field.onBlur}
-                      invalid={fieldState.invalid}
-                      // placeholder="Choisir votre date de naissance"
-                      // A birthdate is in the past, and often decades back —
-                      // hence the year dropdown and the 1930 floor.
-                      disabled={(d) => d > new Date()}
-                      fromYear={1930}
-                      toYear={new Date().getFullYear()}
-                      defaultMonth={new Date(1990, 0)}
-                    />
-                    {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-                  </Field>
-                )}
-              />
-              <Controller
-                name="birthplace"
-                control={profileForm.control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor={field.name}>
-                      <MapPin className="mr-1 inline h-3.5 w-3.5 align-[-2px] text-[var(--green-600)]" />
-                      Lieu de naissance
-                    </FieldLabel>
-                    <Input {...field} id={field.name} placeholder="Nouakchott"
-                      aria-invalid={fieldState.invalid} />
-                    {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-                  </Field>
-                )}
-              />
+              <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                <Controller
+                  name="nni"
+                  control={profileForm.control}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor={field.name}>
+                        Numéro national d&apos;identité
+                      </FieldLabel>
+                      <Input {...field} value={field.value ?? ""} id={field.name}
+                        inputMode="numeric" placeholder="1234567890"
+                        className="font-mono" aria-invalid={fieldState.invalid} />
+                      <FieldDescription>10 chiffres</FieldDescription>
+                      {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                    </Field>
+                  )}
+                />
+                <Controller
+                  name="passportNo"
+                  control={profileForm.control}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor={field.name}>
+                        Passeport{" "}
+                        <span className="font-normal text-[var(--muted-fg)]">
+                          (si pas de NNI)
+                        </span>
+                      </FieldLabel>
+                      <Input {...field} value={field.value ?? ""} id={field.name}
+                        className="font-mono" aria-invalid={fieldState.invalid} />
+                      {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                    </Field>
+                  )}
+                />
+                <Controller
+                  name="birthdate"
+                  control={profileForm.control}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor={field.name}>
+                        <CalendarDays className="mr-1 inline h-3.5 w-3.5 align-[-2px] text-[var(--green-600)]" />
+                        Date de naissance
+                      </FieldLabel>
+                      <DatePicker
+                        id={field.name}
+                        name={field.name}
+                        value={field.value ?? ""}
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        invalid={fieldState.invalid}
+                        // A birthdate is in the past, and often decades back —
+                        // hence the year dropdown and the 1930 floor.
+                        disabled={(d) => d > new Date()}
+                        fromYear={1930}
+                        toYear={new Date().getFullYear()}
+                        defaultMonth={new Date(1990, 0)}
+                      />
+                      {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                    </Field>
+                  )}
+                />
+                <Controller
+                  name="birthplace"
+                  control={profileForm.control}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor={field.name}>
+                        <MapPin className="mr-1 inline h-3.5 w-3.5 align-[-2px] text-[var(--green-600)]" />
+                        Lieu de naissance
+                      </FieldLabel>
+                      <Input {...field} id={field.name} placeholder="Nouakchott"
+                        aria-invalid={fieldState.invalid} />
+                      {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                    </Field>
+                  )}
+                />
+              </div>
             </div>
 
-            <div className="mt-5 flex justify-end border-t border-[var(--line)] pt-4">
+            <div className="flex justify-end border-t border-[var(--line)] bg-[#fbfcfb] px-6 py-3.5">
               <Button type="submit" disabled={saveProfile.isPending}>
                 {saveProfile.isPending ? "Enregistrement…" : "Enregistrer mon identité"}
               </Button>
             </div>
           </form>
-
-          {/* ── photographie ──
-              AFTER identity: candidate_profiles requires a birthdate and a
-              birthplace (both NOT NULL), so the row must exist before a photo
-              can be attached. The control locks itself until then and says so,
-              rather than failing with a server error. */}
-          <PhotoUpload profileExists={!!me.data?.profile} />
         </div>
 
-        {/* ══ live preview ══ */}
-        <div className="lg:sticky lg:top-24 lg:self-start">
-          <div className="rounded-2xl border border-[var(--line)] bg-white p-6">
-            <div className="flex items-center gap-3">
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--green-700)]">
+        {/* ══════════════════════════════════════════════════════════
+            RIGHT COLUMN — the credential taking shape.
+
+            The photograph sits directly ABOVE the card it will be printed on.
+            It was previously LAST on the page, beneath two forms — and it is
+            the most-forgotten requirement, the one that blocks issuance after
+            a commission has already approved a dossier.
+            ══════════════════════════════════════════════════════════ */}
+        <div className="min-w-0 space-y-6 lg:sticky lg:top-24 lg:self-start">
+
+          {/* ── photographie ──
+              candidate_profiles requires a birthdate and a birthplace (both
+              NOT NULL), so the row must exist before a photo can be attached.
+              PhotoUpload locks itself until then and says so, rather than
+              failing with a server error. */}
+          <div className="overflow-hidden rounded-2xl border border-[var(--line)] bg-white">
+            <div className="flex items-center gap-2.5 border-b border-[var(--line)] px-5 py-3.5">
+              <Camera className="h-4 w-4 flex-none text-[var(--green-700)]" />
+              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--green-700)]">
+                Photographie
+              </p>
+              <span className="foil-rule h-px flex-1 opacity-35" aria-hidden="true" />
+              {photoStatus.data?.hasPhoto && (
+                <Check className="h-3.5 w-3.5 flex-none text-[var(--green-600)]" />
+              )}
+            </div>
+
+            <div className="p-5">
+              <PhotoUpload profileExists={!!me.data?.profile} />
+            </div>
+          </div>
+
+          {/* ── the card ── */}
+          <div className="overflow-hidden rounded-2xl border border-[var(--line)] bg-white">
+            <div className="flex items-center gap-2.5 border-b border-[var(--line)] px-5 py-3.5">
+              <OfficialSeal
+                className="h-4 w-4 flex-none"
+                color="var(--green-700)"
+                id="profile-card-seal"
+              />
+              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--green-700)]">
                 Aperçu de votre carte
               </p>
-              <span className="h-px flex-1 bg-[var(--line)]" aria-hidden="true" />
+              <span className="foil-rule h-px flex-1 opacity-35" aria-hidden="true" />
             </div>
 
-            <div className="mt-4">
-              <CardPreview
+            <div className="p-5">
+              {/* THE SHARED SPECIMEN — the same component the dashboard and
+                  the dossier render, so all three show the card that will
+                  actually be printed. The previous local version listed
+                  Naissance and Lieu, which the adopted card does not carry. */}
+              <IssuedCardPreview
                 fullName={liveAccount.fullName}
-                nni={liveProfile.nni}
-                passportNo={liveProfile.passportNo}
-                birthdate={liveProfile.birthdate}
-                birthplace={liveProfile.birthplace}
-                photoUrl={photoUrl}
+                nni={liveProfile.nni?.trim() || liveProfile.passportNo?.trim()}
+                categoryLabel={null}
+                issued={false}
               />
+
+              <p className="mt-4 text-[12px] leading-relaxed text-[var(--slate)]">
+                Aperçu indicatif. Votre catégorie, votre spécialité et le
+                numéro de carte sont fixés lors de l&apos;examen de votre
+                dossier — la carte définitive est éditée par le Ministère après
+                acceptation.
+              </p>
             </div>
 
-            <p className="mt-4 text-[12px] leading-relaxed text-[var(--slate)]">
-              Aperçu indicatif. La carte définitive est éditée par le MCACRP après
-              acceptation de votre dossier, avec votre photographie et un
-              numéro officiel.
-            </p>
+            <MicroprintRule
+              className="pb-1.5 text-center text-[var(--green-700)] opacity-[0.08]"
+              repeat={12}
+            />
           </div>
         </div>
       </div>

@@ -45,7 +45,7 @@ export interface NavGroup {
 const ROLE_LABELS: Record<string, string> = {
   CANDIDATE: "Candidat",
   REVIEWER: "Commission d'examen",
-  SUPER_ADMIN: "Super administrateur",
+  SUPER_ADMIN: "Administrateur",
 };
 
 function NationalMark() {

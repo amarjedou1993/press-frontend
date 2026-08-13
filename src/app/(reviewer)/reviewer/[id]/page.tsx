@@ -7,12 +7,29 @@
 // completeness breakdown, prior decisions, and the decision panel. A
 // reviewer assembling this from four screens will not read it all, and a
 // partial view is how a decision gets taken on incomplete information.
+//
+// ───────────────────────────────────────────────────────────────────────
+// A RECLAMATION IS NOT AN ORDINARY REVIEW, and the screen now says so.
+//
+// Previously the two looked identical — same green field, same heading. But
+// they are different acts:
+//
+//   In a first review, a member examines a dossier.
+//   In a reclamation, a member judges whether a COLLEAGUE'S REFUSAL was
+//   right — knowing the colleague cannot respond, and that this is the
+//   candidate's ONE chance. V1.3 §J bars the original decider from it for
+//   exactly that reason.
+//
+// A gold field, the scales in place of the round marker, and one sentence
+// stating what is being decided. ObjectionBrief still carries the substance;
+// this carries the weight.
+// ───────────────────────────────────────────────────────────────────────
 
 import { use } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import {
-  ArrowLeft, Clock, AlertTriangle, Hand, CheckCircle2,
+  ArrowLeft, Clock, AlertTriangle, Hand, CheckCircle2, Scale,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -25,6 +42,7 @@ import { RequirementChecklist } from "@/components/candidate/RequirementChecklis
 import { getExamination, reviewKeys } from "@/lib/api/review";
 import { STATUS_KIND, type ApplicationStatus } from "@/lib/api/applications";
 import { routes } from "@/lib/routes";
+import { Guilloche } from "@/components/public/patterns";
 
 export default function ExaminationPage({
   params,
@@ -72,20 +90,33 @@ export default function ExaminationPage({
   const decided = !["UNDER_REVIEW", "UNDER_FINAL_REVIEW", "UNDER_RECLAMATION"]
     .includes(e.status);
 
+  /* A reclamation is a different act from a first review: the member judges a
+     colleague's refusal, not a dossier — and the colleague cannot answer
+     back. The screen should not look identical. */
+  const contesting = e.status === "UNDER_RECLAMATION";
+
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       {/* ── header ── */}
       <section
         className="relative overflow-hidden rounded-2xl text-white shadow-[0_20px_50px_-30px_rgba(11,46,31,.8)]"
         style={{
-          background:
-            "radial-gradient(700px 340px at 90% -25%, rgba(255,215,0,.15), transparent 60%), linear-gradient(158deg, var(--green-900) 0%, #0e3d29 60%, #0b3524 100%)",
+          background: contesting
+            ? "radial-gradient(760px 360px at 88% -28%, rgba(255,215,0,.28), transparent 60%), linear-gradient(158deg, #3a2d08 0%, #2f2607 58%, #221b05 100%)"
+            : "radial-gradient(700px 340px at 90% -25%, rgba(255,215,0,.15), transparent 60%), linear-gradient(158deg, var(--green-900) 0%, #0e3d29 60%, #0b3524 100%)",
         }}
       >
         <div className="pointer-events-none absolute inset-0 opacity-[0.05]"
           style={{ backgroundImage: "repeating-linear-gradient(115deg,#fff 0 1px,transparent 1px 12px)" }}
           aria-hidden="true" />
-
+         <div className="pointer-events-none absolute inset-0 opacity-[0.05]"
+          style={{ backgroundImage: "repeating-linear-gradient(115deg,#fff 0 1px,transparent 1px 12px)" }}
+          aria-hidden="true" />
+        <Guilloche
+          className="pointer-events-none absolute -right-20 -top-24 h-[300px] w-[300px] text-white"
+          rings={34}
+          opacity={0.16}
+        />
         <div className="relative z-10 p-7">
           <button
             type="button"
@@ -97,7 +128,8 @@ export default function ExaminationPage({
 
           <div className="mt-4 flex flex-wrap items-start justify-between gap-5">
             <div>
-              <p className="text-[10.5px] font-bold uppercase tracking-[0.2em] text-[var(--gold-500)]">
+              <p className="flex items-center gap-2 text-[10.5px] font-bold uppercase tracking-[0.2em] text-[var(--gold-500)]">
+                {contesting && <Scale className="h-4 w-4 flex-none" />}
                 {e.currentRoundLabelFr}
               </p>
               <div className="mt-2.5 flex flex-wrap items-center gap-3">
@@ -132,6 +164,20 @@ export default function ExaminationPage({
               )}
             </div>
           </div>
+
+          {/* WHAT IS ACTUALLY BEING DECIDED, when it is not the obvious thing.
+              A member arriving at a reclamation is judging a colleague's
+              refusal, and the colleague cannot answer back. */}
+          {contesting && (
+            <p className="mt-6 max-w-2xl rounded-xl bg-black/25 px-5 py-3.5 text-[13px] leading-relaxed text-white/70">
+              Ce candidat conteste un rejet. Vous n&apos;examinez pas seulement
+              son dossier : vous vous prononcez sur le bien-fondé de la décision
+              rendue par un autre membre de la commission.{" "}
+              <b className="font-semibold text-white/90">
+                C&apos;est le seul recours dont dispose le candidat.
+              </b>
+            </p>
+          )}
         </div>
 
         <div className="flex h-1.5" aria-hidden="true">
