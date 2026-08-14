@@ -7,22 +7,30 @@
 // COMMISSION ALLEGES, and WHOSE CARD it concerns — rather than as a row in a
 // table with a menu.
 //
-// TWO PROPERTIES THIS SCREEN ENFORCES.
+// A DECISION EITHER WAY IS EXPLAINED. Executing takes an optional note;
+// DECLINING REQUIRES one, because a refusal the proposer cannot read is a
+// refusal they will simply repeat.
 //
-// 1. A DECISION EITHER WAY IS EXPLAINED. Executing takes an optional note;
-//    DECLINING REQUIRES one, because a refusal the proposer cannot read is a
-//    refusal they will simply repeat.
+// ───────────────────────────────────────────────────────────────────────
+// NO CLIENT-SIDE CHECK ON WHO PROPOSED THIS.
 //
-// 2. THE PROPOSER CANNOT BE THE EXECUTOR. The server refuses it, and this
-//    screen says so on the card rather than letting an administrator find out
-//    by clicking — two hands means two people, even when one person holds both
-//    roles.
+// An earlier version disabled the buttons when the viewing administrator was
+// the proposer. That rule is enforced in CardLifecycleService.executeRevocation
+// — "le retrait d'une carte exige deux intervenants distincts" — tested by
+// theProposerCannotExecuteTheirOwnProposal, and refused with a message that
+// explains itself.
+//
+// Duplicating it here would be a SECOND implementation of a rule about who may
+// end someone's accreditation, and the two could only ever drift apart. The
+// proposer is named on every card; an administrator recognises their own
+// proposal, and the server answers if they try anyway.
+// ───────────────────────────────────────────────────────────────────────
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
-  Gavel, ShieldX, ShieldAlert, Check, X, Clock, User, IdCard, Inbox,
+  Gavel, ShieldX, ShieldAlert, X, Clock, User, IdCard, Inbox,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -33,10 +41,9 @@ import {
 import { Field, FieldLabel, FieldDescription, FieldError } from "@/components/ui/field";
 import {
   getPendingProposals, executeRevocation, declineRevocation, lifecycleKeys,
-  type ProposalResponse,
+  type ProposalResponse, type CardStatusResponse,
 } from "@/lib/api/lifecycle";
 import { cardKeys } from "@/lib/api/cards";
-import { useAuthStore } from "@/lib/auth";
 import { ApiError } from "@/lib/api/client";
 
 function fmt(iso?: string | null) {
@@ -48,7 +55,6 @@ function fmt(iso?: string | null) {
 
 export default function RevocationQueuePage() {
   const qc = useQueryClient();
-  const me = useAuthStore((s) => s.user);
 
   const [deciding, setDeciding] = useState<
     { proposal: ProposalResponse; action: "execute" | "decline" } | null
@@ -74,7 +80,7 @@ export default function RevocationQueuePage() {
           aria-hidden="true" />
 
         <div className="relative z-10 flex flex-wrap items-end justify-between gap-6 p-7">
-          <div>
+          <div className="min-w-0 flex-1">
             <p className="text-[10.5px] font-bold uppercase tracking-[0.2em] text-[var(--gold-500)]">
               Retrait de cartes
             </p>
@@ -88,7 +94,7 @@ export default function RevocationQueuePage() {
             </p>
           </div>
 
-          <div className="rounded-xl border border-white/15 bg-black/20 px-5 py-3.5 text-center">
+          <div className="flex-none rounded-xl border border-white/15 bg-black/20 px-5 py-3.5 text-center">
             <p className="text-[26px] font-extrabold leading-none">
               {pending.isLoading ? "—" : (pending.data?.length ?? 0)}
             </p>
@@ -121,103 +127,88 @@ export default function RevocationQueuePage() {
         </div>
       ) : (
         <div className="space-y-4">
-          {pending.data?.map((proposal) => {
-            const ownProposal = me?.id === proposal.proposedById;
-            return (
-              <article key={proposal.id}
-                className="overflow-hidden rounded-2xl border-2 border-[var(--gold-500)]/50 bg-white">
+          {pending.data?.map((proposal) => (
+            <article key={proposal.id}
+              className="overflow-hidden rounded-2xl border-2 border-[var(--gold-500)]/50 bg-white">
 
-                {/* what is alleged */}
-                <div className="flex flex-wrap items-start gap-4 bg-[var(--gold-tint)] px-6 py-4">
-                  <span className="flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-[var(--gold-700)]">
-                    <Gavel className="h-5 w-5 text-white" />
+              {/* what is alleged */}
+              <div className="flex flex-wrap items-start gap-4 bg-[var(--gold-tint)] px-6 py-4">
+                <span className="flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-[var(--gold-700)]">
+                  <Gavel className="h-5 w-5 text-white" />
+                </span>
+
+                <div className="min-w-0 flex-1">
+                  <p className="flex flex-wrap items-center gap-2 text-[15px] font-extrabold text-[var(--gold-700)]">
+                    {proposal.groundLabelFr}
+                    {proposal.warrantsImmediateSuspension && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-[var(--red-tint)] px-2 py-0.5 text-[10px] font-bold text-[var(--red-700)]">
+                        <ShieldAlert className="h-2.5 w-2.5" />
+                        carte déjà suspendue
+                      </span>
+                    )}
+                  </p>
+                  {/* The proposer is NAMED — which is what lets an
+                      administrator recognise their own proposal without the
+                      client re-implementing the two-hand rule. */}
+                  <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12.5px] text-[var(--gold-700)]">
+                    <span className="flex items-center gap-1.5">
+                      <User className="h-3 w-3" />
+                      Proposé par <b className="font-semibold">{proposal.proposedByName}</b>
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <Clock className="h-3 w-3" />
+                      {fmt(proposal.proposedAt)}
+                    </span>
+                  </p>
+                </div>
+              </div>
+
+              {/* whose card */}
+              <div className="flex flex-wrap items-center gap-4 border-b border-[var(--line)] px-6 py-3.5">
+                <IdCard className="h-4 w-4 flex-none text-[var(--green-600)]" />
+                <p className="min-w-0 flex-1 text-[13.5px]">
+                  <b className="font-bold text-[var(--green-900)]">
+                    {proposal.holderFullName}
+                  </b>
+                  <span className="ml-2 font-mono text-[11.5px] text-[var(--muted-fg)]">
+                    {proposal.cardNumber}
                   </span>
+                </p>
+                {proposal.cardStatusLabelFr && (
+                  <span className="flex-none rounded-full bg-[#eef1ef] px-2.5 py-1 text-[10.5px] font-bold text-[var(--slate)]">
+                    {proposal.cardStatusLabelFr}
+                  </span>
+                )}
+              </div>
 
-                  <div className="min-w-0 flex-1">
-                    <p className="flex flex-wrap items-center gap-2 text-[15px] font-extrabold text-[var(--gold-700)]">
-                      {proposal.groundLabelFr}
-                      {proposal.warrantsImmediateSuspension && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-[var(--red-tint)] px-2 py-0.5 text-[10px] font-bold text-[var(--red-700)]">
-                          <ShieldAlert className="h-2.5 w-2.5" />
-                          carte déjà suspendue
-                        </span>
-                      )}
-                    </p>
-                    <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12.5px] text-[var(--gold-700)]">
-                      <span className="flex items-center gap-1.5">
-                        <User className="h-3 w-3" />
-                        Proposé par <b className="font-semibold">{proposal.proposedByName}</b>
-                      </span>
-                      <span className="flex items-center gap-1.5">
-                        <Clock className="h-3 w-3" />
-                        {fmt(proposal.proposedAt)}
-                      </span>
-                    </p>
-                  </div>
-                </div>
+              {/* the proposer's own words */}
+              <div className="px-6 py-4">
+                <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--green-700)]">
+                  Exposé des faits
+                </p>
+                <blockquote className="mt-2 whitespace-pre-wrap rounded-r-xl border-l-[3px] border-[var(--gold-700)] bg-[#fbfcfb] px-4 py-3 text-[13.5px] leading-[1.7] text-[var(--ink)]">
+                  {proposal.statement}
+                </blockquote>
+              </div>
 
-                {/* whose card */}
-                <div className="flex flex-wrap items-center gap-4 border-b border-[var(--line)] px-6 py-3.5">
-                  <IdCard className="h-4 w-4 flex-none text-[var(--green-600)]" />
-                  <p className="min-w-0 flex-1 text-[13.5px]">
-                    <b className="font-bold text-[var(--green-900)]">
-                      {proposal.holderFullName}
-                    </b>
-                    <span className="ml-2 font-mono text-[11.5px] text-[var(--muted-fg)]">
-                      {proposal.cardNumber}
-                    </span>
-                  </p>
-                  {proposal.cardStatusLabelFr && (
-                    <span className="flex-none rounded-full bg-[#eef1ef] px-2.5 py-1 text-[10.5px] font-bold text-[var(--slate)]">
-                      {proposal.cardStatusLabelFr}
-                    </span>
-                  )}
-                </div>
-
-                {/* the proposer's own words */}
-                <div className="px-6 py-4">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--green-700)]">
-                    Exposé des faits
-                  </p>
-                  <blockquote className="mt-2 whitespace-pre-wrap rounded-r-xl border-l-[3px] border-[var(--gold-700)] bg-[#fbfcfb] px-4 py-3 text-[13.5px] leading-[1.7] text-[var(--ink)]">
-                    {proposal.statement}
-                  </blockquote>
-                </div>
-
-                {/* the decision */}
-                <div className="flex flex-wrap items-center gap-3 border-t border-[var(--line)] bg-[#fbfcfb] px-6 py-4">
-                  {ownProposal ? (
-                    // Said HERE rather than discovered by clicking: the server
-                    // refuses it, and an administrator should know why before
-                    // they try.
-                    <p className="flex flex-1 items-start gap-2 text-[12.5px] leading-relaxed text-[var(--red-700)]">
-                      <ShieldAlert className="mt-0.5 h-3.5 w-3.5 flex-none" />
-                      Vous êtes l&apos;auteur de cette proposition. Le retrait
-                      d&apos;une carte exige deux intervenants distincts : un
-                      autre administrateur doit statuer.
-                    </p>
-                  ) : (
-                    <>
-                      <p className="flex-1 text-[12.5px] leading-relaxed text-[var(--slate)]">
-                        Le retrait est <b>définitif</b>. Le titulaire devra
-                        déposer une nouvelle candidature lors d&apos;une
-                        prochaine session.
-                      </p>
-                      <Button size="sm" variant="outline"
-                        onClick={() => setDeciding({ proposal, action: "decline" })}>
-                        <X className="h-3.5 w-3.5" /> Refuser
-                      </Button>
-                      <Button size="sm"
-                        className="bg-[var(--red-500)] text-white hover:bg-[var(--red-700)]"
-                        onClick={() => setDeciding({ proposal, action: "execute" })}>
-                        <ShieldX className="h-3.5 w-3.5" /> Prononcer le retrait
-                      </Button>
-                    </>
-                  )}
-                </div>
-              </article>
-            );
-          })}
+              {/* the decision */}
+              <div className="flex flex-wrap items-center gap-3 border-t border-[var(--line)] bg-[#fbfcfb] px-6 py-4">
+                <p className="min-w-0 flex-1 text-[12.5px] leading-relaxed text-[var(--slate)]">
+                  Le retrait est <b>définitif</b>. Le titulaire devra déposer
+                  une nouvelle candidature lors d&apos;une prochaine session.
+                </p>
+                <Button size="sm" variant="outline"
+                  onClick={() => setDeciding({ proposal, action: "decline" })}>
+                  <X className="h-3.5 w-3.5" /> Refuser
+                </Button>
+                <Button size="sm"
+                  className="bg-[var(--red-500)] text-white hover:bg-[var(--red-700)]"
+                  onClick={() => setDeciding({ proposal, action: "execute" })}>
+                  <ShieldX className="h-3.5 w-3.5" /> Prononcer le retrait
+                </Button>
+              </div>
+            </article>
+          ))}
         </div>
       )}
 
@@ -251,7 +242,10 @@ function DecisionDialog({
 
   const close = () => { setNote(""); setError(undefined); onClose(); };
 
-  const decide = useMutation({
+  /* The two acts return different shapes — executing gives the CARD's new
+     status, declining gives the PROPOSAL. The union is honest about that;
+     onSuccess uses neither payload. */
+  const decide = useMutation<CardStatusResponse | ProposalResponse, unknown, void>({
     mutationFn: () =>
       executing
         ? executeRevocation(deciding!.proposal.id, note.trim() || undefined)
@@ -267,6 +261,9 @@ function DecisionDialog({
       onDone();
     },
     onError: (e) =>
+      // The server refuses a self-execution here, with a message naming the
+      // rule. That is where the two-hand requirement is enforced, and the
+      // administrator reads it in full.
       setError(e instanceof ApiError ? (e.problem.detail ?? e.message) : "Réessayez."),
   });
 

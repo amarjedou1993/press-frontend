@@ -295,7 +295,7 @@ export function SubmitButton({ children, loading }: { children: ReactNode; loadi
     <button
       type="submit"
       disabled={loading}
-      className="group relative inline-flex h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-xl text-[14px] font-extrabold text-white
+      className="group relative inline-flex h-10 w-full items-center justify-center gap-2 overflow-hidden rounded-md text-[13px] font-extrabold text-white
                  shadow-[0_12px_28px_-14px_rgba(0,107,60,.95)] transition-all
                  hover:-translate-y-px hover:shadow-[0_16px_34px_-14px_rgba(0,107,60,1)]
                  disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0

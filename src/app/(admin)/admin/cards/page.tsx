@@ -361,7 +361,7 @@ export default function AdminCardsPage() {
             />
           </div>
 
-          <Button size="sm" disabled={selected.size === 0}
+          <Button size="xs" disabled={selected.size === 0}
             onClick={() => setConfirmIssue(true)}>
             <IdCard className="h-3.5 w-3.5" />
             Éditer {selected.size > 0 && `(${selected.size})`}
@@ -458,7 +458,7 @@ export default function AdminCardsPage() {
             </p>
           </div>
 
-          <Button size="sm" variant="outline"
+          <Button size="xs" variant="outline"
             disabled={exportRegistry.isPending}
             onClick={() => exportRegistry.mutate()}>
             <FileSpreadsheet className="h-3.5 w-3.5" />
@@ -514,7 +514,7 @@ export default function AdminCardsPage() {
             </select>
           </label>
 
-          <Button size="sm"
+          <Button size="xs"
             disabled={selectedCards.size === 0 || printBatch.isPending}
             onClick={() => printBatch.mutate()}>
             {printBatch.isPending

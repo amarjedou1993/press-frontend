@@ -112,10 +112,14 @@ export default function ExaminationPage({
          <div className="pointer-events-none absolute inset-0 opacity-[0.05]"
           style={{ backgroundImage: "repeating-linear-gradient(115deg,#fff 0 1px,transparent 1px 12px)" }}
           aria-hidden="true" />
-        <Guilloche
+        {/* <Guilloche
           className="pointer-events-none absolute -right-20 -top-24 h-[300px] w-[300px] text-white"
           rings={34}
           opacity={0.16}
+        /> */}
+         <Guilloche
+          className="pointer-events-none absolute -right-20 -top-24 h-[300px] w-[300px] text-white opacity-[0.06]"
+          rings={34}
         />
         <div className="relative z-10 p-7">
           <button

@@ -8,40 +8,42 @@
 // that cycle determines what everything else means: forty dossiers awaiting
 // review is normal in the examination phase and alarming on its last day.
 //
-// So the phase rail is the hero, not a status pill in the corner. It is the
-// institutional clock the rest of the system runs on, and it was previously
-// the one thing this page did not show.
+// Below the rail, everything is ordered by CONSEQUENCE rather than by
+// category: a withdrawal proposal outranks a card to issue, which outranks a
+// count.
 //
-// Below it, everything is ordered by CONSEQUENCE rather than by category:
-// a withdrawal proposal outranks a card to issue, which outranks a count.
+// ───────────────────────────────────────────────────────────────────────
+// AND THE REGISTER NOW REPORTS THE CARD POPULATION, not only this cycle's.
+//
+// "How many accredited journalists are there?" is the question a minister
+// asks, and nothing in the admin space answered it. The session results
+// screen reports a CYCLE; the public register lists valid holders; neither
+// tells the Authority how many cards are in force today, nor how many lapse
+// this quarter.
+//
+// All three figures are arithmetic over data the page already fetches — no
+// endpoint, no query. The one that earns its place most is EXPIRENT BIENTÔT:
+// forty cards lapsing in March means a session should open in January, and
+// knowing that in December is the difference between a planned cycle and a
+// scramble.
+// ───────────────────────────────────────────────────────────────────────
 
 import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import {
   Inbox, Gavel, PenLine, Scale, IdCard, Users, ArrowRight, ArrowUpRight,
-  AlertTriangle, CalendarPlus, ShieldX,
+  AlertTriangle, CalendarPlus, ShieldX, CalendarClock, BadgeCheck,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { listSessions, sessionKeys, PHASE_LABELS, SessionResponse } from "@/lib/api/sessions";
+import {
+  listSessions, sessionKeys, PHASE_LABELS, type SessionResponse,
+} from "@/lib/api/sessions";
 import { listReviewers, reviewerKeys } from "@/lib/api/admin";
 import { getIssuable, getRegistry, cardKeys } from "@/lib/api/cards";
 import { getPendingProposals, lifecycleKeys } from "@/lib/api/lifecycle";
 import { routes } from "@/lib/routes";
 
-/* ── the cycle, in order ── */
-// const PHASES = [
-//   { key: "RECEIVING",   label: "Réception",   Icon: Inbox,   endField: "receivingEnd" },
-//   { key: "REVIEW",      label: "Examen",      Icon: Gavel,   endField: "reviewEnd" },
-//   { key: "CORRECTION",  label: "Correction",  Icon: PenLine, endField: "correctionEnd" },
-//   { key: "RECLAMATION", label: "Réclamation", Icon: Scale,   endField: "reclamationEnd" },
-// ] as const;
-
-/* ── the cycle, in order ──
-   Each phase names how to read its own end date. A function rather than a
-   field-name string: the string would have to be cast back to a key of
-   SessionResponse at every use, and a cast is exactly what stops the compiler
-   telling you when a field is renamed. */
 const PHASES = [
   { key: "RECEIVING",   label: "Réception",   Icon: Inbox,
     endOf: (s: SessionResponse) => s.receivingEnd },
@@ -52,6 +54,9 @@ const PHASES = [
   { key: "RECLAMATION", label: "Réclamation", Icon: Scale,
     endOf: (s: SessionResponse) => s.reclamationEnd },
 ] as const;
+
+/** Cards lapsing inside this window need a cycle already being planned. */
+const LAPSE_HORIZON_DAYS = 90;
 
 function daysUntil(iso?: string | null): number | null {
   if (!iso) return null;
@@ -91,10 +96,6 @@ export default function AdminHomePage() {
 
   const phaseIndex = active ? PHASES.findIndex((p) => p.key === active.status) : -1;
   const currentPhase = phaseIndex >= 0 ? PHASES[phaseIndex] : null;
-  // const phaseEndsIn = currentPhase && active
-  //   ? daysUntil((active as Record<string, unknown>)[currentPhase.endField] as string)
-  //   : null;
-
   const phaseEndsIn = currentPhase && active
     ? daysUntil(currentPhase.endOf(active))
     : null;
@@ -102,20 +103,45 @@ export default function AdminHomePage() {
   const activeReviewers = reviewers.data?.filter((r) => r.enabled).length ?? 0;
   const ready = issuable.data?.filter((i) => !i.blockerFr) ?? [];
   const blocked = issuable.data?.filter((i) => i.blockerFr) ?? [];
-  const issued = registry.data?.length ?? 0;
-  const revoked = registry.data?.filter((c) => c.status === "REVOKED").length ?? 0;
   const pending = proposals.data ?? [];
   const suspendedPending = pending.filter((p) => p.cardStatus === "SUSPENDED").length;
+
+  /* ══ the card population, across every session ══ */
+  const population = useMemo(() => {
+    const cards = registry.data ?? [];
+
+    // In force TODAY. `expired` is derived server-side from expires_at, so a
+    // lapsed card can never count as valid because a job failed to run.
+    const inCirculation = cards.filter(
+      (c) => c.status === "VALID" && !c.expired).length;
+
+    // The planning figure: cards lapsing inside the horizon.
+    const lapsingSoon = cards.filter((c) => {
+      if (c.status !== "VALID" || c.expired) return false;
+      const days = daysUntil(c.expiresAt);
+      return days !== null && days >= 0 && days <= LAPSE_HORIZON_DAYS;
+    }).length;
+
+    const revoked = cards.filter((c) => c.status === "REVOKED").length;
+    const suspended = cards.filter((c) => c.status === "SUSPENDED").length;
+    const expired = cards.filter((c) => c.expired).length;
+
+    return {
+      total: cards.length,
+      inCirculation,
+      lapsingSoon,
+      revoked,
+      suspended,
+      expired,
+      withheld: revoked + suspended,
+    };
+  }, [registry.data]);
 
   return (
     <div className="mx-auto max-w-5xl space-y-7 pb-4">
 
       {/* ══════════════════════════════════════════════════════════
           THE CYCLE — the signature of this page.
-
-          A rail rather than a badge: the four phases are a sequence with
-          real boundaries, and an administrator's first question is where
-          along it they stand and how long is left.
           ══════════════════════════════════════════════════════════ */}
       <section
         className="relative overflow-hidden rounded-[20px] text-white shadow-[0_24px_60px_-36px_rgba(11,46,31,.9)]"
@@ -139,7 +165,6 @@ export default function AdminHomePage() {
             </div>
           ) : active ? (
             <>
-              {/* the phase, and the number that matters most about it */}
               <div className="mt-4 flex flex-wrap items-end justify-between gap-6">
                 <div>
                   <h2 className="text-[30px] font-extrabold leading-none tracking-tight">
@@ -173,7 +198,6 @@ export default function AdminHomePage() {
                   const now = i === phaseIndex;
                   return (
                     <li key={phase.key}>
-                      {/* the measure — filled, current, or ahead */}
                       <div className="h-[3px] rounded-full"
                         style={{
                           background: done ? "var(--green-500)"
@@ -193,10 +217,6 @@ export default function AdminHomePage() {
                             }}>
                             {phase.label}
                           </span>
-                          {/* <span className="block font-mono text-[10.5px]"
-                            style={{ color: now ? "rgba(255,255,255,.6)" : "rgba(255,255,255,.3)" }}>
-                            → {shortFr((active as Record<string, unknown>)[phase.endField] as string)}
-                          </span> */}
                           <span className="block font-mono text-[10.5px]"
                             style={{ color: now ? "rgba(255,255,255,.6)" : "rgba(255,255,255,.3)" }}>
                             → {shortFr(phase.endOf(active))}
@@ -209,11 +229,6 @@ export default function AdminHomePage() {
               </ol>
 
               <div className="mt-6 flex justify-end pb-6">
-                {/* <button type="button"
-                  onClick={() => router.push(`${routes.admin.sessions}/${active.id}`)}
-                  className="inline-flex items-center gap-1.5 text-[12.5px] font-bold text-[var(--gold-500)] transition-opacity hover:opacity-80">
-                  Piloter la session <ArrowUpRight className="h-3.5 w-3.5" />
-                </button> */}
                 <button type="button"
                   onClick={() => router.push(routes.admin.sessionResults(active.id))}
                   className="inline-flex items-center gap-1.5 text-[12.5px] font-bold text-[var(--gold-500)] transition-opacity hover:opacity-80">
@@ -252,11 +267,6 @@ export default function AdminHomePage() {
 
       {/* ══════════════════════════════════════════════════════════
           WHAT NEEDS A DECISION — ordered by consequence.
-
-          A withdrawal proposal first: a journalist's accreditation hangs on
-          it, and a card may already be suspended while it waits. Cards to
-          issue second: someone accepted is waiting for their credential.
-          Blocked dossiers last: they need a fix elsewhere.
           ══════════════════════════════════════════════════════════ */}
       {(pending.length > 0 || ready.length > 0 || blocked.length > 0) && (
         <section className="space-y-2.5">
@@ -307,11 +317,73 @@ export default function AdminHomePage() {
       )}
 
       {/* ══════════════════════════════════════════════════════════
-          THE REGISTER — a measured row, not four boxes.
+          THE CARD POPULATION — the whole corps, not this cycle.
 
-          Set as figures with small labels and hairline dividers: this is a
-          register of what the Authority has issued, and it should read like
-          one rather than like a set of tiles.
+          "How many accredited journalists are there?" had no answer
+          anywhere in the system until now.
+          ══════════════════════════════════════════════════════════ */}
+      <section>
+        <h3 className="px-1 pb-2.5 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--muted-fg)]">
+          Cartes en circulation
+        </h3>
+
+        <div className="grid grid-cols-3 divide-x divide-[var(--line)] overflow-hidden rounded-[18px] border border-[var(--line)] bg-white">
+          <Figure
+            value={registry.isLoading ? null : population.inCirculation}
+            label="En circulation"
+            note={population.expired > 0
+              ? `${population.expired} expirée${population.expired > 1 ? "s" : ""}`
+              : "valides à ce jour"}
+            Icon={BadgeCheck}
+            onClick={() => router.push(routes.admin.cards)}
+          />
+
+          {/* THE PLANNING FIGURE. Forty cards lapsing in March means a
+              session should open in January — and knowing that in December is
+              the difference between a planned cycle and a scramble. */}
+          <Figure
+            value={registry.isLoading ? null : population.lapsingSoon}
+            label="Expirent sous 90 j"
+            note={population.lapsingSoon > 0
+              ? "prévoir une session"
+              : "aucune échéance proche"}
+            warn={population.lapsingSoon > 0}
+            Icon={CalendarClock}
+            onClick={() => router.push(routes.admin.cards)}
+          />
+
+          <Figure
+            value={registry.isLoading ? null : population.withheld}
+            label="Retirées / suspendues"
+            note={population.withheld > 0
+              ? `${population.revoked} retirée${population.revoked > 1 ? "s" : ""} · ${population.suspended} suspendue${population.suspended > 1 ? "s" : ""}`
+              : "aucune"}
+            urgent={population.withheld > 0}
+            Icon={ShieldX}
+            onClick={() => router.push(routes.admin.cards)}
+          />
+        </div>
+
+        {/* Said in a sentence as well as a number: an administrator planning
+            the year's calendar should not have to infer the consequence. */}
+        {!registry.isLoading && population.lapsingSoon > 0 && !active && !planned && (
+          <div className="mt-2.5 flex items-start gap-2 rounded-xl bg-[var(--gold-tint)] px-4 py-3 text-[12.5px] leading-relaxed text-[var(--gold-700)]">
+            <CalendarClock className="mt-0.5 h-3.5 w-3.5 flex-none" />
+            <p>
+              <b>
+                {population.lapsingSoon} carte{population.lapsingSoon > 1 ? "s" : ""}{" "}
+                arrive{population.lapsingSoon > 1 ? "nt" : ""} à échéance dans
+                les trois mois
+              </b>{" "}
+              et aucune session n&apos;est ouverte ni programmée. Leurs
+              titulaires devront candidater à nouveau pour rester accrédités.
+            </p>
+          </div>
+        )}
+      </section>
+
+      {/* ══════════════════════════════════════════════════════════
+          THE REGISTER — a measured row, not four boxes.
           ══════════════════════════════════════════════════════════ */}
       <section>
         <h3 className="px-1 pb-2.5 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--muted-fg)]">
@@ -320,17 +392,15 @@ export default function AdminHomePage() {
 
         <div className="grid grid-cols-2 divide-y divide-[var(--line)] overflow-hidden rounded-[18px] border border-[var(--line)] bg-white sm:grid-cols-4 sm:divide-x sm:divide-y-0">
           <Figure
-            value={registry.isLoading ? null : issued}
+            value={registry.isLoading ? null : population.total}
             label="Cartes éditées"
-            note={ready.length > 0 ? `+${ready.length} en attente` : undefined}
+            note={ready.length > 0 ? `+${ready.length} en attente` : "depuis l'origine"}
             onClick={() => router.push(routes.admin.cards)}
           />
           <Figure
             value={proposals.isLoading ? null : pending.length}
             label="Retraits proposés"
-            note={revoked > 0
-              ? `${revoked} carte${revoked > 1 ? "s" : ""} retirée${revoked > 1 ? "s" : ""}`
-              : undefined}
+            note={pending.length > 0 ? "en attente de décision" : "aucun en cours"}
             urgent={pending.length > 0}
             Icon={ShieldX}
             onClick={() => router.push(routes.admin.revocations)}
@@ -346,7 +416,7 @@ export default function AdminHomePage() {
           <Figure
             value={sessions.isLoading ? null : (sessions.data?.length ?? 0)}
             label="Sessions"
-            note={active ? "1 en cours" : planned ? "1 programmée" : undefined}
+            note={active ? "1 en cours" : planned ? "1 programmée" : "aucune ouverte"}
             onClick={() => router.push(routes.admin.sessions)}
           />
         </div>

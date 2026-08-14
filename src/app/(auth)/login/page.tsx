@@ -93,12 +93,12 @@ function LoginForm({ readsQuery = false }: { readsQuery?: boolean }) {
       subtitle="Accédez à votre espace d'accréditation."
       footer={
         <>
-          Pas encore de compte ?{" "}
+          <span className="text-[13px]">Pas encore de compte ?</span>{" "}
           <Link
             href={routes.auth.register}
-            className="font-bold text-[var(--green-700)] underline underline-offset-2"
+            className="font-bold text-[var(--green-700)] text-[13px] underline underline-offset-2"
           >
-            Créer un compte candidat
+            Créer un compte
           </Link>
         </>
       }

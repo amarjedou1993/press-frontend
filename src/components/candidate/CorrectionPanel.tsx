@@ -243,7 +243,7 @@ export function CorrectionPanel({ applicationId }: { applicationId: number }) {
                   <Check className="h-4 w-4 flex-none" />
                   Toutes les corrections ont été déposées.
                 </p>
-                <Button size="lg" onClick={() => setConfirmResubmit(true)}>
+                <Button size="sm" onClick={() => setConfirmResubmit(true)}>
                   <Send className="h-4 w-4" />
                   Renvoyer à la commission
                 </Button>

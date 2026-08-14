@@ -357,7 +357,7 @@ export function ObjectionPanel({
             dossier. Relisez votre exposé avant de l&apos;envoyer.
           </p>
 
-          <Button size="lg" disabled={!ready || submit.isPending}
+          <Button size="sm" disabled={!ready || submit.isPending}
             onClick={() => setConfirming(true)}>
             <Send className="h-4 w-4" />
             Déposer ma réclamation

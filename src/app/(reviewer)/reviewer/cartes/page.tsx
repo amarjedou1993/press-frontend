@@ -41,6 +41,7 @@ import {
   type ProposalResponse,
 } from "@/lib/api/lifecycle";
 import { ApiError } from "@/lib/api/client";
+import { Guilloche } from "@/components/public/patterns";
 
 type Tab = "register" | "mine";
 
@@ -148,6 +149,11 @@ export default function ReviewerCardsPage() {
         <div className="pointer-events-none absolute inset-0 opacity-[0.05]"
           style={{ backgroundImage: "repeating-linear-gradient(115deg,#fff 0 1px,transparent 1px 12px)" }}
           aria-hidden="true" />
+
+           <Guilloche
+          className="pointer-events-none absolute -right-20 -top-24 h-[300px] w-[300px] text-white opacity-[0.06]"
+          rings={34}
+        />
 
         <div className="relative z-10 flex flex-wrap items-end justify-between gap-6 p-7">
           <div>
@@ -447,7 +453,7 @@ function CardRow({
           {card.proposedByMe ? "Votre proposition est en cours" : card.cannotProposeReasonFr}
         </span>
       ) : (
-        <Button size="sm" variant="outline"
+        <Button size="xs" variant="outline"
           className="flex-none border-[var(--gold-500)]/50 text-[var(--gold-700)] hover:bg-[var(--gold-tint)]"
           onClick={onPropose}>
           <Gavel className="h-3.5 w-3.5" />
@@ -492,7 +498,7 @@ function ProposalRow({
         </span>
 
         {open && (
-          <Button size="sm" variant="outline" className="flex-none"
+          <Button size="xs" variant="outline" className="flex-none"
             onClick={onWithdraw}>
             <Undo2 className="h-3.5 w-3.5" /> Retirer
           </Button>

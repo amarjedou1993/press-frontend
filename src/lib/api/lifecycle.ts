@@ -1,11 +1,3 @@
-// src/lib/api/lifecycle.ts
-// Suspension, revocation proposals, and a card's status history.
-//
-// TWO HANDS, TWO SURFACES. The commission proposes through /api/reviewer/…;
-// the Authority decides through /api/admin/…. They are separate here for the
-// same reason they are separate on the backend: a single module mixing them
-// invites a component to call the wrong one.
-
 import { apiFetch } from "./client";
 
 /* ══ shared shapes ══ */

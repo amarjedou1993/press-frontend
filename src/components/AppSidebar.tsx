@@ -129,7 +129,7 @@ export function AppSidebar({
                         aria-disabled={item.disabled}
                         onClick={item.disabled ? undefined : () => router.push(item.href)}
                         className={[
-                          "relative h-10 rounded-lg text-[13.5px] font-semibold transition-all",
+                          "relative h-10 rounded-lg text-[12.5px] font-semibold transition-all",
                           item.active
                             ? "bg-white/[0.14] text-white hover:bg-white/[0.16] " +
                               "before:absolute before:left-0 before:top-1/2 before:h-5 before:w-[3px] " +
