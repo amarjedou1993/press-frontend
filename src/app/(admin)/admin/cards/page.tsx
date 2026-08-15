@@ -43,6 +43,7 @@ import { useAuthStore } from "@/lib/auth";
 import { ApiError } from "@/lib/api/client";
 import { CardHistoryDialog } from "@/components/card/CardHistoryDialog";
 import { CardStatusActions } from "@/components/card/CardStatusActions";
+import { OfficialSeal } from "@/components/public/patterns";
 
 const STATUS_TONE: Record<string, { bg: string; fg: string }> = {
   VALID:     { bg: "var(--green-tint)", fg: "var(--green-700)" },

@@ -156,7 +156,9 @@ export default function AdminHomePage() {
 
         <div className="relative z-10 px-7 pt-7">
           <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--gold-500)]">
-            Haute Autorité de la Presse et de l&apos;Audiovisuel
+            {/* Haute Autorité de la Presse et de l&apos;Audiovisuel */}
+            Ministère de la Culture, 
+            des Arts, de la Communication  <br />et des Relations avec le Parlement
           </p>
 
           {sessions.isLoading ? (

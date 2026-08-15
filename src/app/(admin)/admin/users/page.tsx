@@ -294,7 +294,8 @@ export default function ReviewersPage() {
         onOpenChange={(o) => { setDialogOpen(o); if (!o) setEditing(null); }}
         reviewer={editing}
         onSubmit={(v) => (editing ? update.mutate(v) : create.mutate(v))}
-        pending={create.isPending || update.isPending}
+        submitting={create.isPending || update.isPending}
+        // pending={create.isPending || update.isPending}
       />
 
       <AlertDialog open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)}>
