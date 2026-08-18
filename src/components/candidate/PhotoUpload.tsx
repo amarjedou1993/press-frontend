@@ -1,20 +1,14 @@
 "use client";
 // src/components/candidate/PhotoUpload.tsx
-// The identity photograph.
 //
-// FIXES IN THIS VERSION
-//  · The photo now DISPLAYS. <img src="/api/me/photo"> could never work:
-//    a plain browser request carries no Authorization header, so the
-//    endpoint answered 401 and the image failed silently. It is fetched as
-//    an authenticated blob instead (useAuthenticatedFile).
-//  · A DELETE action exists. There was no way to remove a photo once added.
-//  · Actions are ICON buttons — add, replace, delete — rather than a lone
-//    "Ajouter".
-//  · When no profile row exists yet, the control explains that identity must
-//    be saved first and DISABLES itself, instead of letting the upload fail
-//    with a confusing server error.
+// The photograph that will be printed on the card.
+//
+// Every check runs BEFORE anything crosses the wire — size, format, real
+// pixel dimensions, aspect ratio. A candidate on a weak connection should not
+// upload four megabytes to be told the picture is landscape.
 
 import { useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -63,7 +57,8 @@ function inspect(file: File): Promise<{ width: number; height: number }> {
     };
     img.onerror = () => {
       URL.revokeObjectURL(url);
-      reject(new Error("Ce fichier n'est pas une image valide."));
+      // A CODE, not a sentence — the caller translates it.
+      reject(new Error("notAnImage"));
     };
     img.src = url;
   });
@@ -75,6 +70,7 @@ export function PhotoUpload({
 }: {
   profileExists?: boolean;
 }) {
+  const t = useTranslations("photo");
   const qc = useQueryClient();
   const token = useAuthStore((s) => s.token);
   const input = useRef<HTMLInputElement>(null);
@@ -110,22 +106,26 @@ export function PhotoUpload({
         body: form,
       });
       if (!res.ok) {
-        let message = "Le téléversement a échoué.";
+        // The SERVER's own message if it sent one — already in the caller's
+        // language. Otherwise our key, translated below.
+        let message = "uploadFailed";
         try {
           const body = await res.json();
           message = body.detail ?? body.message ?? message;
-        } catch { /* keep default */ }
+        } catch { /* keep the key */ }
         throw new Error(message);
       }
       return res.json();
     },
     onSuccess: () => {
       refresh();
-      toast.success("Photo enregistrée", {
-        description: "Elle figurera sur votre carte de presse.",
-      });
+      toast.success(t("savedTitle"), { description: t("savedBody") });
     },
-    onError: (e) => setError(e instanceof Error ? e.message : "Échec du téléversement."),
+    onError: (e) => {
+      const raw = e instanceof Error ? e.message : "uploadFailed";
+      // A key resolves; a server sentence passes through unchanged.
+      setError(t.has(raw) ? t(raw) : raw);
+    },
   });
 
   const remove = useMutation({
@@ -134,18 +134,16 @@ export function PhotoUpload({
         method: "DELETE",
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
-      if (!res.ok) throw new Error("La suppression a échoué.");
+      if (!res.ok) throw new Error("deleteFailed");
     },
     onSuccess: () => {
       refresh();
       setConfirmDelete(false);
-      toast.success("Photo supprimée", {
-        description: "Ajoutez-en une nouvelle avant de soumettre votre dossier.",
-      });
+      toast.success(t("deletedTitle"), { description: t("deletedBody") });
     },
     onError: () => {
       setConfirmDelete(false);
-      toast.error("Suppression impossible", { description: "Réessayez." });
+      toast.error(t("deleteFailedTitle"), { description: t("tryAgain") });
     },
   });
 
@@ -153,38 +151,40 @@ export function PhotoUpload({
     setError(undefined);
     if (!file) return;
 
-    if (file.size === 0) {
-      setError("Ce fichier est vide (0 octet).");
-      return;
-    }
+    if (file.size === 0) { setError(t("emptyFile")); return; }
     if (!["image/jpeg", "image/png"].includes(file.type)) {
-      setError("Utilisez une photo JPEG ou PNG.");
+      setError(t("wrongFormat"));
       return;
     }
     if (file.size > MAX_MB * 1024 * 1024) {
-      setError(`La photo dépasse ${MAX_MB} Mo.`);
+      setError(t("tooLarge", { max: MAX_MB }));
       return;
     }
 
     try {
       const { width, height } = await inspect(file);
       if (width < MIN_W || height < MIN_H) {
-        setError(`Photo trop petite (${width}×${height}). Minimum ${MIN_W}×${MIN_H} pixels.`);
+        // The actual dimensions are named: "too small" alone leaves someone
+        // guessing whether their picture is close or hopeless.
+        setError(t("tooSmall", { width, height, minW: MIN_W, minH: MIN_H }));
         return;
       }
       const ratio = width / height;
       if (ratio < MIN_RATIO || ratio > MAX_RATIO) {
-        setError("Format portrait requis (type photo d'identité, environ 3:4). Recadrez-la.");
+        setError(t("wrongRatio"));
         return;
       }
       upload.mutate(file);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Image illisible.");
+      const raw = e instanceof Error ? e.message : "unreadable";
+      setError(t.has(raw) ? t(raw) : raw);
     }
   }
 
   const busy = upload.isPending || remove.isPending || photoLoading;
   const has = status.data?.hasPhoto ?? false;
+
+  const RULES = ["ratio", "resolution", "background", "face", "recent"] as const;
 
   return (
     <div className="rounded-2xl border border-[var(--line)] bg-white p-6">
@@ -194,15 +194,13 @@ export function PhotoUpload({
         </span>
         <div className="min-w-0 flex-1">
           <p className="text-[14px] font-extrabold text-[var(--green-900)]">
-            Photographie d&apos;identité
+            {t("title")}
           </p>
-          <p className="text-[12px] text-[var(--slate)]">
-            Elle figurera sur votre carte de presse
-          </p>
+          <p className="text-[12px] text-[var(--slate)]">{t("subtitle")}</p>
         </div>
         {has && (
           <span className="inline-flex flex-none items-center gap-1 rounded-full bg-[var(--green-tint)] px-2.5 py-1 text-[10.5px] font-bold text-[var(--green-700)]">
-            <Check className="h-3 w-3" /> Enregistrée
+            <Check className="h-3 w-3" /> {t("saved")}
           </span>
         )}
       </div>
@@ -211,8 +209,7 @@ export function PhotoUpload({
       {!profileExists && (
         <p className="mt-4 flex items-start gap-2 rounded-lg bg-[var(--gold-tint)] px-3.5 py-2.5 text-[12.5px] leading-relaxed text-[var(--gold-700)]">
           <Lock className="mt-0.5 h-3.5 w-3.5 flex-none" />
-          Enregistrez d&apos;abord votre identité ci-dessous. La photographie
-          pourra ensuite être ajoutée.
+          {t("identityFirst")}
         </p>
       )}
 
@@ -228,13 +225,13 @@ export function PhotoUpload({
           >
             {photoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={photoUrl} alt="Votre photographie d'identité"
+              <img src={photoUrl} alt={t("altPhoto")}
                 className="h-full w-full object-cover" />
             ) : (
               <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-[var(--muted-fg)]">
                 <Camera className="h-7 w-7 opacity-40" />
                 <span className="px-2 text-center text-[10.5px] font-semibold">
-                  Aucune photo
+                  {t("noPhoto")}
                 </span>
               </div>
             )}
@@ -251,8 +248,8 @@ export function PhotoUpload({
               type="button"
               onClick={() => input.current?.click()}
               disabled={busy || !profileExists}
-              title={has ? "Remplacer la photo" : "Ajouter une photo"}
-              aria-label={has ? "Remplacer la photo" : "Ajouter une photo"}
+              title={has ? t("replace") : t("add")}
+              aria-label={has ? t("replace") : t("add")}
               className="inline-flex h-9 flex-1 items-center justify-center rounded-lg border border-[var(--line)] bg-white text-[var(--green-700)] transition-colors hover:border-[var(--green-500)] hover:bg-[var(--green-tint)] disabled:cursor-not-allowed disabled:opacity-45"
             >
               {has ? <RefreshCw className="h-4 w-4" /> : <Upload className="h-4 w-4" />}
@@ -263,8 +260,8 @@ export function PhotoUpload({
                 type="button"
                 onClick={() => setConfirmDelete(true)}
                 disabled={busy}
-                title="Supprimer la photo"
-                aria-label="Supprimer la photo"
+                title={t("delete")}
+                aria-label={t("delete")}
                 className="inline-flex h-9 w-9 flex-none items-center justify-center rounded-lg border border-[var(--line)] bg-white text-[var(--muted-fg)] transition-colors hover:border-[var(--red-500)] hover:bg-[var(--red-tint)] hover:text-[var(--red-500)] disabled:opacity-45"
               >
                 <Trash2 className="h-4 w-4" />
@@ -279,25 +276,19 @@ export function PhotoUpload({
         {/* ── requirements ── */}
         <div className="min-w-[240px] flex-1">
           <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--green-700)]">
-            Exigences
+            {t("requirements")}
           </p>
           <ul className="mt-2.5 space-y-1.5 text-[12.5px] leading-relaxed text-[var(--slate)]">
-            {[
-              "Format portrait, type photo d'identité (3:4)",
-              `Résolution minimale ${MIN_W}×${MIN_H} pixels`,
-              "Fond uni et clair",
-              "Visage de face, entièrement visible, sans lunettes de soleil",
-              "Photographie récente",
-            ].map((rule) => (
+            {RULES.map((rule) => (
               <li key={rule} className="flex items-start gap-2">
                 <span className="mt-1.5 h-1 w-1 flex-none rounded-full bg-[var(--green-500)]" />
-                {rule}
+                {t(`rules.${rule}`, { minW: MIN_W, minH: MIN_H })}
               </li>
             ))}
           </ul>
 
           {error && (
-            <p className="mt-3 flex items-start gap-2 rounded-lg bg-[var(--red-tint)] px-3 py-2 text-[12.5px] font-medium text-[var(--red-700)]">
+            <p dir="auto" className="mt-3 flex items-start gap-2 rounded-lg bg-[var(--red-tint)] px-3 py-2 text-[12.5px] font-medium text-[var(--red-700)]">
               <AlertCircle className="mt-0.5 h-3.5 w-3.5 flex-none" />
               {error}
             </p>
@@ -306,8 +297,7 @@ export function PhotoUpload({
           {status.data?.ageing && !error && (
             <p className="mt-3 flex items-start gap-2 rounded-lg bg-[var(--gold-tint)] px-3 py-2 text-[12.5px] text-[var(--gold-700)]">
               <AlertCircle className="mt-0.5 h-3.5 w-3.5 flex-none" />
-              Votre photo date de plus de deux ans. Nous vous recommandons de
-              la remplacer avant de soumettre votre dossier.
+              {t("ageing")}
             </p>
           )}
         </div>
@@ -316,21 +306,19 @@ export function PhotoUpload({
       <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Supprimer votre photographie ?</AlertDialogTitle>
+            <AlertDialogTitle>{t("confirmDeleteTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Votre profil sera incomplet tant qu&apos;une nouvelle
-              photographie n&apos;aura pas été ajoutée, et votre dossier ne
-              pourra pas être soumis.
+              {t("confirmDeleteBody")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               className="bg-[var(--red-500)] text-white hover:bg-[var(--red-700)]"
               onClick={() => remove.mutate()}
               disabled={remove.isPending}
             >
-              {remove.isPending ? "Suppression…" : "Supprimer"}
+              {remove.isPending ? t("deleting") : t("delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

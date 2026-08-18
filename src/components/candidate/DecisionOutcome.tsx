@@ -1,20 +1,27 @@
 "use client";
 // src/components/candidate/DecisionOutcome.tsx
-// The commission's decision, presented as what it actually is: an official
-// notification, not a status card.
 //
-// This is the moment a journalist learns whether they hold a press card for
-// the year. The design follows administrative practice rather than product
-// convention — an engraved header, a reference, the reason set apart as a
-// considérant, and the national baseline closing it — because a decision that
-// looks like a toast reads like a toast.
+// The formal notification of a decision — the single most consequential
+// screen a candidate sees, and the one they may print or forward.
 //
-// TONE IS DELIBERATE PER OUTCOME. An acceptance may be warm; a rejection must
-// be DIGNIFIED, never punishing — the person is being told they are not
-// recognised as a professional, and the notice should carry that with the
-// gravity it has. So the rejection uses a deep institutional burgundy, not an
-// alarm red, and states the objection right as prominently as the refusal.
+// ───────────────────────────────────────────────────────────────────────
+// ⚠️ THE REASON IS FREE TEXT IN AN UNKNOWN LANGUAGE.
+//
+// A commission member writes their justification in French or in Arabic —
+// their choice, and the system never translates it. So an Arabic reader may
+// open a French refusal, and the reverse.
+//
+// `dir="auto"` is the only correct handling: the browser reads the first
+// strong directional character and sets direction from it. Without it, an
+// Arabic paragraph inside an LTR block renders with its punctuation at the
+// wrong end — on the grounds of a refusal, which is not a place for a
+// rendering fault.
+//
+// The surrounding notice IS translated: the act, the heading, the procedure
+// that follows. Only the member's own words are left as written.
+// ───────────────────────────────────────────────────────────────────────
 
+import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { Check, X, IdCard, Scale, Gavel, ShieldAlert, Clock, FileText } from "lucide-react";
 import type { ApplicationStatus, TimelineEntry } from "@/lib/api/applications";
 
@@ -34,15 +41,21 @@ function Rosette({ className, stroke }: { className?: string; stroke: string }) 
   );
 }
 
-/** An official seal impression. */
-function Seal({ className, stroke, label }: {
-  className?: string; stroke: string; label: string;
+/**
+ * An official seal impression.
+ *
+ * ⚠️ THE MONOGRAM STAYS LATIN, THE LABEL TRANSLATES. "MCACRP" is an emblem —
+ * the same object as the coat of arms — while "ACCORDÉE" is a word describing
+ * what happened, and an Arabic reader should read it.
+ *
+ * And letterSpacing goes to ZERO for Arabic: tracking separates joined
+ * letterforms, and a seal is exactly where that would be most visible.
+ */
+function Seal({ className, stroke, label, arabic }: {
+  className?: string; stroke: string; label: string; arabic: boolean;
 }) {
   return (
     <svg className={className} viewBox="0 0 200 200" fill="none" aria-hidden="true">
-      <defs>
-        <path id="seal-arc" d="M100,100 m-64,0 a64,64 0 1,1 128,0" />
-      </defs>
       <g stroke={stroke} fill="none">
         <circle cx="100" cy="100" r="88" strokeWidth="2.5" />
         <circle cx="100" cy="100" r="80" strokeWidth="0.8" />
@@ -54,8 +67,16 @@ function Seal({ className, stroke, label }: {
       </g>
       <text fill={stroke} fontSize="13" fontWeight="800" letterSpacing="3"
         textAnchor="middle" x="100" y="96">MCACRP</text>
-      <text fill={stroke} fontSize="7.5" fontWeight="700" letterSpacing="1.6"
-        textAnchor="middle" x="100" y="112">{label}</text>
+      <text
+        fill={stroke}
+        fontSize={arabic ? "9" : "7.5"}
+        fontWeight="700"
+        letterSpacing={arabic ? "0" : "1.6"}
+        textAnchor="middle" x="100" y={arabic ? "114" : "112"}
+        direction={arabic ? "rtl" : "ltr"}
+      >
+        {label}
+      </text>
     </svg>
   );
 }
@@ -65,7 +86,6 @@ function Seal({ className, stroke, label }: {
 interface Palette {
   /** The header's engraved field. */
   field: string;
-  ink: string;          // text on the field
   accent: string;       // seal, rules, icon plate
   softBg: string;       // the reason block
   softInk: string;
@@ -73,7 +93,6 @@ interface Palette {
 
 const ACCEPTED_PALETTE: Palette = {
   field: "linear-gradient(158deg, var(--green-900) 0%, #0e3d29 55%, #0b3524 100%)",
-  ink: "#ffffff",
   accent: "var(--gold-500)",
   softBg: "var(--green-tint)",
   softInk: "var(--green-700)",
@@ -83,7 +102,6 @@ const ACCEPTED_PALETTE: Palette = {
 // not an error message.
 const REFUSED_PALETTE: Palette = {
   field: "linear-gradient(158deg, #4a1416 0%, #5e1a1d 55%, #451214 100%)",
-  ink: "#ffffff",
   accent: "#e8b4b6",
   softBg: "var(--red-tint)",
   softInk: "var(--red-700)",
@@ -91,107 +109,41 @@ const REFUSED_PALETTE: Palette = {
 
 const PENDING_PALETTE: Palette = {
   field: "linear-gradient(158deg, #4a3c0e 0%, #5e4c12 55%, #43370d 100%)",
-  ink: "#ffffff",
   accent: "var(--gold-500)",
   softBg: "var(--gold-tint)",
   softInk: "var(--gold-700)",
 };
 
+/**
+ * Only the VISUAL shape lives here now; every word comes from the catalogue,
+ * under the status's own name.
+ */
 interface Outcome {
   palette: Palette;
   Icon: React.ElementType;
-  sealLabel: string;
-  kicker: string;        // the administrative act
-  title: string;
-  lede: string;
-  reasonLabel?: string;
-  next?: { heading: string; text: string; grave?: boolean };
+  /** Whether the notice carries the member's written reason. */
+  hasReason: boolean;
+  /** A grave "what next" — the objection right, set apart. */
+  grave: boolean;
 }
 
-function outcomeFor(status: ApplicationStatus): Outcome | null {
-  switch (status) {
-    case "ACCEPTED":
-      return {
-        palette: ACCEPTED_PALETTE, Icon: Check, sealLabel: "ACCORDÉE",
-        kicker: "Notification de décision",
-        title: "Votre demande a été acceptée",
-        lede: "La commission d'examen a reconnu votre qualité de journaliste "
-            + "professionnel. Votre carte de presse sera éditée par le MCACRP ",
-        reasonLabel: "Observation de la commission",
-        next: {
-          heading: "Suite de la procédure",
-          text: "Votre carte sera établie et vous serez informé par e-mail dès "
-              + "qu'elle sera disponible. Aucune démarche de votre part n'est "
-              + "nécessaire.",
-        },
-      };
-
-    case "CARD_ISSUED":
-      return {
-        palette: ACCEPTED_PALETTE, Icon: IdCard, sealLabel: "ÉMISE",
-        kicker: "Carte de presse",
-        title: "Votre carte a été éditée",
-        lede: "Votre carte de presse a été établie par le MCACRP et "
-            + "porte un numéro officiel.",
-        next: {
-          heading: "Retrait de votre carte",
-          text: "Les modalités de retrait vous ont été communiquées par e-mail.",
-        },
-      };
-
-    case "REJECTED":
-      return {
-        palette: REFUSED_PALETTE, Icon: X, sealLabel: "REFUSÉE",
-        kicker: "Notification de décision",
-        title: "Votre demande n'a pas été retenue",
-        lede: "Après examen de votre dossier, la commission n'a pas pu donner "
-            + "une suite favorable à votre demande pour la présente session.",
-        reasonLabel: "Motif de la décision",
-        next: {
-          heading: "Votre droit de réclamation",
-          text: "Vous pouvez contester cette décision. Une réclamation peut être "
-              + "déposée depuis votre espace pendant la phase de réclamation de "
-              + "la session. Elle sera examinée par un membre de la commission "
-              + "DIFFÉRENT de celui ayant rendu la présente décision.",
-          grave: true,
-        },
-      };
-
-    case "UNDER_RECLAMATION":
-      return {
-        palette: PENDING_PALETTE, Icon: Gavel, sealLabel: "EN COURS",
-        kicker: "Réclamation",
-        title: "Votre réclamation est en cours d'examen",
-        lede: "Votre contestation a été enregistrée et transmise à un membre de "
-            + "la commission différent de celui ayant rendu la décision initiale.",
-        next: {
-          heading: "Suite de la procédure",
-          text: "Vous serez informé par e-mail de la décision définitive, qui "
-              + "clôturera l'instruction de votre dossier pour cette session.",
-        },
-      };
-
-    case "FINAL_REJECTION":
-      return {
-        palette: REFUSED_PALETTE, Icon: Scale, sealLabel: "DÉFINITIVE",
-        kicker: "Décision définitive",
-        title: "Votre réclamation n'a pas abouti",
-        lede: "Après réexamen par un second membre de la commission, la décision "
-            + "de rejet est confirmée. Cette décision met fin à l'instruction de "
-            + "votre dossier pour la présente session.",
-        reasonLabel: "Motif de la décision définitive",
-        next: {
-          heading: "Prochaine session",
-          text: "Vous pourrez déposer une nouvelle demande lors d'une prochaine "
-              + "session de candidature. Les conditions et le calendrier seront "
-              + "publiés sur le site de le MCACRP.",
-        },
-      };
-
-    default:
-      return null;      // still in progress — the timeline tells that story
-  }
-}
+const OUTCOMES: Partial<Record<ApplicationStatus, Outcome>> = {
+  ACCEPTED: {
+    palette: ACCEPTED_PALETTE, Icon: Check, hasReason: true, grave: false,
+  },
+  CARD_ISSUED: {
+    palette: ACCEPTED_PALETTE, Icon: IdCard, hasReason: false, grave: false,
+  },
+  REJECTED: {
+    palette: REFUSED_PALETTE, Icon: X, hasReason: true, grave: true,
+  },
+  UNDER_RECLAMATION: {
+    palette: PENDING_PALETTE, Icon: Gavel, hasReason: false, grave: false,
+  },
+  FINAL_REJECTION: {
+    palette: REFUSED_PALETTE, Icon: Scale, hasReason: true, grave: false,
+  },
+};
 
 /** The reason recorded on the transition that produced this status. */
 function decisiveReason(timeline: TimelineEntry[], status: ApplicationStatus) {
@@ -216,19 +168,26 @@ export function DecisionOutcome({
   timeline: TimelineEntry[];
   applicationId?: number;
 }) {
-  const outcome = outcomeFor(status);
-  if (!outcome) return null;
+  const t = useTranslations("decision");
+  const locale = useLocale();
+  const format = useFormatter();
+  const arabic = locale === "ar";
+
+  const outcome = OUTCOMES[status];
+  if (!outcome) return null;   // still in progress — the timeline tells that story
 
   const decisive = decisiveReason(timeline, status);
   const { palette: p, Icon } = outcome;
 
   const decidedOn = decisive?.at
-    ? new Date(decisive.at).toLocaleDateString("fr-FR", {
-        day: "numeric", month: "long", year: "numeric",
-      })
+    ? format.dateTime(new Date(decisive.at), "long")
     : null;
 
   // A decision reference, as an administrative act carries.
+  //
+  // ⚠️ NOT translated and NOT mirrored. It is an identifier: the candidate may
+  // quote it in a letter or read it down a telephone, and it must be the same
+  // string whichever language they were reading.
   const reference = applicationId && decisive?.at
     ? `MCACRP/${new Date(decisive.at).getFullYear()}/${String(applicationId).padStart(5, "0")}`
     : null;
@@ -237,7 +196,7 @@ export function DecisionOutcome({
     <section
       className="overflow-hidden rounded-2xl bg-white shadow-[0_24px_60px_-38px_rgba(11,46,31,.55)]"
       style={{ border: "1px solid var(--line)" }}
-      aria-label="Notification de décision"
+      aria-label={t("ariaLabel")}
     >
       {/* ══ engraved header ══ */}
       <div className="relative overflow-hidden" style={{ background: p.field }}>
@@ -245,23 +204,25 @@ export function DecisionOutcome({
         <div className="pointer-events-none absolute inset-0 opacity-[0.06]"
           style={{ backgroundImage: "repeating-linear-gradient(115deg,#fff 0 1px,transparent 1px 11px)" }}
           aria-hidden="true" />
-        <Rosette className="pointer-events-none absolute -left-24 -top-20 h-72 w-72 opacity-[0.07]"
+        <Rosette className="rtl-mirror pointer-events-none absolute -left-24 -top-20 h-72 w-72 opacity-[0.07]"
           stroke="#fff" />
-        <Seal className="pointer-events-none absolute -right-6 top-1/2 h-44 w-44 -translate-y-1/2 opacity-[0.13]"
-          stroke={p.accent} label={outcome.sealLabel} />
+        <Seal
+          className="rtl-mirror pointer-events-none absolute -right-6 top-1/2 h-44 w-44 -translate-y-1/2 opacity-[0.13]"
+          stroke={p.accent}
+          label={t(`${status}.seal`)}
+          arabic={arabic}
+        />
 
         <div className="relative px-7 py-7 sm:px-8 sm:py-8">
           {/* institutional line */}
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <span className="text-[10px] font-extrabold uppercase tracking-[0.24em]"
               style={{ color: p.accent }}>
-              {outcome.kicker}
+              {t(`${status}.kicker`)}
             </span>
             <span className="h-3 w-px" style={{ background: `${p.accent}66` }} aria-hidden="true" />
             <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/45">
-              Ministère de la Culture, des Arts,
-de la Communication et des
-Relations avec le Parlement
+              {t("ministry")}
             </span>
           </div>
 
@@ -278,10 +239,10 @@ Relations avec le Parlement
 
             <div className="min-w-0 flex-1">
               <h3 className="text-[22px] font-extrabold leading-tight text-white sm:text-[25px]">
-                {outcome.title}
+                {t(`${status}.title`)}
               </h3>
               <p className="mt-2.5 max-w-2xl text-[14px] leading-relaxed text-white/70">
-                {outcome.lede}
+                {t(`${status}.lede`)}
               </p>
             </div>
           </div>
@@ -293,9 +254,9 @@ Relations avec le Parlement
               {reference && (
                 <div>
                   <dt className="text-[9px] font-bold uppercase tracking-[0.16em] text-white/40">
-                    Référence
+                    {t("reference")}
                   </dt>
-                  <dd className="mt-0.5 font-mono text-[12.5px] text-white/85">
+                  <dd dir="ltr" className="mt-0.5 font-mono text-[12.5px] text-white/85">
                     {reference}
                   </dd>
                 </div>
@@ -303,10 +264,10 @@ Relations avec le Parlement
               {decidedOn && (
                 <div>
                   <dt className="text-[9px] font-bold uppercase tracking-[0.16em] text-white/40">
-                    Rendue le
+                    {t("decidedOn")}
                   </dt>
                   <dd className="mt-0.5 flex items-center gap-1.5 text-[12.5px] text-white/85">
-                    <Clock className="h-3 w-3" /> {decidedOn}
+                    <Clock className="h-3 w-3 flex-none" /> {decidedOn}
                   </dd>
                 </div>
               )}
@@ -316,21 +277,26 @@ Relations avec le Parlement
       </div>
 
       {/* ══ the reason, set apart as a considérant ══ */}
-      {decisive?.text && outcome.reasonLabel && (
+      {decisive?.text && outcome.hasReason && (
         <div className="px-7 py-6 sm:px-8">
           <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em]"
             style={{ color: p.softInk }}>
-            <FileText className="h-3 w-3" />
-            {outcome.reasonLabel}
+            <FileText className="h-3 w-3 flex-none" />
+            {t(`${status}.reasonLabel`)}
           </p>
 
           <blockquote
-            className="mt-3 rounded-r-xl border-l-[3px] px-5 py-4"
+            className="mt-3 rounded-e-xl border-s-[3px] px-5 py-4"
             style={{ borderColor: p.softInk, background: p.softBg }}
           >
-            {/* pre-wrap: the justification carries its own line breaks, and
+            {/* ⚠️ dir="auto" — the member wrote this in French or in Arabic,
+                and the system does not translate an administrative act.
+                pre-wrap: the justification carries its own line breaks, and
                 rewrapping a legal reason changes how it reads. */}
-            <p className="whitespace-pre-wrap text-[14px] leading-[1.75] text-[var(--ink)]">
+            <p
+              dir="auto"
+              className="user-text whitespace-pre-wrap text-[14px] leading-[1.75] text-[var(--ink)]"
+            >
               {decisive.text}
             </p>
           </blockquote>
@@ -338,37 +304,35 @@ Relations avec le Parlement
       )}
 
       {/* ══ what happens next ══ */}
-      {outcome.next && (
-        <div
-          className="flex items-start gap-4 border-t px-7 py-5 sm:px-8"
+      <div
+        className="flex items-start gap-4 border-t px-7 py-5 sm:px-8"
+        style={{
+          borderColor: "var(--line)",
+          background: outcome.grave ? p.softBg : "#fbfcfb",
+        }}
+      >
+        <span
+          className="mt-0.5 flex h-8 w-8 flex-none items-center justify-center rounded-lg"
           style={{
-            borderColor: "var(--line)",
-            background: outcome.next.grave ? p.softBg : "#fbfcfb",
+            background: outcome.grave ? p.softInk : "var(--green-tint)",
+            color: outcome.grave ? "#fff" : "var(--green-700)",
           }}
         >
-          <span
-            className="mt-0.5 flex h-8 w-8 flex-none items-center justify-center rounded-lg"
-            style={{
-              background: outcome.next.grave ? p.softInk : "var(--green-tint)",
-              color: outcome.next.grave ? "#fff" : "var(--green-700)",
-            }}
-          >
-            {outcome.next.grave ? <ShieldAlert className="h-4 w-4" />
-                                : <Check className="h-4 w-4" />}
-          </span>
+          {outcome.grave ? <ShieldAlert className="h-4 w-4" />
+                         : <Check className="h-4 w-4" />}
+        </span>
 
-          <div className="min-w-0">
-            <p className="text-[12.5px] font-extrabold uppercase tracking-[0.1em]"
-              style={{ color: outcome.next.grave ? p.softInk : "var(--green-700)" }}>
-              {outcome.next.heading}
-            </p>
-            <p className="mt-1.5 max-w-3xl text-[13.5px] leading-relaxed"
-              style={{ color: outcome.next.grave ? p.softInk : "var(--slate)" }}>
-              {outcome.next.text}
-            </p>
-          </div>
+        <div className="min-w-0">
+          <p className="text-[12.5px] font-extrabold uppercase tracking-[0.1em]"
+            style={{ color: outcome.grave ? p.softInk : "var(--green-700)" }}>
+            {t(`${status}.nextHeading`)}
+          </p>
+          <p className="mt-1.5 max-w-3xl text-[13.5px] leading-relaxed"
+            style={{ color: outcome.grave ? p.softInk : "var(--slate)" }}>
+            {t.rich(`${status}.nextBody`, { b: (c) => <b className="font-bold">{c}</b> })}
+          </p>
         </div>
-      )}
+      </div>
 
       {/* ══ national baseline ══ */}
       <div className="flex h-1.5" aria-hidden="true">

@@ -1,13 +1,28 @@
 "use client";
 // src/components/candidate/RequirementChecklist.tsx
-// The centrepiece of the dossier page, so it is designed like one: a
-// progress ring, requirement rows that read as satisfied or not at a glance,
-// and alternative groups framed as the CHOICE they are.
 //
-// It renders the backend's readiness object directly — the object that
-// decides is the object that explains, so the two cannot disagree.
+// What a dossier still needs, and what it already has.
+//
+// ───────────────────────────────────────────────────────────────────────
+// ⚠️ THE BLOCKERS ARE TRANSLATED FROM THEIR REASON, NOT DISPLAYED.
+//
+// The server sends both a `reason` constant and a finished sentence. The
+// sentence is French — and one of them embeds a date formatted with
+// Locale.FRENCH:
+//
+//     "La date limite de dépôt était le 15 mars 2026."
+//
+// Dropped into an Arabic screen that is a French date inside an Arabic
+// paragraph. So the reason is the key, and `deadline` arrives as a DATE which
+// this component formats in the reader's locale.
+//
+// The requirement rows show ONE label — the reader's. The French version
+// printed the Arabic underneath as an ornament; once the page is genuinely
+// available in Arabic that is redundant, and a little condescending.
+// ───────────────────────────────────────────────────────────────────────
 
-import { Check, X, AlertCircle, Upload, Link2, Sparkles } from "lucide-react";
+import { useFormatter, useLocale, useTranslations } from "next-intl";
+import { Check, AlertCircle, Upload, Link2, Sparkles } from "lucide-react";
 import type {
   ReadinessResponse, RequirementResponse, DocumentType,
 } from "@/lib/api/applications";
@@ -21,7 +36,10 @@ function ProgressRing({ satisfied, total }: { satisfied: number; total: number }
 
   return (
     <div className="relative h-[68px] w-[68px] flex-none">
-      <svg viewBox="0 0 68 68" className="h-full w-full -rotate-90">
+      {/* ⚠️ NOT mirrored under RTL. A progress ring is a gauge, not a
+          sentence: it fills clockwise in both directions, the way a clock
+          face or a fuel gauge does. */}
+      <svg viewBox="0 0 68 68" className="h-full w-full -rotate-90" dir="ltr">
         <circle cx="34" cy="34" r={R} fill="none" stroke="var(--line)" strokeWidth="6" />
         <circle
           cx="34" cy="34" r={R} fill="none"
@@ -36,10 +54,10 @@ function ProgressRing({ satisfied, total }: { satisfied: number; total: number }
           <Check className="h-6 w-6 text-[var(--green-600)]" />
         ) : (
           <>
-            <span className="text-[15px] font-extrabold leading-none text-[var(--green-900)]">
+            <span className="font-mono text-[15px] font-extrabold leading-none text-[var(--green-900)]">
               {satisfied}
             </span>
-            <span className="text-[10px] font-semibold text-[var(--muted-fg)]">
+            <span className="font-mono text-[10px] font-semibold text-[var(--muted-fg)]">
               / {total}
             </span>
           </>
@@ -50,13 +68,17 @@ function ProgressRing({ satisfied, total }: { satisfied: number; total: number }
 }
 
 function RequirementRow({
-  requirement, onAdd, inGroup = false,
+  requirement, onAdd,
 }: {
   requirement: RequirementResponse;
   onAdd?: (docType: DocumentType) => void;
-  inGroup?: boolean;
 }) {
+  const t = useTranslations("checklist");
+  const locale = useLocale();
   const { satisfied, labelFr, labelAr, required, provided, isFile, docType } = requirement;
+
+  // ONE label — the reader's. The other was ornament.
+  const label = (locale === "ar" ? labelAr : labelFr) ?? labelFr;
 
   return (
     <div
@@ -76,10 +98,13 @@ function RequirementRow({
 
       <div className="min-w-0 flex-1">
         <p className={`text-[13.5px] font-bold ${satisfied ? "text-[var(--green-900)]" : "text-[var(--ink)]"}`}>
-          {labelFr}
+          {label}
           {required > 1 && (
+            // dir="ltr" on the ratio: "1/3" reads the same way in both
+            // languages, and mirroring it would say 3/1.
             <span
-              className="ml-2 rounded-full px-1.5 py-0.5 font-mono text-[10.5px] font-bold"
+              dir="ltr"
+              className="ms-2 inline-block rounded-full px-1.5 py-0.5 font-mono text-[10.5px] font-bold"
               style={{
                 background: satisfied ? "var(--green-500)" : "var(--gold-tint)",
                 color: satisfied ? "#fff" : "var(--gold-700)",
@@ -89,7 +114,6 @@ function RequirementRow({
             </span>
           )}
         </p>
-        <p dir="rtl" className="text-[11.5px] text-[var(--muted-fg)]">{labelAr}</p>
       </div>
 
       {!satisfied && onAdd && (
@@ -98,7 +122,7 @@ function RequirementRow({
           onClick={() => onAdd(docType)}
           className="flex-none rounded-lg bg-[var(--green-700)] px-3 py-1.5 text-[12px] font-bold text-white opacity-0 transition-opacity hover:bg-[var(--green-600)] focus-visible:opacity-100 group-hover:opacity-100 sm:opacity-100"
         >
-          Ajouter
+          {t("add")}
         </button>
       )}
     </div>
@@ -117,14 +141,17 @@ export function RequirementChecklist({
   onAdd?: (docType: DocumentType) => void;
   editable?: boolean;
 }) {
+  const t = useTranslations("checklist");
+  const tb = useTranslations("blockers");
+  const format = useFormatter();
+
   // ── normalise before use ──
-  // This component now has TWO callers with slightly different payloads:
-  // the candidate's ReadinessResponse (blockers, canSubmit) and the
-  // reviewer's CompletenessResult (neither — the commission does not submit
-  // anything). On top of that, `spring.jackson.default-property-inclusion:
-  // non_null` omits empty collections entirely, so they arrive as UNDEFINED
-  // rather than []. Defaulting here is the difference between a report and
-  // a crash.
+  // This component has TWO callers with slightly different payloads: the
+  // candidate's ReadinessResponse (blockers, canSubmit) and the reviewer's
+  // CompletenessResult (neither — the commission does not submit anything).
+  // On top of that, `spring.jackson.default-property-inclusion: non_null`
+  // omits empty collections entirely, so they arrive as UNDEFINED rather than
+  // []. Defaulting here is the difference between a report and a crash.
   const mandatory = readiness?.mandatory ?? [];
   const groups = readiness?.alternativeGroups ?? [];
   const blockers = readiness?.blockers ?? [];
@@ -145,13 +172,11 @@ export function RequirementChecklist({
         <div className="min-w-0">
           <p className="text-[14px] font-extrabold text-[var(--green-900)]">
             {documentsComplete
-              ? "Toutes les pièces sont fournies"
-              : `${total - satisfied} pièce${total - satisfied > 1 ? "s" : ""} à fournir`}
+              ? t("allProvided")
+              : t("remaining", { count: total - satisfied })}
           </p>
           <p className="mt-0.5 text-[12.5px] leading-relaxed text-[var(--slate)]">
-            {documentsComplete
-              ? "Vérifiez les autres conditions ci-dessous avant de soumettre."
-              : "Ajoutez les documents demandés pour votre catégorie."}
+            {documentsComplete ? t("allProvidedBody") : t("remainingBody")}
           </p>
         </div>
       </div>
@@ -161,7 +186,7 @@ export function RequirementChecklist({
         <div>
           <div className="flex items-center gap-3">
             <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--green-700)]">
-              Pièces obligatoires
+              {t("mandatory")}
             </p>
             <span className="h-px flex-1 bg-[var(--line)]" aria-hidden="true" />
           </div>
@@ -178,13 +203,13 @@ export function RequirementChecklist({
         <div key={group.groupNumber}>
           <div className="flex items-center gap-3">
             <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--gold-700)]">
-              <Sparkles className="h-3 w-3" />
-              Au choix — une seule suffit
+              <Sparkles className="h-3 w-3 flex-none" />
+              {t("anyOne")}
             </p>
             <span className="h-px flex-1 bg-[var(--line)]" aria-hidden="true" />
             {group.satisfied && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-[var(--green-500)] px-2 py-0.5 text-[10px] font-bold text-white">
-                <Check className="h-2.5 w-2.5" /> Satisfait
+              <span className="inline-flex flex-none items-center gap-1 rounded-full bg-[var(--green-500)] px-2 py-0.5 text-[10px] font-bold text-white">
+                <Check className="h-2.5 w-2.5" /> {t("satisfied")}
               </span>
             )}
           </div>
@@ -199,25 +224,24 @@ export function RequirementChecklist({
               <div key={r.docType}>
                 {i > 0 && (
                   <p className="py-0.5 text-center text-[10px] font-bold uppercase tracking-wider text-[var(--muted-fg)]">
-                    ou
+                    {t("or")}
                   </p>
                 )}
-                <RequirementRow requirement={r} onAdd={onAdd} inGroup />
+                <RequirementRow requirement={r} onAdd={onAdd} />
               </div>
             ))}
           </div>
         </div>
       ))}
 
-      {/* ── blockers, in the server's own words ── */}
+      {/* ── blockers ──
+          Translated from `reason`, never displayed from `message`. */}
       {blockers.length > 0 && (
         <div className="overflow-hidden rounded-xl border border-[var(--gold-500)]/45 bg-[var(--gold-tint)]">
           <div className="flex items-center gap-2 border-b border-[var(--gold-500)]/30 px-4 py-2.5">
-            <AlertCircle className="h-4 w-4 text-[var(--gold-700)]" />
+            <AlertCircle className="h-4 w-4 flex-none text-[var(--gold-700)]" />
             <p className="text-[12.5px] font-extrabold text-[var(--gold-700)]">
-              {blockers.length === 1
-                ? "Une condition reste à remplir"
-                : `${blockers.length} conditions restent à remplir`}
+              {t("conditions", { count: blockers.length })}
             </p>
           </div>
           <ul className="divide-y divide-[var(--gold-500)]/20">
@@ -225,7 +249,16 @@ export function RequirementChecklist({
               <li key={b.reason}
                 className="flex items-start gap-2.5 px-4 py-2.5 text-[13px] leading-relaxed text-[var(--gold-700)]">
                 <span className="mt-1.5 h-1.5 w-1.5 flex-none rounded-full bg-[var(--gold-500)]" />
-                {b.message}
+                <span>
+                  {tb(b.reason, {
+                    // Only DEADLINE_PASSED reads it; the other six ignore the
+                    // parameter. Formatted HERE, so an Arabic page shows an
+                    // Arabic date rather than the server's French one.
+                    deadline: b.deadline
+                      ? format.dateTime(new Date(b.deadline + "T00:00:00"), "long")
+                      : "",
+                  })}
+                </span>
               </li>
             ))}
           </ul>
@@ -244,7 +277,7 @@ export function RequirementChecklist({
             <Check className="h-4 w-4 text-white" />
           </span>
           <p className="text-[13.5px] font-bold text-[var(--green-700)]">
-            Votre dossier est complet et peut être soumis à la commission.
+            {t("readyToSubmit")}
           </p>
         </div>
       )}

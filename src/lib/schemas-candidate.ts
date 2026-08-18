@@ -1,10 +1,14 @@
 // src/lib/schemas-candidate.ts
-// Zod schemas for the candidate forms. Rules mirror the backend validators
-// (@ValidNni, @ValidPhone) — the backend stays the enforcer; these give
-// instant, field-specific French feedback.
 //
-// APPEND these to your existing src/lib/schemas.ts, or keep as a separate
-// module and import from both.
+// ⚠️ THE MESSAGES ARE KEYS, NOT SENTENCES — same reasoning as validation.ts.
+//
+// A zod message is fixed when the schema is DEFINED, which is module load —
+// long before a locale is known. Making the schema a factory would work, but
+// every call site would have to build it inside a component and memoise it.
+//
+// Emitting keys instead costs nothing: react-hook-form carries the string to
+// FieldError, and the Field component resolves it. The schemas stay module
+// constants and every call site is unchanged.
 
 import { z } from "zod";
 
@@ -18,25 +22,25 @@ export const profileSchema = z
       .string()
       .optional()
       .refine((v) => !v || NNI_REGEX.test(v.replace(/\s/g, "")), {
-        message: "Le NNI doit comporter 10 chiffres.",
+        message: "validation.nniLength",
       }),
     passportNo: z.string().optional(),
     birthdate: z
       .string()
-      .min(1, "La date de naissance est requise.")
+      .min(1, "validation.birthdateRequired")
       .refine((v) => new Date(v) < new Date(), {
-        message: "La date de naissance doit être dans le passé.",
+        message: "validation.birthdatePast",
       }),
     birthplace: z
       .string()
-      .min(1, "Le lieu de naissance est requis.")
-      .max(200, "200 caractères maximum."),
+      .min(1, "validation.birthplaceRequired")
+      .max(200, "validation.max200"),
   })
   .refine(
     (v) => (v.nni && v.nni.trim()) || (v.passportNo && v.passportNo.trim()),
     {
       path: ["nni"],
-      message: "Renseignez votre NNI ou votre numéro de passeport.",
+      message: "validation.nniOrPassport",
     }
   );
 
@@ -46,13 +50,13 @@ export type ProfileValues = z.infer<typeof profileSchema>;
 export const accountSchema = z.object({
   fullName: z
     .string()
-    .min(1, "Le nom complet est requis.")
-    .max(200, "200 caractères maximum."),
+    .min(1, "validation.requiredName")
+    .max(200, "validation.max200"),
   phone: z
     .string()
-    .min(1, "Le numéro de téléphone est requis.")
+    .min(1, "validation.requiredPhone")
     .refine((v) => PHONE_REGEX.test(v.replace(/\s/g, "")), {
-      message: "Numéro invalide — 8 chiffres commençant par 2, 3 ou 4.",
+      message: "validation.phone",
     }),
 });
 
@@ -62,8 +66,8 @@ export type AccountValues = z.infer<typeof accountSchema>;
 export const workLinkSchema = z.object({
   url: z
     .string()
-    .min(1, "L'adresse du lien est requise.")
-    .url("Adresse invalide (exemple : https://exemple.mr/article)"),
+    .min(1, "validation.urlRequired")
+    .url("validation.urlInvalid"),
 });
 
 export type WorkLinkValues = z.infer<typeof workLinkSchema>;

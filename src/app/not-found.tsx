@@ -1,47 +1,51 @@
-// src/app/not-found.tsx
+// src/app/[locale]/not-found.tsx
 //
-// A 404 on a government site is usually reached by someone following a link
-// that has moved — from an old bookmark, a printed circular, an e-mail sent
-// months ago. So this page does not apologise and stop: it says plainly that
-// the address no longer exists, and offers THE THREE THINGS anyone is
-// actually here for.
+// A 404 here is usually reached by someone following a link that MOVED — an
+// old bookmark, a printed circular, an e-mail sent months ago. So it does not
+// apologise and stop: it offers the three things anyone is actually here for,
+// each with a line saying what it is for.
 //
-// The seal is the point. A stray page that looks like a framework error is a
-// page that makes someone doubt the site itself.
+// ⚠️ Reached only because of the [...rest] catch-all beside this file. Next
+// resolves the route tree before rendering, so an unmatched URL never enters
+// [locale] on its own and falls through to the root not-found.
 
-import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { ArrowRight, Search, FileText, Home } from "lucide-react";
 import {
   Guilloche, OfficialSeal, MicroprintRule, TricolorRule,
 } from "@/components/public/patterns";
 import { routes } from "@/lib/routes";
+import Link from "next/link";
+// import { Link } from "@/i18n/navigation";
 
 export const metadata = {
   title: "Page introuvable — Accréditation presse",
 };
 
-const WAYS = [
-  {
-    href: routes.publicJournalists,
-    Icon: Search,
-    label: "Registre des journalistes accrédités",
-    hint: "Vérifier qu'une personne est titulaire d'une carte en cours de validité.",
-  },
-  {
-    href: routes.publicSessions,
-    Icon: FileText,
-    label: "Sessions de candidature",
-    hint: "Consulter le calendrier et les conditions de dépôt.",
-  },
-  {
-    href: routes.home,
-    Icon: Home,
-    label: "Accueil",
-    hint: "Revenir à la page principale.",
-  },
-];
+export default async function NotFound() {
+  const t = await getTranslations("notFound");
 
-export default function NotFound() {
+  const WAYS = [
+    {
+      href: routes.publicJournalists,
+      Icon: Search,
+      label: t("registryLabel"),
+      hint: t("registryHint"),
+    },
+    {
+      href: routes.publicSessions,
+      Icon: FileText,
+      label: t("sessionsLabel"),
+      hint: t("sessionsHint"),
+    },
+    {
+      href: routes.home,
+      Icon: Home,
+      label: t("homeLabel"),
+      hint: t("homeHint"),
+    },
+  ];
+
   return (
     <main
       className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 py-16 text-white"
@@ -81,25 +85,31 @@ export default function NotFound() {
         {/* The code, set as a serial rather than shouted. A giant "404" is a
             developer's joke; this is a ministry. */}
         <p className="mt-7 font-mono text-[11px] uppercase tracking-[0.3em] text-white/35">
-          Erreur 404
+          {t("code")}
         </p>
 
         <h1 className="engraved-dark mt-4 text-[32px] font-extrabold leading-tight tracking-tight sm:text-[38px]">
-          Cette page n&apos;existe pas
+          {t("title")}
         </h1>
-        <p dir="rtl" lang="ar" className="mt-2.5 text-[20px] font-semibold text-white/45">
-          هذه الصفحة غير موجودة
+        {/* The other language, always — a page nobody can read is a page
+            nobody can leave. It stays even when the interface is already
+            Arabic: the pairing is the point. */}
+        <p
+          dir={t("titleOtherDir")}
+          lang={t("titleOtherLang")}
+          className="mt-2.5 text-[20px] font-semibold text-white/45"
+        >
+          {t("titleOther")}
         </p>
 
         <span className="foil-rule mx-auto mt-6 block h-px w-28 opacity-50" aria-hidden="true" />
 
         <p className="mx-auto mt-6 max-w-sm text-[14px] leading-relaxed text-white/55">
-          L&apos;adresse demandée n&apos;existe pas ou a été déplacée. Si vous
-          suivez un lien reçu par e-mail, il a peut-être expiré.
+          {t("body")}
         </p>
 
         {/* the three things anyone is actually here for */}
-        <ul className="mt-9 space-y-2.5 text-left">
+        <ul className="mt-9 space-y-2.5 text-start">
           {WAYS.map((way) => (
             <li key={way.href}>
               <Link
@@ -115,7 +125,9 @@ export default function NotFound() {
                     {way.hint}
                   </span>
                 </span>
-                <ArrowRight className="h-4 w-4 flex-none text-white/35 transition-all group-hover:translate-x-0.5 group-hover:text-[var(--gold-500)]" />
+                {/* rtl-flip: an arrow saying "go" must point the way the
+                    reader travels. */}
+                <ArrowRight className="rtl-flip h-4 w-4 flex-none text-white/35 transition-all group-hover:text-[var(--gold-500)]" />
               </Link>
             </li>
           ))}

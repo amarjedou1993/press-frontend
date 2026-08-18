@@ -10,13 +10,26 @@ export interface ProfileResponse {
   birthplace: string;
 }
 
+// export interface MeResponse {
+//   id: number;
+//   email: string;
+//   fullName: string;
+//   phone?: string | null;
+//   role: string;
+//   emailVerified: boolean;
+//   profile?: ProfileResponse | null;
+//   profileComplete: boolean;
+// }
+
 export interface MeResponse {
   id: number;
   email: string;
   fullName: string;
-  phone?: string | null;
+  phone: string;
   role: string;
   emailVerified: boolean;
+  /** ISO 639-1 — la langue des courriels adressés à cette personne. */
+  preferredLocale: string;
   profile?: ProfileResponse | null;
   profileComplete: boolean;
 }
@@ -48,6 +61,13 @@ export function updateProfile(body: {
   return apiFetch<MeResponse>("/api/me/profile", {
     method: "PUT",
     body: JSON.stringify(body),
+  });
+}
+
+export function setLocale(locale: string) {
+  return apiFetch<void>("/api/me/locale", {
+    method: "PUT",
+    body: JSON.stringify({ locale }),
   });
 }
 

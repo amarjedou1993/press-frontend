@@ -1,10 +1,16 @@
 "use client";
 // src/components/candidate/VerificationBanner.tsx
-// An outstanding obligation, not a notification — so it is not dismissible,
-// and it is styled with the weight of an official notice: gold rule, seal
-// motif, the address in evidence, one clear action.
+//
+// Shown until a candidate confirms their address. It appears on every page of
+// the candidate space, because an unverified address blocks SUBMISSION — and
+// discovering that at the moment of submitting, after assembling a dossier,
+// is the worst possible time to learn it.
+//
+// So the banner says what still works ("prepare your dossier now") as well as
+// what does not. A warning that only forbids leaves someone stuck.
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { MailWarning, Send, CheckCircle2 } from "lucide-react";
@@ -13,6 +19,7 @@ import { getVerificationStatus, resendVerification, accountKeys } from "@/lib/ap
 import { ApiError } from "@/lib/api/client";
 
 export function VerificationBanner() {
+  const t = useTranslations("verifyBanner");
   const [justSent, setJustSent] = useState(false);
 
   const { data } = useQuery({
@@ -25,13 +32,15 @@ export function VerificationBanner() {
     mutationFn: () => resendVerification(data!.email),
     onSuccess: () => {
       setJustSent(true);
-      toast.success("E-mail envoyé", {
-        description: `Un nouveau lien a été envoyé à ${data?.email}.`,
+      toast.success(t("sentTitle"), {
+        description: t("sentBody", { email: data?.email ?? "" }),
       });
     },
     onError: (e) =>
-      toast.error("Envoi impossible", {
-        description: e instanceof ApiError ? (e.problem.detail ?? e.message) : "Réessayez.",
+      toast.error(t("sendFailed"), {
+        description: e instanceof ApiError
+          ? (e.problem.detail ?? e.message)
+          : t("tryAgain"),
       }),
   });
 
@@ -46,11 +55,12 @@ export function VerificationBanner() {
       }}
       role="status"
     >
-      {/* gold edge */}
-      <span className="absolute inset-y-0 left-0 w-1.5 bg-[var(--gold-500)]" aria-hidden="true" />
+      {/* gold edge — at the reading edge, so it leads rather than trails */}
+      <span className="absolute inset-y-0 start-0 w-1.5 bg-[var(--gold-500)]" aria-hidden="true" />
+
       {/* seal watermark */}
       <svg
-        className="pointer-events-none absolute -right-6 -top-8 h-32 w-32 opacity-[0.07]"
+        className="rtl-mirror pointer-events-none absolute -right-6 -top-8 h-32 w-32 opacity-[0.07]"
         viewBox="0 0 200 200" aria-hidden="true"
       >
         <g stroke="var(--gold-700)" fill="none">
@@ -63,7 +73,7 @@ export function VerificationBanner() {
         </g>
       </svg>
 
-      <div className="relative flex flex-wrap items-start gap-4 p-5 pl-7">
+      <div className="relative flex flex-wrap items-start gap-4 p-5 ps-7">
         <span
           className="flex h-11 w-11 flex-none items-center justify-center rounded-xl shadow-sm"
           style={{ background: "var(--gold-500)" }}
@@ -73,22 +83,30 @@ export function VerificationBanner() {
 
         <div className="min-w-0 flex-1">
           <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--gold-700)]/70">
-            Action requise
+            {t("eyebrow")}
           </p>
           <p className="mt-1 text-[15px] font-extrabold text-[var(--green-900)]">
-            Vérifiez votre adresse e-mail
+            {t("title")}
           </p>
           <p className="mt-1.5 max-w-2xl text-[13.5px] leading-relaxed text-[var(--gold-700)]">
-            Un lien a été envoyé à{" "}
-            <b className="font-bold text-[var(--green-900)]">{data.email}</b>.
-            Vous pouvez préparer votre dossier dès maintenant — la{" "}
-            <b className="font-bold">soumission</b> nécessite une adresse vérifiée.
+            {t.rich("body", {
+              // ⚠️ dir="ltr" on the address. An e-mail is a Latin string, and
+              // inside an Arabic paragraph its dot and @ bidi-reorder — the
+              // address would display wrongly in the very message telling
+              // someone to go and check it.
+              email: () => (
+                <b dir="ltr" className="font-bold text-[var(--green-900)]">
+                  {data.email}
+                </b>
+              ),
+              b: (c) => <b className="font-bold">{c}</b>,
+            })}
           </p>
 
           {justSent && (
             <p className="mt-2.5 inline-flex items-center gap-1.5 rounded-lg bg-white/70 px-2.5 py-1 text-[12.5px] font-semibold text-[var(--green-700)]">
-              <CheckCircle2 className="h-3.5 w-3.5" />
-              Lien renvoyé — pensez aux courriers indésirables.
+              <CheckCircle2 className="h-3.5 w-3.5 flex-none" />
+              {t("resent")}
             </p>
           )}
         </div>
@@ -101,7 +119,7 @@ export function VerificationBanner() {
           className="flex-none border-[var(--gold-700)]/25 bg-white text-[var(--gold-700)] shadow-sm hover:bg-white hover:text-[var(--green-900)]"
         >
           <Send className="h-3.5 w-3.5" />
-          {resend.isPending ? "Envoi…" : "Renvoyer"}
+          {resend.isPending ? t("sending") : t("resend")}
         </Button>
       </div>
     </div>

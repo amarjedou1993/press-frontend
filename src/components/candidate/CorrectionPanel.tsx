@@ -1,33 +1,32 @@
 "use client";
 // src/components/candidate/CorrectionPanel.tsx
-// The candidate's answer to the commission.
 //
-// This is the most consequential screen in the candidate space: getting it
-// wrong costs someone their accreditation for a year, and the single
-// correction round is already spent by the time they arrive here.
+// The correction round: what the commission flagged, how long is left, and
+// what happens if the candidate does nothing.
 //
-// So it does three things a plain "upload files" screen would not:
+// ───────────────────────────────────────────────────────────────────────
+// ⚠️ THE OBSERVATIONS ARE FREE TEXT, IN AN UNKNOWN LANGUAGE.
 //
-// 1. THE DEADLINE IS UNMISSABLE, and coloured by urgency. Past it, the
-//    dossier is rejected automatically — that consequence is stated in
-//    words, not implied by a date.
+// «document illisible» or «الوثيقة غير مقروءة» — a commission member writes
+// whichever they use, and the system never translates it. Every observation
+// therefore carries dir="auto".
 //
-// 2. EACH PIECE CARRIES ITS OBSERVATION. The candidate must see WHAT was
-//    wrong, beside the piece it was wrong with — otherwise they re-upload
-//    the same bad scan.
+// ⚠️ AND `remainingFr` IS NO LONGER USED.
 //
-// 3. RESUBMISSION IS GATED BY THE SERVER. `readyToResubmit` and
-//    `remainingFr` come from the same object, so the button and the
-//    explanation cannot disagree — and a partial answer can never be sent,
-//    because it would land on a reviewer with no round left to ask again.
+// The backend composed a French list of what is left. But `s.documents`
+// already carries each item's docType and whether it was answered, so the
+// list is DERIVED HERE and reads in the reader's language. One less French
+// string crossing the wire, and one less thing to keep in step.
+// ───────────────────────────────────────────────────────────────────────
 
 import { useState } from "react";
-import Link from "next/link";
+import { useFormatter, useTranslations } from "next-intl";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   AlertTriangle, Check, Clock, Camera, FileText, Link2, Send, ArrowRight,
 } from "lucide-react";
+import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -52,14 +51,12 @@ function deadlineTone(days: number, passed: boolean) {
   return { bg: "var(--green-tint)", fg: "var(--green-700)", edge: "var(--green-500)" };
 }
 
-function longFr(iso: string) {
-  return new Date(iso + "T00:00:00").toLocaleDateString("fr-FR", {
-    day: "numeric", month: "long", year: "numeric",
-  });
-}
-
 export function CorrectionPanel({ applicationId }: { applicationId: number }) {
+  const t = useTranslations("correction");
+  const td = useTranslations("documentType");
+  const format = useFormatter();
   const qc = useQueryClient();
+
   const [replacing, setReplacing] = useState<OutstandingItem | null>(null);
   const [confirmResubmit, setConfirmResubmit] = useState(false);
 
@@ -75,14 +72,14 @@ export function CorrectionPanel({ applicationId }: { applicationId: number }) {
       qc.invalidateQueries({ queryKey: applicationKeys.all });
       qc.invalidateQueries({ queryKey: applicationKeys.detail(applicationId) });
       setConfirmResubmit(false);
-      toast.success("Corrections déposées", {
-        description: "Votre dossier retourne devant la commission pour examen final.",
-      });
+      toast.success(t("sentTitle"), { description: t("sentBody") });
     },
     onError: (e) => {
       setConfirmResubmit(false);
-      toast.error("Envoi impossible", {
-        description: e instanceof ApiError ? (e.problem.detail ?? e.message) : "Réessayez.",
+      toast.error(t("sendFailed"), {
+        description: e instanceof ApiError
+          ? (e.problem.detail ?? e.message)
+          : t("tryAgain"),
       });
     },
   });
@@ -95,6 +92,17 @@ export function CorrectionPanel({ applicationId }: { applicationId: number }) {
   const answered = s.documents.filter((d) => d.answered).length
     + (s.photoNeedsCorrection && s.photoAnswered ? 1 : 0);
   const total = s.documents.length + (s.photoNeedsCorrection ? 1 : 0);
+
+  /* What is still outstanding, in the reader's language.
+     Derived from the same data the rows above render, rather than taken from
+     the backend's pre-composed French list. */
+  const remaining = [
+    ...s.documents.filter((d) => !d.answered).map((d) => td(d.docType)),
+    ...(s.photoNeedsCorrection && !s.photoAnswered ? [t("photo")] : []),
+  ];
+
+  const oneCorrectionWarning =
+    t("oneCorrectionOnly");
 
   return (
     <>
@@ -112,39 +120,47 @@ export function CorrectionPanel({ applicationId }: { applicationId: number }) {
           <div className="min-w-0 flex-1">
             <p className="text-[10px] font-bold uppercase tracking-[0.18em]"
               style={{ color: tone.fg, opacity: 0.75 }}>
-              Corrections demandées
+              {t("eyebrow")}
             </p>
+
             {s.deadlinePassed ? (
               <p className="mt-0.5 text-[15px] font-extrabold" style={{ color: tone.fg }}>
-                Le délai de correction est expiré
+                {t("expired")}
               </p>
             ) : (
               <p className="mt-0.5 text-[15px] font-extrabold" style={{ color: tone.fg }}>
                 {s.daysRemaining === 0
-                  ? "Dernier jour pour répondre"
-                  : `${s.daysRemaining} jour${s.daysRemaining > 1 ? "s" : ""} pour répondre`}
+                  ? t("lastDay")
+                  : t("daysToAnswer", { count: s.daysRemaining })}
                 {s.deadline && (
-                  <span className="ml-2 text-[13px] font-semibold opacity-80">
-                    — jusqu&apos;au {longFr(s.deadline)}
+                  <span className="ms-2 text-[13px] font-semibold opacity-80">
+                    {t("until", {
+                      date: format.dateTime(
+                        new Date(s.deadline + "T00:00:00"), "long"),
+                    })}
                   </span>
                 )}
               </p>
             )}
+
+            {/* ⚠️ THE CONSEQUENCE, NAMED. A deadline without its effect is a
+                date; with it, it is a warning. */}
             <p className="mt-1 text-[12.5px] leading-relaxed" style={{ color: tone.fg }}>
-              {s.deadlinePassed
-                ? "Votre dossier va être examiné en l'état par la commission."
-                : "Passé ce délai et sans réponse de votre part, votre dossier sera rejeté pour dossier incomplet."}
+              {s.deadlinePassed ? t("expiredBody") : t("consequence")}
             </p>
           </div>
 
           {total > 0 && (
             <div className="flex-none rounded-xl bg-white/70 px-4 py-2.5 text-center">
-              <p className="text-[20px] font-extrabold leading-none" style={{ color: tone.fg }}>
+              {/* dir="ltr" on the ratio: "2/3" reads the same in both
+                  languages, and mirroring it would say 3/2. */}
+              <p dir="ltr" className="font-mono text-[20px] font-extrabold leading-none"
+                style={{ color: tone.fg }}>
                 {answered}<span className="text-[13px] opacity-60">/{total}</span>
               </p>
               <p className="mt-1 text-[9.5px] font-bold uppercase tracking-[0.12em]"
                 style={{ color: tone.fg, opacity: 0.7 }}>
-                corrigées
+                {t("corrected")}
               </p>
             </div>
           )}
@@ -167,16 +183,19 @@ export function CorrectionPanel({ applicationId }: { applicationId: number }) {
 
                 <div className="min-w-0 flex-1">
                   <p className="text-[13.5px] font-bold text-[var(--green-900)]">
-                    {item.docTypeLabelFr}
+                    {td(item.docType)}
                   </p>
                   {item.observation && (
-                    <p className="mt-1 rounded-lg bg-[var(--gold-tint)] px-3 py-1.5 text-[12.5px] leading-relaxed text-[var(--gold-700)]">
+                    /* ⚠️ dir="auto": the member wrote this in French or in
+                       Arabic, and it is never translated. */
+                    <p dir="auto"
+                      className="user-text mt-1 rounded-lg bg-[var(--gold-tint)] px-3 py-1.5 text-[12.5px] leading-relaxed text-[var(--gold-700)]">
                       {item.observation}
                     </p>
                   )}
                   {item.answered && (
                     <p className="mt-1 text-[12px] font-semibold text-[var(--green-700)]">
-                      Nouvelle version déposée.
+                      {t("newVersionFiled")}
                     </p>
                   )}
                 </div>
@@ -188,7 +207,7 @@ export function CorrectionPanel({ applicationId }: { applicationId: number }) {
                     className="flex-none"
                     onClick={() => setReplacing(item)}
                   >
-                    {item.answered ? "Remplacer à nouveau" : "Remplacer"}
+                    {item.answered ? t("replaceAgain") : t("replace")}
                   </Button>
                 )}
               </div>
@@ -208,25 +227,24 @@ export function CorrectionPanel({ applicationId }: { applicationId: number }) {
 
               <div className="min-w-0 flex-1">
                 <p className="text-[13.5px] font-bold text-[var(--green-900)]">
-                  Photographie d&apos;identité
+                  {t("photo")}
                 </p>
                 {s.photoObservation && (
-                  <p className="mt-1 rounded-lg bg-[var(--gold-tint)] px-3 py-1.5 text-[12.5px] leading-relaxed text-[var(--gold-700)]">
+                  <p dir="auto"
+                    className="user-text mt-1 rounded-lg bg-[var(--gold-tint)] px-3 py-1.5 text-[12.5px] leading-relaxed text-[var(--gold-700)]">
                     {s.photoObservation}
                   </p>
                 )}
                 <p className="mt-1 text-[12px] text-[var(--slate)]">
-                  {s.photoAnswered
-                    ? "Nouvelle photographie enregistrée."
-                    : "Votre photographie se modifie depuis votre profil."}
+                  {s.photoAnswered ? t("photoReplaced") : t("photoOnProfile")}
                 </p>
               </div>
 
               {!s.deadlinePassed && (
                 <Link href={routes.candidate.profile} className="flex-none">
                   <Button variant={s.photoAnswered ? "outline" : "default"} size="sm">
-                    {s.photoAnswered ? "Modifier" : "Aller au profil"}
-                    <ArrowRight className="h-3 w-3" />
+                    {s.photoAnswered ? t("photoEdit") : t("photoGo")}
+                    <ArrowRight className="rtl-flip h-3 w-3" />
                   </Button>
                 </Link>
               )}
@@ -239,25 +257,24 @@ export function CorrectionPanel({ applicationId }: { applicationId: number }) {
           <div className="border-t border-[var(--line)] bg-[#fbfcfb] px-6 py-4">
             {s.readyToResubmit ? (
               <div className="flex flex-wrap items-center gap-4">
-                <p className="flex flex-1 items-center gap-2 text-[13.5px] font-semibold text-[var(--green-700)]">
+                <p className="flex min-w-0 flex-1 items-center gap-2 text-[13.5px] font-semibold text-[var(--green-700)]">
                   <Check className="h-4 w-4 flex-none" />
-                  Toutes les corrections ont été déposées.
+                  {t("allCorrected")}
                 </p>
-                <Button size="sm" onClick={() => setConfirmResubmit(true)}>
+                <Button size="sm" className="flex-none" onClick={() => setConfirmResubmit(true)}>
                   <Send className="h-4 w-4" />
-                  Renvoyer à la commission
+                  {t("resubmit")}
                 </Button>
               </div>
             ) : (
               <div className="flex items-start gap-2.5">
                 <AlertTriangle className="mt-0.5 h-4 w-4 flex-none text-[var(--gold-700)]" />
-                <div>
+                <div className="min-w-0">
                   <p className="text-[13px] font-semibold text-[var(--gold-700)]">
-                    Il reste à corriger : {s.remainingFr.join(", ")}
+                    {t("stillToCorrect", { list: remaining.join(t("listSeparator")) })}
                   </p>
                   <p className="mt-0.5 text-[12.5px] text-[var(--slate)]">
-                    Votre dossier ne peut être renvoyé qu&apos;une fois toutes les
-                    pièces signalées remplacées.
+                    {t("allBeforeResubmit")}
                   </p>
                 </div>
               </div>
@@ -276,21 +293,27 @@ export function CorrectionPanel({ applicationId }: { applicationId: number }) {
       <AlertDialog open={confirmResubmit} onOpenChange={setConfirmResubmit}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Renvoyer votre dossier ?</AlertDialogTitle>
+            <AlertDialogTitle>{t("confirmTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Vos corrections seront transmises à la commission pour examen final.
-              <br />
-              <span className="mt-2 block font-medium text-[var(--red-500)]">
-                Le règlement ne prévoit qu&apos;une seule correction : après cet
-                envoi, vous ne pourrez plus modifier vos pièces.
-              </span>
+              {t("confirmBody")}
             </AlertDialogDescription>
           </AlertDialogHeader>
+
+          {/* ⚠️ OUTSIDE the description, and not merely for tidiness:
+              AlertDialogDescription renders a <p>, and the previous version
+              nested a <span className="block"> inside it. It is also a
+              WARNING rather than a description — the rule that there is only
+              ever one correction round, which the action's name does not
+              carry. */}
+          <p className="text-[13px] font-medium leading-relaxed text-[var(--red-500)]">
+            {oneCorrectionWarning}
+          </p>
+
           <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
             <AlertDialogAction onClick={() => resubmit.mutate()}
               disabled={resubmit.isPending}>
-              {resubmit.isPending ? "Envoi…" : "Confirmer l'envoi"}
+              {resubmit.isPending ? t("sending") : t("confirmSend")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

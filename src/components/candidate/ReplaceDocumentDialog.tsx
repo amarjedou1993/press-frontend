@@ -1,13 +1,19 @@
 "use client";
 // src/components/candidate/ReplaceDocumentDialog.tsx
-// Replacing one flagged piece.
 //
-// The dialog SHOWS THE COMMISSION'S OBSERVATION while the candidate chooses
-// the replacement. Being told "scan illisible" on a previous screen and then
-// asked for a file in the abstract is how someone uploads the same bad scan
-// again — the reason must be in front of them at the moment they act.
+// Replacing a piece the commission flagged.
+//
+// The observation sits at the top, in front of the candidate while they
+// choose the replacement — a correction made without re-reading what was
+// asked is a correction that comes back.
+//
+// ⚠️ Most strings here duplicate DocumentUploader's. They share the
+// `uploader` namespace deliberately: "PDF, JPEG or PNG · 10 Mo maximum"
+// stated two different ways in two dialogs is how a limit stops being
+// believed.
 
 import { useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Upload, FileText, X, Link2, AlertTriangle } from "lucide-react";
@@ -54,6 +60,10 @@ export function ReplaceDocumentDialog({
   open: boolean;
   onOpenChange: (o: boolean) => void;
 }) {
+  const t = useTranslations("uploader");
+  const tr = useTranslations("replace");
+  const td = useTranslations("documentType");
+
   const qc = useQueryClient();
   const token = useAuthStore((s) => s.token);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -64,6 +74,7 @@ export function ReplaceDocumentDialog({
   const [checking, setChecking] = useState(false);
 
   const isLink = item ? LINK_TYPES.has(item.docType) : false;
+  const typeLabel = item ? td(item.docType) : "";
 
   const reset = () => { setFile(null); setUrl(""); setError(undefined); };
   const close = () => { reset(); onOpenChange(false); };
@@ -77,52 +88,48 @@ export function ReplaceDocumentDialog({
     mutationFn: () => replaceDocument(applicationId, item!.documentId, file!, token),
     onSuccess: () => {
       refresh();
-      toast.success("Pièce remplacée", {
-        description: `${item?.docTypeLabelFr} a été mise à jour.`,
+      toast.success(tr("pieceReplaced"), {
+        description: tr("updated", { type: typeLabel }),
       });
       close();
     },
-    onError: (e) => setError(e instanceof Error ? e.message : "Le remplacement a échoué."),
+    onError: (e) => setError(e instanceof Error ? e.message : tr("replaceFailed")),
   });
 
   const link = useMutation({
     mutationFn: () => replaceLink(applicationId, item!.documentId, url.trim()),
     onSuccess: () => {
       refresh();
-      toast.success("Lien remplacé", {
-        description: `${item?.docTypeLabelFr} a été mis à jour.`,
+      toast.success(tr("linkReplaced"), {
+        description: tr("updated", { type: typeLabel }),
       });
       close();
     },
     onError: (e) =>
-      setError(e instanceof ApiError ? (e.problem.detail ?? e.message) : "Le remplacement a échoué."),
+      setError(e instanceof ApiError
+        ? (e.problem.detail ?? e.message)
+        : tr("replaceFailed")),
   });
 
   async function pick(selected: File | undefined) {
     setError(undefined);
     if (!selected) return;
 
-    if (selected.size === 0) {
-      setError("Ce fichier est vide (0 octet).");
-      return;
-    }
+    if (selected.size === 0) { setError(t("emptyFile")); return; }
     if (selected.size > MAX_SIZE_MB * 1024 * 1024) {
-      setError(`Le fichier dépasse ${MAX_SIZE_MB} Mo.`);
+      setError(t("tooLarge", { max: MAX_SIZE_MB }));
       return;
     }
-    if (!ACCEPTED.includes(selected.type)) {
-      setError("Formats acceptés : PDF, JPEG, PNG.");
-      return;
-    }
+    if (!ACCEPTED.includes(selected.type)) { setError(t("wrongFormat")); return; }
 
     setChecking(true);
     try {
       if (!(await looksLikeItsType(selected))) {
-        setError("Ce fichier semble endommagé ou n'est pas du format annoncé.");
+        setError(t("corrupt"));
         return;
       }
     } catch {
-      setError("Ce fichier n'a pas pu être lu.");
+      setError(t("unreadable"));
       return;
     } finally {
       setChecking(false);
@@ -137,17 +144,17 @@ export function ReplaceDocumentDialog({
 
     if (isLink) {
       const value = url.trim();
-      if (!value) { setError("Saisissez une adresse."); return; }
+      if (!value) { setError(t("atLeastOne")); return; }
       try {
         const parsed = new URL(value);
         if (!["http:", "https:"].includes(parsed.protocol)) throw new Error();
       } catch {
-        setError("Adresse invalide (exemple : https://exemple.mr/article)");
+        setError(t("invalidUrl"));
         return;
       }
       link.mutate();
     } else {
-      if (!file) { setError("Choisissez un fichier."); return; }
+      if (!file) { setError(tr("chooseAFile")); return; }
       upload.mutate();
     }
   }
@@ -158,11 +165,8 @@ export function ReplaceDocumentDialog({
     <Dialog open={open} onOpenChange={(o) => (o ? onOpenChange(true) : close())}>
       <DialogContent className="flex max-h-[85vh] flex-col sm:max-w-[520px]">
         <DialogHeader className="flex-none">
-          <DialogTitle>Remplacer : {item?.docTypeLabelFr}</DialogTitle>
-          <DialogDescription>
-            La pièce précédente est conservée dans l&apos;historique de votre
-            dossier ; c&apos;est la nouvelle version qui sera examinée.
-          </DialogDescription>
+          <DialogTitle>{tr("title", { type: typeLabel })}</DialogTitle>
+          <DialogDescription>{tr("previousKept")}</DialogDescription>
         </DialogHeader>
 
         <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-1 py-1">
@@ -170,10 +174,13 @@ export function ReplaceDocumentDialog({
           {item?.observation && (
             <div className="rounded-xl border border-[var(--gold-500)]/45 bg-[var(--gold-tint)] p-4">
               <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--gold-700)]">
-                <AlertTriangle className="h-3 w-3" />
-                Observation de la commission
+                <AlertTriangle className="h-3 w-3 flex-none" />
+                {tr("observation")}
               </p>
-              <p className="mt-1.5 text-[13.5px] leading-relaxed text-[var(--gold-700)]">
+              {/* ⚠️ dir="auto" — written by a commission member, in whichever
+                  language they use, and never translated. */}
+              <p dir="auto"
+                className="user-text mt-1.5 whitespace-pre-wrap text-[13.5px] leading-relaxed text-[var(--gold-700)]">
                 {item.observation}
               </p>
             </div>
@@ -181,37 +188,39 @@ export function ReplaceDocumentDialog({
 
           {isLink ? (
             <Field data-invalid={!!error}>
-              <FieldLabel htmlFor="replace-url">Nouvelle adresse</FieldLabel>
+              <FieldLabel htmlFor="replace-url">{tr("newAddress")}</FieldLabel>
               <div className="relative">
-                <Link2 className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--muted-fg)]" />
-                <Input id="replace-url" type="url" inputMode="url" className="pl-9"
+                <Link2 className="pointer-events-none absolute start-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--muted-fg)]" />
+                {/* ⚠️ dir="ltr": a URL's slashes and dots reorder in an RTL
+                    field, and someone typing a link in an Arabic page would
+                    watch it scramble as they went. */}
+                <Input id="replace-url" type="url" inputMode="url"
+                  dir="ltr" className="ps-9 text-start"
                   placeholder="https://exemple.mr/mon-article"
                   value={url}
                   onChange={(e) => { setUrl(e.target.value); setError(undefined); }}
                   aria-invalid={!!error} />
               </div>
-              <FieldDescription>
-                L&apos;adresse doit être publiquement accessible.
-              </FieldDescription>
+              <FieldDescription>{tr("mustBePublic")}</FieldDescription>
               {error && <FieldError errors={[{ message: error }]} />}
             </Field>
           ) : (
             <Field data-invalid={!!error}>
-              <FieldLabel htmlFor="replace-file">Nouveau fichier</FieldLabel>
+              <FieldLabel htmlFor="replace-file">{tr("newFile")}</FieldLabel>
 
               {file ? (
                 <div className="flex items-center gap-3 rounded-xl border border-[var(--green-500)] bg-[var(--green-tint)] p-3.5">
                   <FileText className="h-5 w-5 flex-none text-[var(--green-700)]" />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[13px] font-semibold text-[var(--ink)]">
+                    <p dir="auto" className="truncate text-[13px] font-semibold text-[var(--ink)]">
                       {file.name}
                     </p>
                     <p className="text-[11.5px] text-[var(--slate)]">
-                      {(file.size / 1024 / 1024).toFixed(2)} Mo
+                      {t("megabytes", { size: (file.size / 1024 / 1024).toFixed(2) })}
                     </p>
                   </div>
                   <button type="button" onClick={() => setFile(null)}
-                    aria-label="Retirer le fichier"
+                    aria-label={t("removeFile")}
                     className="flex-none rounded-lg p-1.5 text-[var(--muted-fg)] hover:bg-white hover:text-[var(--red-500)]">
                     <X className="h-4 w-4" />
                   </button>
@@ -222,10 +231,10 @@ export function ReplaceDocumentDialog({
                   className="flex w-full flex-col items-center gap-2 rounded-xl border-2 border-dashed border-[var(--line)] p-8 transition-colors hover:border-[var(--green-500)] hover:bg-[var(--green-tint)]/40 disabled:opacity-60">
                   <Upload className="h-6 w-6 text-[var(--muted-fg)]" />
                   <span className="text-[13px] font-semibold text-[var(--green-700)]">
-                    {checking ? "Vérification…" : "Choisir un fichier"}
+                    {checking ? t("checking") : t("chooseFile")}
                   </span>
                   <span className="text-[11.5px] text-[var(--muted-fg)]">
-                    PDF, JPEG ou PNG · {MAX_SIZE_MB} Mo maximum
+                    {t("formats", { max: MAX_SIZE_MB })}
                   </span>
                 </button>
               )}
@@ -240,9 +249,9 @@ export function ReplaceDocumentDialog({
         </div>
 
         <DialogFooter className="flex-none border-t border-[var(--line)] pt-4">
-          <Button variant="outline" onClick={close}>Annuler</Button>
+          <Button variant="outline" onClick={close}>{t("cancel")}</Button>
           <Button onClick={submit} disabled={pending}>
-            {pending ? "Envoi…" : "Remplacer la pièce"}
+            {pending ? t("sending") : tr("replaceAction")}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -1,27 +1,4 @@
 "use client";
-// src/components/candidate/IssuedCardPreview.tsx
-// The thing that was actually being decided.
-//
-// After an acceptance, a status card is a thin reward for a process that took
-// weeks. This shows the credential itself — the holder's own name, photograph,
-// number and validity — so the outcome is the OBJECT, not a sentence about it.
-//
-// ───────────────────────────────────────────────────────────────────────
-// THREE CHANGES.
-//
-// 1. IT NOW RECEIVES THE FIELDS IT ALWAYS RENDERED. Both call sites passed
-//    categoryLabel={null} and omitted cardNumber and validUntil, because no
-//    endpoint returned them — so an ISSUED card displayed "à l'édition" where
-//    its own number should have been. /api/me/card supplies them.
-//
-// 2. IT NO LONGER DRAWS ITS OWN PANEL. The component wrapped itself in a
-//    bordered box with a heading, and every caller wrapped it again — a card,
-//    inside a card, inside a card. It now renders the credential alone and
-//    lets the page frame it.
-//
-// 3. IT IS SIZED. At full container width the card was enormous; a credential
-//    is a small object and reads as one. maxWidth 460 by default.
-// ───────────────────────────────────────────────────────────────────────
 
 import { User } from "lucide-react";
 import { Guilloche } from "@/components/public/patterns";

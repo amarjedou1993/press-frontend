@@ -1,18 +1,25 @@
 "use client";
 // src/components/candidate/EmploymentCard.tsx
-// Specialisation and institution — the two things printed on the card that
-// nothing else in the system asks for.
 //
-// WHY THIS SITS ON THE DOSSIER AND NOT THE PROFILE. Identity belongs to the
-// person; employment belongs to the moment. A journalist changes outlet, and
-// last year's card must keep saying who they worked for when it was issued —
-// the same reasoning as the photograph snapshot.
+// Specialisation and outlet — the two fields printed on the card that nothing
+// else in the system asks for. Collected here because a dossier without them
+// can be approved by the commission and then fail at issuance, which is the
+// one moment nobody can do anything about it.
 //
-// The card preview beneath it is not decoration: it is the only way a
-// candidate can see that "صحفي / موري نيوز" is what will actually be printed,
-// in the script it will be printed in.
+// ───────────────────────────────────────────────────────────────────────
+// ⚠️ THE CARD PREVIEW STAYS IN ARABIC IN BOTH LANGUAGES.
+//
+// It is not a translation of the form — it is a facsimile of a physical
+// object. The adopted card prints التخصص and المؤسسة, and it prints them in
+// Arabic whoever the holder is.
+//
+// Showing a French reader "Spécialité : Reportage" would be a comfortable
+// lie: they would then be surprised by their own card. The whole point of
+// this block is to say "here is what will actually be printed".
+// ───────────────────────────────────────────────────────────────────────
 
 import { useEffect, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Briefcase, Check, IdCard } from "lucide-react";
@@ -57,7 +64,10 @@ export function EmploymentCard({
   currentSpecialisationId?: number | null;
   currentInstitution?: string | null;
 }) {
+  const t = useTranslations("employment");
+  const locale = useLocale();
   const qc = useQueryClient();
+  const arabic = locale === "ar";
 
   const [specialisationId, setSpecialisationId] = useState<number | null>(
     currentSpecialisationId ?? null
@@ -83,21 +93,16 @@ export function EmploymentCard({
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: applicationKeys.detail(applicationId) });
       qc.invalidateQueries({ queryKey: applicationKeys.readiness(applicationId) });
-      toast.success("Informations enregistrées", {
-        description: "Elles figureront sur votre carte de presse.",
-      });
+      toast.success(t("savedTitle"), { description: t("savedBody") });
     },
     onError: (e) =>
-      setError(e instanceof ApiError ? (e.problem.detail ?? e.message) : "Réessayez."),
+      setError(e instanceof ApiError ? (e.problem.detail ?? e.message) : t("tryAgain")),
   });
 
   function submit() {
     setError(undefined);
-    if (!specialisationId) { setError("Sélectionnez votre spécialité."); return; }
-    if (!institution.trim()) {
-      setError("Indiquez l'organe de presse pour lequel vous exercez.");
-      return;
-    }
+    if (!specialisationId) { setError(t("selectSpecialisation")); return; }
+    if (!institution.trim()) { setError(t("enterInstitution")); return; }
     save.mutate();
   }
 
@@ -116,22 +121,21 @@ export function EmploymentCard({
         </span>
         <div className="min-w-0 flex-1">
           <p className="text-[14px] font-extrabold text-[var(--green-900)]">
-            Votre exercice professionnel
+            {t("title")}
           </p>
-          <p className="text-[12px] text-[var(--slate)]">
-            Ces informations figureront sur votre carte
-          </p>
+          <p className="text-[12px] text-[var(--slate)]">{t("subtitle")}</p>
         </div>
+
         {complete && (
           <span className="inline-flex flex-none items-center gap-1 rounded-full bg-[var(--green-tint)] px-2.5 py-1 text-[10.5px] font-bold text-[var(--green-700)]">
-            <Check className="h-3 w-3" /> Complet
+            <Check className="h-3 w-3" /> {t("complete")}
           </span>
         )}
       </div>
 
       <div className="mt-5 grid gap-4 sm:grid-cols-2">
         <Field data-invalid={!!error && !specialisationId}>
-          <FieldLabel htmlFor="specialisation">Spécialité</FieldLabel>
+          <FieldLabel htmlFor="specialisation">{t("specialisation")}</FieldLabel>
           <select
             id="specialisation"
             value={specialisationId ?? ""}
@@ -142,54 +146,62 @@ export function EmploymentCard({
             }}
             className="h-9 rounded-lg border border-[var(--line)] bg-white px-3 text-[13px] outline-none focus-visible:border-[var(--green-500)] focus-visible:ring-2 focus-visible:ring-[var(--green-500)]/25 disabled:opacity-60"
           >
-            <option value="">Sélectionnez…</option>
+            <option value="">{t("choose")}</option>
+            {/* ONE language in the list. The pairing belonged in the preview
+                below, which shows the card; a dropdown is a control. */}
             {specialisations.data?.map((s) => (
               <option key={s.id} value={s.id}>
-                {s.labelFr} — {s.labelAr}
+                {arabic ? s.labelAr : s.labelFr}
               </option>
             ))}
           </select>
-          <FieldDescription>
-            Imprimée sur la carte sous « التخصص ».
-          </FieldDescription>
+          <FieldDescription>{t("specialisationHint")}</FieldDescription>
         </Field>
 
         <Field data-invalid={!!error && !institution.trim()}>
-          <FieldLabel htmlFor="institution">Organe de presse</FieldLabel>
+          <FieldLabel htmlFor="institution">{t("institution")}</FieldLabel>
+          {/* ⚠️ dir="auto": an outlet writes its own name in its own script.
+              «Al Akhbar» and «الأخبار» are both correct, and the field must
+              follow what is typed rather than the page. */}
           <Input
             id="institution"
+            dir="auto"
             value={institution}
             disabled={!editable}
             onChange={(e) => { setInstitution(e.target.value); setError(undefined); }}
-            placeholder="Mauri News, Agence Mauritanienne d'Information…"
+            placeholder={t("institutionPlaceholder")}
             maxLength={200}
           />
-          <FieldDescription>
-            Imprimé sur la carte sous « المؤسسة ».
-          </FieldDescription>
+          <FieldDescription>{t("institutionHint")}</FieldDescription>
         </Field>
       </div>
 
-      {/* ── what will actually be printed ── */}
+      {/* ══ what will actually be printed ══
+          ARABIC IN BOTH LANGUAGES — see the note at the top of the file. */}
       {complete && (
         <div className="mt-4 rounded-xl border border-[var(--line)] bg-[#fbfcfb] p-4">
           <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--green-700)]">
-            <IdCard className="h-3 w-3" /> Tel qu&apos;imprimé sur la carte
+            <IdCard className="h-3 w-3 flex-none" /> {t("asPrinted")}
           </p>
-          <dl className="mt-2.5 space-y-1.5">
+
+          {/* One dir on the container rather than on every cell: this block
+              is a fragment of the card, and the card is an RTL document. */}
+          <dl dir="rtl" lang="ar" className="mt-2.5 space-y-1.5">
             <div className="flex items-baseline justify-between gap-4">
-              <dt dir="rtl" className="text-[12.5px] font-semibold text-[var(--slate)]">
-                : التخصص
+              <dt className="flex-none text-[12.5px] font-semibold text-[var(--slate)]">
+                التخصص :
               </dt>
-              <dd dir="rtl" className="flex-1 text-right text-[13.5px] font-bold text-[var(--ink)]">
+              <dd className="min-w-0 flex-1 truncate text-start text-[13.5px] font-bold text-[var(--ink)]">
                 {chosen?.labelAr}
               </dd>
             </div>
             <div className="flex items-baseline justify-between gap-4">
-              <dt dir="rtl" className="text-[12.5px] font-semibold text-[var(--slate)]">
-                : المؤسسة
+              <dt className="flex-none text-[12.5px] font-semibold text-[var(--slate)]">
+                المؤسسة :
               </dt>
-              <dd dir="rtl" className="flex-1 truncate text-right text-[13.5px] font-bold text-[var(--ink)]">
+              {/* The outlet name as typed — it may be Latin even here, and
+                  the card prints it as given. */}
+              <dd dir="auto" className="min-w-0 flex-1 truncate text-start text-[13.5px] font-bold text-[var(--ink)]">
                 {institution.trim()}
               </dd>
             </div>
@@ -206,7 +218,7 @@ export function EmploymentCard({
       {editable && (
         <div className="mt-5 flex justify-end border-t border-[var(--line)] pt-4">
           <Button onClick={submit} disabled={save.isPending}>
-            {save.isPending ? "Enregistrement…" : "Enregistrer"}
+            {save.isPending ? t("saving") : t("save")}
           </Button>
         </div>
       )}

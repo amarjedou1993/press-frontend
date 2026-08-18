@@ -21,6 +21,8 @@ export interface RegisterCandidateRequest {
   email: string;
   phone: string; // mandatory since feedback §2.1 — mirrors the backend
   password: string;
+  /** The interface locale at registration — decides the language of e-mail. */
+  locale?: string;
 }
 
 /* ── Errors (backend: RFC 7807 ProblemDetail) ──────────────── */

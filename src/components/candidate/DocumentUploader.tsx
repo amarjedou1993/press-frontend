@@ -1,22 +1,15 @@
 "use client";
 // src/components/candidate/DocumentUploader.tsx
-// Adds evidence: a FILE upload, or LINKS.
 //
-// TWO IMPROVEMENTS over the first version:
+// Adding a supporting document — a file, or one or more published links.
 //
-// 1. MULTIPLE LINKS AT ONCE. A category requiring three published articles
-//    used to mean opening this dialog three times. Now the dialog opens with
-//    as many inputs as are still missing, they are validated together, and
-//    they are sent together. Asking someone to repeat a modal three times is
-//    a tax on the applicant for our convenience.
-//
-// 2. HONEST FILE VALIDATION. An empty or corrupt file used to be refused with
-//    whatever message the server happened to produce. Now: zero-byte files
-//    are named as such, and images/PDFs are checked for a valid signature
-//    (magic bytes) rather than trusting the extension — a .pdf that is
-//    actually a renamed .exe has the wrong first four bytes.
+// ⚠️ THE LABELS ARE NO LONGER DUPLICATED HERE. This file carried its own
+// French names for the four document types, alongside the ones the backend
+// already sends and the ones CompletenessService uses. Three copies of one
+// list drift; the `documentType` namespace is now the single source.
 
 import { useState, useRef, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Upload, FileText, X, Plus, Trash2, Link2 } from "lucide-react";
@@ -35,27 +28,12 @@ import { ApiError } from "@/lib/api/client";
 const MAX_SIZE_MB = 10;
 const ACCEPTED = ["application/pdf", "image/jpeg", "image/png"];
 
-const LABELS: Record<DocumentType, { fr: string; hint: string; isFile: boolean }> = {
-  CONTRACT: {
-    fr: "Contrat de travail",
-    hint: "PDF ou photo de votre contrat en cours de validité.",
-    isFile: true,
-  },
-  WORK_CERTIFICATE: {
-    fr: "Attestation de travail",
-    hint: "Document délivré par votre employeur.",
-    isFile: true,
-  },
-  WEBSITE: {
-    fr: "Site web professionnel",
-    hint: "Adresse de votre site ou blog professionnel.",
-    isFile: false,
-  },
-  WORK_LINK: {
-    fr: "Liens de publication",
-    hint: "Adresses d'articles que vous avez publiés.",
-    isFile: false,
-  },
+/** Which types are uploaded and which are typed. Everything else is a key. */
+const IS_FILE: Record<DocumentType, boolean> = {
+  CONTRACT: true,
+  WORK_CERTIFICATE: true,
+  WEBSITE: false,
+  WORK_LINK: false,
 };
 
 /* ── file signature check: the bytes, not the extension ── */
@@ -100,6 +78,10 @@ export function DocumentUploader({
   open: boolean;
   onOpenChange: (o: boolean) => void;
 }) {
+  const t = useTranslations("uploader");
+  const td = useTranslations("documentType");
+  const th = useTranslations("documentHint");
+
   const qc = useQueryClient();
   const token = useAuthStore((s) => s.token);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -110,15 +92,16 @@ export function DocumentUploader({
   const [error, setError] = useState<string>();
   const [checking, setChecking] = useState(false);
 
-  const meta = docType ? LABELS[docType] : null;
+  const isFile = docType ? IS_FILE[docType] : false;
+  const typeLabel = docType ? td(docType) : t("addPiece");
 
   // Open with as many inputs as are still missing (capped for sanity).
   useEffect(() => {
-    if (open && meta && !meta.isFile) {
+    if (open && docType && !IS_FILE[docType]) {
       setUrls(Array.from({ length: Math.min(Math.max(remaining, 1), 10) }, () => ""));
       setUrlErrors({});
     }
-  }, [open, remaining, meta]);
+  }, [open, remaining, docType]);
 
   const reset = () => {
     setFile(null); setUrls([""]); setUrlErrors({}); setError(undefined);
@@ -134,10 +117,10 @@ export function DocumentUploader({
     mutationFn: () => uploadDocument(applicationId, docType!, file!, token),
     onSuccess: () => {
       refresh();
-      toast.success("Pièce ajoutée", { description: `${meta?.fr} a été téléversé.` });
+      toast.success(t("pieceAdded"), { description: t("uploaded", { type: typeLabel }) });
       close();
     },
-    onError: (e) => setError(e instanceof Error ? e.message : "Le téléversement a échoué."),
+    onError: (e) => setError(e instanceof Error ? e.message : t("uploadFailed")),
   });
 
   /** All links in one go — partial success is reported honestly. */
@@ -152,20 +135,18 @@ export function DocumentUploader({
     onSuccess: ({ total, failed }) => {
       refresh();
       if (failed === 0) {
-        toast.success(
-          total === 1 ? "Lien ajouté" : `${total} liens ajoutés`,
-          { description: `${meta?.fr} enregistré.` }
-        );
+        toast.success(t("linksAdded", { count: total }),
+          { description: t("recorded", { type: typeLabel }) });
         close();
       } else {
         // Say exactly what happened rather than pretending it all worked.
-        toast.warning(`${total - failed} lien(s) ajouté(s), ${failed} en échec`, {
-          description: "Vérifiez les adresses restantes et réessayez.",
+        toast.warning(t("partialFailure", { added: total - failed, failed }), {
+          description: t("checkRemaining"),
         });
       }
     },
     onError: (e) =>
-      setError(e instanceof ApiError ? (e.problem.detail ?? e.message) : "L'ajout a échoué."),
+      setError(e instanceof ApiError ? (e.problem.detail ?? e.message) : t("addFailed")),
   });
 
   async function pickFile(selected: File | undefined) {
@@ -175,15 +156,15 @@ export function DocumentUploader({
     // Zero bytes: a real case (interrupted copy, empty scan) that a size
     // check alone would let through with a confusing server error.
     if (selected.size === 0) {
-      setError("Ce fichier est vide (0 octet). Vérifiez-le et réessayez.");
+      setError(t("emptyFile"));
       return;
     }
     if (selected.size > MAX_SIZE_MB * 1024 * 1024) {
-      setError(`Le fichier dépasse ${MAX_SIZE_MB} Mo.`);
+      setError(t("tooLarge", { max: MAX_SIZE_MB }));
       return;
     }
     if (!ACCEPTED.includes(selected.type)) {
-      setError("Formats acceptés : PDF, JPEG, PNG.");
+      setError(t("wrongFormat"));
       return;
     }
 
@@ -192,14 +173,11 @@ export function DocumentUploader({
     try {
       const genuine = await looksLikeItsType(selected);
       if (!genuine) {
-        setError(
-          "Ce fichier semble endommagé ou n'est pas du format annoncé. " +
-          "Ouvrez-le pour vérifier, puis réessayez."
-        );
+        setError(t("corrupt"));
         return;
       }
     } catch {
-      setError("Ce fichier n'a pas pu être lu.");
+      setError(t("unreadable"));
       return;
     } finally {
       setChecking(false);
@@ -218,11 +196,11 @@ export function DocumentUploader({
       const value = raw.trim();
       if (!value) return;                       // blanks are simply skipped
       if (!isValidUrl(value)) {
-        errors[i] = "Adresse invalide (exemple : https://exemple.mr/article)";
+        errors[i] = t("invalidUrl");
         return;
       }
       if (seen.has(value)) {
-        errors[i] = "Ce lien est déjà saisi ci-dessus.";
+        errors[i] = t("duplicateUrl");
         return;
       }
       seen.add(value);
@@ -234,7 +212,7 @@ export function DocumentUploader({
       return;
     }
     if (filled.length === 0) {
-      setError("Saisissez au moins une adresse.");
+      setError(t("atLeastOne"));
       return;
     }
     setUrlErrors({});
@@ -248,33 +226,33 @@ export function DocumentUploader({
     <Dialog open={open} onOpenChange={(o) => (o ? onOpenChange(true) : close())}>
       <DialogContent className="sm:max-w-[520px]">
         <DialogHeader>
-          <DialogTitle>{meta?.fr ?? "Ajouter une pièce"}</DialogTitle>
+          <DialogTitle>{typeLabel}</DialogTitle>
           <DialogDescription>
-            {meta?.hint}
-            {!meta?.isFile && remaining > 1 && (
-              <> Vous pouvez en saisir {remaining} d&apos;un coup.</>
-            )}
+            {docType && th(docType)}
+            {!isFile && remaining > 1 && <> {t("severalAtOnce", { count: remaining })}</>}
           </DialogDescription>
         </DialogHeader>
 
-        {meta?.isFile ? (
+        {isFile ? (
           /* ══ file ══ */
           <Field data-invalid={!!error}>
-            <FieldLabel htmlFor="doc-file">Fichier</FieldLabel>
+            <FieldLabel htmlFor="doc-file">{t("file")}</FieldLabel>
 
             {file ? (
               <div className="flex items-center gap-3 rounded-xl border border-[var(--green-500)] bg-[var(--green-tint)] p-3.5">
                 <FileText className="h-5 w-5 flex-none text-[var(--green-700)]" />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[13px] font-semibold text-[var(--ink)]">
+                  {/* dir="auto": a filename may be in either script, and
+                      "rapport-2026.pdf" must not reorder in an Arabic page. */}
+                  <p dir="auto" className="truncate text-[13px] font-semibold text-[var(--ink)]">
                     {file.name}
                   </p>
                   <p className="text-[11.5px] text-[var(--slate)]">
-                    {(file.size / 1024 / 1024).toFixed(2)} Mo
+                    {t("megabytes", { size: (file.size / 1024 / 1024).toFixed(2) })}
                   </p>
                 </div>
                 <button type="button" onClick={() => setFile(null)}
-                  aria-label="Retirer le fichier"
+                  aria-label={t("removeFile")}
                   className="flex-none rounded-lg p-1.5 text-[var(--muted-fg)] hover:bg-white hover:text-[var(--red-500)]">
                   <X className="h-4 w-4" />
                 </button>
@@ -288,10 +266,10 @@ export function DocumentUploader({
               >
                 <Upload className="h-6 w-6 text-[var(--muted-fg)]" />
                 <span className="text-[13px] font-semibold text-[var(--green-700)]">
-                  {checking ? "Vérification…" : "Choisir un fichier"}
+                  {checking ? t("checking") : t("chooseFile")}
                 </span>
                 <span className="text-[11.5px] text-[var(--muted-fg)]">
-                  PDF, JPEG ou PNG · {MAX_SIZE_MB} Mo maximum
+                  {t("formats", { max: MAX_SIZE_MB })}
                 </span>
               </button>
             )}
@@ -308,16 +286,23 @@ export function DocumentUploader({
             {urls.map((value, i) => (
               <Field key={i} data-invalid={!!urlErrors[i]}>
                 <FieldLabel htmlFor={`doc-url-${i}`}>
-                  {urls.length > 1 ? `Lien ${i + 1}` : "Adresse"}
+                  {urls.length > 1 ? t("linkNumber", { n: i + 1 }) : t("address")}
                 </FieldLabel>
                 <div className="flex items-center gap-2">
                   <div className="relative flex-1">
-                    <Link2 className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--muted-fg)]" />
+                    {/* start-3 / ps-9: the icon sits at the reading edge. */}
+                    <Link2 className="pointer-events-none absolute start-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--muted-fg)]" />
+                    {/* ⚠️ dir="ltr" ALWAYS. A URL is a Latin string full of
+                        slashes, dots and hyphens — every one of which
+                        bidi-reorders inside an RTL field. Someone typing a
+                        link in an Arabic page would watch it scramble as they
+                        went. */}
                     <Input
                       id={`doc-url-${i}`}
                       type="url"
                       inputMode="url"
-                      className="pl-9"
+                      dir="ltr"
+                      className="ps-9 text-start"
                       placeholder="https://exemple.mr/mon-article"
                       value={value}
                       aria-invalid={!!urlErrors[i]}
@@ -340,7 +325,7 @@ export function DocumentUploader({
                         setUrls(urls.filter((_, j) => j !== i));
                         setUrlErrors({});
                       }}
-                      aria-label={`Retirer le lien ${i + 1}`}
+                      aria-label={t("removeLink", { n: i + 1 })}
                       className="flex-none rounded-lg p-2 text-[var(--muted-fg)] transition-colors hover:bg-[var(--red-tint)] hover:text-[var(--red-500)]"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -357,14 +342,11 @@ export function DocumentUploader({
                 onClick={() => setUrls([...urls, ""])}
                 className="inline-flex items-center gap-1.5 text-[12.5px] font-bold text-[var(--green-700)] hover:text-[var(--green-600)]"
               >
-                <Plus className="h-3.5 w-3.5" /> Ajouter un autre lien
+                <Plus className="h-3.5 w-3.5 flex-none" /> {t("addAnotherLink")}
               </button>
             )}
 
-            <FieldDescription>
-              Les adresses doivent être publiquement accessibles pour que la
-              commission puisse les consulter. Les champs vides sont ignorés.
-            </FieldDescription>
+            <FieldDescription>{t("linksNote")}</FieldDescription>
 
             {error && <FieldError errors={[{ message: error }]} />}
           </div>
@@ -372,20 +354,18 @@ export function DocumentUploader({
 
         <DialogFooter>
           <Button type="button" variant="outline" onClick={close}>
-            Annuler
+            {t("cancel")}
           </Button>
           <Button
             type="button"
-            onClick={() => (meta?.isFile ? upload.mutate() : submitLinks())}
-            disabled={pending || (meta?.isFile ? !file : filledCount === 0)}
+            onClick={() => (isFile ? upload.mutate() : submitLinks())}
+            disabled={pending || (isFile ? !file : filledCount === 0)}
           >
             {pending
-              ? "Envoi…"
-              : meta?.isFile
-                ? "Téléverser"
-                : filledCount > 1
-                  ? `Ajouter ${filledCount} liens`
-                  : "Ajouter le lien"}
+              ? t("sending")
+              : isFile
+                ? t("uploadAction")
+                : t("addLinks", { count: filledCount })}
           </Button>
         </DialogFooter>
       </DialogContent>

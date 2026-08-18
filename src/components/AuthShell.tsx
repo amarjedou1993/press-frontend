@@ -1,61 +1,100 @@
 "use client";
 // src/components/AuthShell.tsx
 //
+// A journalist's first impression of the Authority. Whoever reaches this
+// screen is about to hand their identity documents to a government system —
+// what the page must establish, before a field is filled, is that this is the
+// real thing.
+//
 // ───────────────────────────────────────────────────────────────────────
-// A JOURNALIST'S FIRST IMPRESSION OF THE AUTHORITY.
+// ⚠️ THE FIELD PRIMITIVES RESOLVE ERROR CODES, NOT SENTENCES.
 //
-// Whoever reaches this screen is about to hand over their identity documents
-// to a government system. What the page has to establish, before a single
-// field is filled, is that this is the real thing — hence the state seal, the
-// guilloche engraving, and the specimen card set as the object being applied
-// for rather than as an illustration.
+// Validation used to return French text: «Adresse e-mail invalide». Under an
+// Arabic label that is the exact mixed-language failure this whole exercise
+// exists to avoid.
 //
-// THREE THINGS CHANGED FROM THE PREVIOUS VERSION.
+// So the validators now return KEYS — "validation.email" — and Field resolves
+// them here. A key that has no entry is rendered as-is, which lets a SERVER
+// message («Cet e-mail est déjà utilisé», already translated by the backend)
+// pass through untouched.
 //
-// 1. THE SPECIMEN IS NOW THE REAL COMPONENT. AuthShell carried its own
-//    hand-built card, made before <PressCard/> existed — showing an obsolete
-//    number format (MCACRP-2026-000000, since replaced by A - 0001 / 26) and
-//    a layout the adopted design no longer uses. A registration page that
-//    shows a card unlike the one the applicant will receive undersells the
-//    thing at the exact moment it should sell it. Two specimens also means
-//    the next card change updates one of them.
-//
-// 2. THE ACCENTS ARE BACK. "Republique", "Donnees securisees", "traitees",
-//    "l'accreditation", "ACCREDITATION" — a page missing every accent reads
-//    as unfinished to a French speaker, and this is the Authority's first
-//    word to them.
-//
-// 3. IT SPEAKS THE SITE'S VOCABULARY. Guilloche, the official seal, foil
-//    rules, microprint — the same devices as the public pages and the card
-//    itself, so arriving here feels like the same institution.
+// Every call site is unchanged: they still pass `error` and it still renders.
 // ───────────────────────────────────────────────────────────────────────
 
 import { useState, type ReactNode } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Eye, EyeOff, ShieldCheck, Languages } from "lucide-react";
 import { PressCard } from "@/components/public/PressCard";
-import {
-  Guilloche, OfficialSeal, TricolorRule,
-} from "@/components/public/patterns";
-
-// function NationalMark({ small = false }: { small?: boolean }) {
-//   const h = small ? "h-3" : "h-3.5";
-//   return (
-//     <span className="inline-flex items-center gap-1" aria-hidden="true">
-//       <i className={`${h} w-1.5 rounded-full bg-[var(--green-500)]`} />
-//       <i className={`${h} w-1.5 rounded-full bg-[var(--gold-500)]`} />
-//       <i className={`${h} w-1.5 rounded-full bg-[var(--red-500)]`} />
-//     </span>
-//   );
-// }
+import { LocaleSwitcher } from "@/components/LocaleSwitcher";
+import { Guilloche, OfficialSeal, TricolorRule } from "@/components/public/patterns";
 
 export function AuthShell({
   title, subtitle, children, footer,
 }: {
   title: string; subtitle: string; children: ReactNode; footer: ReactNode;
 }) {
+  const locale = useLocale();
+  const t = useTranslations("auth");
+  const arabic = locale === "ar";
+
+  /* ── the two halves of the ministry signature ── */
+
+  const latinName = (
+    <p
+      dir="ltr"
+      lang="fr"
+      className="gold-foil text-[10.5px] font-bold uppercase leading-[1.7] tracking-[0.16em]"
+    >
+      Ministère de la Culture, des Arts,
+      <br />
+      de la Communication et des Relations
+      <br />
+      avec le Parlement
+    </p>
+  );
+
+  const arabicName = (
+    <p
+      dir="rtl"
+      lang="ar"
+      className="text-[13px] font-semibold leading-[1.8] text-white/40"
+    >
+      وزارة الثقافة والفنون والاتصال والعلاقات مع البرلمان
+    </p>
+  );
+
+  /**
+   * ⚠️ Arabic leading gets the foil WITHOUT tracking.
+   *
+   * gold-foil carries letter-spacing: 0.16em, which separates Arabic
+   * letterforms — the word visibly falls apart.
+   */
+  const arabicNameLeading = (
+    <p
+      dir="rtl"
+      lang="ar"
+      className="gold-foil text-[15px] font-bold leading-[1.85]"
+      style={{ letterSpacing: 0 }}
+    >
+      وزارة الثقافة والفنون والاتصال والعلاقات مع البرلمان
+    </p>
+  );
+
+  const latinNameFollowing = (
+    <p
+      dir="ltr"
+      lang="fr"
+      className="text-[10px] font-bold uppercase leading-[1.75] tracking-[0.12em] text-white/40"
+    >
+      Ministère de la Culture, des Arts, de la Communication
+      <br />
+      et des Relations avec le Parlement
+    </p>
+  );
+
   return (
     <main className="grid min-h-screen lg:grid-cols-[1.1fr_1fr]">
 
@@ -71,11 +110,11 @@ export function AuthShell({
         }}
       >
         <Guilloche
-          className="pointer-events-none absolute -left-52 -top-56 h-[640px] w-[640px] text-white opacity-[0.055]"
+          className="rtl-mirror pointer-events-none absolute -left-52 -top-56 h-[640px] w-[640px] text-white opacity-[0.055]"
           rings={50}
         />
         <Guilloche
-          className="pointer-events-none absolute -bottom-64 -right-40 h-[460px] w-[460px] text-[var(--gold-500)] opacity-[0.05]"
+          className="rtl-mirror pointer-events-none absolute -bottom-64 -right-40 h-[460px] w-[460px] text-[var(--gold-500)] opacity-[0.05]"
           rings={34}
         />
         <div
@@ -85,13 +124,6 @@ export function AuthShell({
         />
 
         <header className="relative z-10">
-          {/* <div className="flex items-center gap-3">
-            <NationalMark />
-            <p className="text-[10.5px] font-bold uppercase tracking-[0.22em] text-white/55">
-              République Islamique de Mauritanie
-            </p>
-          </div> */}
-
           <div className="mt-8 flex items-start gap-5">
             <span className="relative mt-1 flex h-[54px] w-[54px] flex-none items-center justify-center">
               <span
@@ -106,34 +138,29 @@ export function AuthShell({
               />
             </span>
 
+            {/* The reader's own language leads; the other follows. */}
             <div className="min-w-0">
-              <p className="gold-foil text-[10.5px] font-bold uppercase leading-[1.7] tracking-[0.16em]">
-                Ministère de la Culture, des Arts,
-                <br />
-                de la Communication et des Relations
-                <br />
-                avec le Parlement
-              </p>
-              <p dir="rtl" className="mt-2.5 text-[13px] font-semibold leading-[1.8] text-white/40">
-              وزارة الثقافة والفنون والاتصالات والعلاقات مع البرلمان
-              </p>
+              {arabic ? arabicNameLeading : latinName}
+              <div className="mt-2.5">
+                {arabic ? latinNameFollowing : arabicName}
+              </div>
             </div>
           </div>
 
           <span className="foil-rule mt-7 block h-px w-40 opacity-55" aria-hidden="true" />
 
           <h1 className="engraved-dark mt-7 text-[38px] font-extrabold leading-[1.08] tracking-[-0.015em] xl:text-[44px]">
-            La carte de presse
-            <br />
-            <span className="text-[var(--gold-500)]">officielle</span> de la Mauritanie
+            {t.rich("heroTitle", {
+              gold: (c) => <span className="text-[var(--gold-500)]">{c}</span>,
+              br: () => <br />,
+            })}
           </h1>
         </header>
 
         {/* THE SPECIMEN — the real component, so what an applicant sees here
-            is what they will actually be issued. */}
-        {/* <div className="relative z-10 self-center py-8">
-          <PressCard className="w-full max-w-[420px]" />
-        </div> */}
+            is what they will actually be issued.
+            ⚠️ NOT mirrored: the card is a physical object with a fixed
+            layout, and Arabic already leads on it. */}
         <div className="relative z-10 self-center px-6 py-8">
           <PressCard className="mx-auto w-full max-w-[380px]" />
         </div>
@@ -141,31 +168,24 @@ export function AuthShell({
         <footer className="relative z-10">
           <div className="flex flex-wrap gap-x-7 gap-y-2.5 text-[11.5px] font-semibold text-white/65">
             <span className="inline-flex items-center gap-2">
-              <ShieldCheck className="h-3.5 w-3.5 text-[var(--gold-500)]" />
-              Données sécurisées
+              <ShieldCheck className="h-3.5 w-3.5 flex-none text-[var(--gold-500)]" />
+              {t("secureData")}
             </span>
             <span className="inline-flex items-center gap-2">
-              <Languages className="h-3.5 w-3.5 text-[var(--gold-500)]" />
-              Bilingue FR / AR
+              <Languages className="h-3.5 w-3.5 flex-none text-[var(--gold-500)]" />
+              {t("bilingual")}
             </span>
           </div>
 
           <p className="mt-4 max-w-md text-[12px] leading-relaxed text-white/40">
-            Espace sécurisé — vos informations sont traitées par le Ministère
-            dans le cadre de l&apos;accréditation des journalistes.
+            {t("secureNotice")}
           </p>
-
-          {/* <MicroprintRule
-            className="mt-6 text-white opacity-[0.13]"
-            repeat={12}
-          /> */}
         </footer>
       </section>
 
       {/* ══════════════════════════════════════════════════════════
           THE FORM
           ══════════════════════════════════════════════════════════ */}
-      {/* <section className="relative flex items-center justify-center bg-white p-6 sm:p-12"> */}
       <section className="relative flex items-center justify-center overflow-hidden bg-white p-6 sm:p-12">
         <div
           className="pointer-events-none absolute inset-0 opacity-60"
@@ -173,32 +193,38 @@ export function AuthShell({
           aria-hidden="true"
         />
         <Guilloche
-          className="pointer-events-none absolute -right-28 -top-28 h-[360px] w-[360px] text-[var(--green-900)] opacity-[0.03]"
+          className="rtl-mirror pointer-events-none absolute -right-28 -top-28 h-[360px] w-[360px] text-[var(--green-900)] opacity-[0.03]"
           rings={30}
         />
 
         <div className="relative z-10 w-full max-w-md">
-          {/* the lockup, for the narrow layout where the left panel is gone */}
-          <div className="mb-9 flex items-center gap-3 lg:hidden">
-            <span className="flex h-9 w-9 flex-none items-center justify-center">
-              <OfficialSeal
-                className="h-full w-full"
-                color="var(--green-700)"
-                id="auth-seal-mobile"
-              />
+          {/* the lockup and the switcher, for the narrow layout where the
+              left panel is gone. The switcher must be reachable there too —
+              a visitor arriving in the wrong language needs a way out. */}
+          <div className="mb-9 flex items-center justify-between gap-3 lg:hidden">
+            <span className="flex min-w-0 items-center gap-3">
+              <span className="flex h-9 w-9 flex-none items-center justify-center">
+                <OfficialSeal
+                  className="h-full w-full"
+                  color="var(--green-700)"
+                  id="auth-seal-mobile"
+                />
+              </span>
+              <span className="min-w-0 truncate text-[12.5px] font-extrabold leading-tight text-[var(--green-900)]">
+                {t("eyebrow")}
+              </span>
             </span>
-            <span className="text-[12.5px] font-extrabold leading-tight tracking-[0.08em] text-[var(--green-900)]">
-              MCACRP
-              <span className="mx-1.5 text-[var(--gold-700)]">/</span>
-              <span className="text-[var(--slate)]">Accréditation presse</span>
-            </span>
+            <LocaleSwitcher variant="light" />
           </div>
 
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--green-700)]">
-            Accréditation presse
-          </p>
+          <div className="mb-2.5 hidden items-center justify-between gap-3 lg:flex">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--green-700)]">
+              {t("eyebrow")}
+            </p>
+            <LocaleSwitcher variant="light" />
+          </div>
 
-          <h2 className="mt-2.5 text-[30px] font-extrabold leading-tight tracking-tight text-[var(--green-900)]">
+          <h2 className="text-[30px] font-extrabold leading-tight tracking-tight text-[var(--green-900)]">
             {title}
           </h2>
 
@@ -226,22 +252,40 @@ export function AuthShell({
    FORM PRIMITIVES — same signatures, unchanged API
    ══════════════════════════════════════════════════════════════════ */
 
+/**
+ * Resolve a validation key, or pass a sentence through unchanged.
+ *
+ * Client validators return keys ("validation.email"); the SERVER returns
+ * finished sentences. Checking whether the key exists lets both work through
+ * the same prop, so no call site had to change.
+ */
+function useFieldError() {
+  const t = useTranslations();
+  return (error?: string) => {
+    if (!error) return undefined;
+    return t.has(error) ? t(error) : error;
+  };
+}
+
 export function Field({
   label, error, ...inputProps
 }: { label: string; error?: string } & React.ComponentProps<typeof Input>) {
   const id = inputProps.id ?? inputProps.name;
+  const resolve = useFieldError();
+  const message = resolve(error);
+
   return (
     <div className="mb-5 space-y-2">
       <Label htmlFor={id}>{label}</Label>
       <Input
         id={id}
-        aria-invalid={!!error}
-        className={error ? "border-[var(--red-500)]" : ""}
+        aria-invalid={!!message}
+        className={message ? "border-[var(--red-500)]" : ""}
         {...inputProps}
       />
-      {error && (
+      {message && (
         <p className="text-xs font-medium text-[var(--red-500)]" role="alert">
-          {error}
+          {message}
         </p>
       )}
     </div>
@@ -252,45 +296,49 @@ export function PasswordField({
   label, error, ...inputProps
 }: { label: string; error?: string } & Omit<React.ComponentProps<typeof Input>, "type">) {
   const id = inputProps.id ?? inputProps.name;
+  const t = useTranslations("auth");
+  const resolve = useFieldError();
+  const message = resolve(error);
   const [visible, setVisible] = useState(false);
+
   return (
     <div className="mb-5 space-y-2">
       <Label htmlFor={id}>{label}</Label>
       <div className="relative">
+        {/* pe-11 rather than pr-11: the reveal button sits at the END of the
+            field, which is the left in Arabic. */}
         <Input
           id={id}
           type={visible ? "text" : "password"}
-          aria-invalid={!!error}
-          className={`pr-11 ${error ? "border-[var(--red-500)]" : ""}`}
+          aria-invalid={!!message}
+          // A password is typed left-to-right whatever the page: it may
+          // contain Latin letters and digits, and mixing directions inside
+          // one field makes the caret jump.
+          dir="ltr"
+          className={`pe-11 text-start ${message ? "border-[var(--red-500)]" : ""}`}
           {...inputProps}
         />
         <button
           type="button"
           onClick={() => setVisible((v) => !v)}
-          aria-label={visible ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+          aria-label={visible ? t("hidePassword") : t("showPassword")}
           aria-pressed={visible}
-          className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-[var(--muted-fg)] transition-colors hover:text-[var(--green-700)]"
+          className="absolute inset-y-0 end-0 flex w-11 items-center justify-center text-[var(--muted-fg)] transition-colors hover:text-[var(--green-700)]"
         >
           {visible ? <EyeOff size={18} /> : <Eye size={18} />}
         </button>
       </div>
-      {error && (
+      {message && (
         <p className="text-xs font-medium text-[var(--red-500)]" role="alert">
-          {error}
+          {message}
         </p>
       )}
     </div>
   );
 }
 
-/**
- * The submit button.
- *
- * Gold rather than the default green: on a white panel the primary action
- * should be the one thing the eye cannot miss, and gold is what this system
- * uses for a decision everywhere else.
- */
 export function SubmitButton({ children, loading }: { children: ReactNode; loading?: boolean }) {
+  const t = useTranslations("common");
   return (
     <button
       type="submit"
@@ -303,7 +351,7 @@ export function SubmitButton({ children, loading }: { children: ReactNode; loadi
       style={{ background: "linear-gradient(140deg, var(--green-600), var(--green-700) 60%, #05502c)" }}
     >
       <span className="relative z-10">
-        {loading ? "Veuillez patienter…" : children}
+        {loading ? t("pleaseWait") : children}
       </span>
       {/* the sheen the site uses on its primary actions */}
       <span
@@ -315,10 +363,12 @@ export function SubmitButton({ children, loading }: { children: ReactNode; loadi
 }
 
 export function FormError({ message }: { message?: string }) {
-  if (!message) return null;
+  const resolve = useFieldError();
+  const text = resolve(message);
+  if (!text) return null;
   return (
     <Alert variant="destructive" className="mb-5">
-      <AlertDescription>{message}</AlertDescription>
+      <AlertDescription>{text}</AlertDescription>
     </Alert>
   );
 }

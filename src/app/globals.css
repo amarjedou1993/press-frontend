@@ -263,3 +263,191 @@ input:focus-visible { outline: none; }
   .gold-foil, .foil-rule, .seal-turn { animation: none; }
   .gold-foil { background-position: 40% 50%; }
 }
+
+
+/* NEW for I18n */
+/* ══════════════════════════════════════════════════════════════════
+   BILINGUE — à ajouter à la fin de src/app/globals.css
+   ══════════════════════════════════════════════════════════════════
+
+   THE ARABIC FACE IS APPLIED BY DIRECTION, NOT BY CLASS.
+
+   Marking every Arabic element with a class means one gets missed, and a
+   missed element falls back to a Latin face that has no Arabic glyphs — the
+   same failure that produced '#' on the printed card. Keying off `dir`
+   applies it to the whole document at once.
+   ══════════════════════════════════════════════════════════════════ */
+
+:root {
+  --font-latin: var(--font-sans);
+}
+
+/* The whole document, when Arabic. */
+html[dir="rtl"] body {
+  font-family: var(--font-arabic), var(--font-sans), system-ui, sans-serif;
+}
+
+/* Machine values keep the Latin mono face in BOTH languages: a card number
+   read on screen must match the one printed on the card, digit for digit. */
+html[dir="rtl"] .font-mono,
+html[dir="rtl"] [class*="font-mono"] {
+  font-family: var(--font-mono), ui-monospace, monospace;
+}
+
+/* Arabic sits lower on the line and needs more leading than Latin at the
+   same size — without this, headings look cramped and body text dense. */
+html[dir="rtl"] h1,
+html[dir="rtl"] h2,
+html[dir="rtl"] h3 {
+  line-height: 1.32;
+  letter-spacing: 0;              /* negative tracking breaks Arabic joins */
+}
+html[dir="rtl"] p,
+html[dir="rtl"] li {
+  line-height: 1.9;
+}
+
+/* ⚠️ TRACKING IS FATAL TO ARABIC.
+   letter-spacing separates joined letterforms — the word visibly falls apart.
+   Tailwind's tracking-* utilities are used throughout this codebase for
+   small-caps labels; they must not reach Arabic text. */
+html[dir="rtl"] [class*="tracking-"] {
+  letter-spacing: 0 !important;
+}
+/* …except on Latin runs deliberately marked as such. */
+html[dir="rtl"] .latin,
+html[dir="rtl"] [lang="fr"],
+html[dir="rtl"] .font-mono {
+  letter-spacing: revert;
+}
+
+/* A Latin run inside Arabic text — an outlet name, a card number. */
+.latin {
+  font-family: var(--font-latin), system-ui, sans-serif;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+/* ══ MIRRORING ══════════════════════════════════════════════════════
+
+   Most of the layout mirrors itself: flex, grid and logical properties all
+   follow `dir`. What does NOT mirror is anything positioned with physical
+   values — left/right insets, and directional icons.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Arrows point the way the reader travels. An arrow saying "next" that
+   points right in an RTL page is pointing backwards. */
+html[dir="rtl"] .rtl-flip {
+  transform: scaleX(-1);
+}
+
+/* Decorative engraving anchored to an edge — the guilloche, the corner
+   rosettes. Mirroring keeps the composition rather than the coordinates. */
+html[dir="rtl"] .rtl-mirror {
+  transform: scaleX(-1);
+}
+html[dir="rtl"] .rtl-mirror-45 {
+  transform: scaleX(-1) rotate(-45deg);
+}
+
+/* The national band reads green–gold–red in both directions: it is a flag
+   device, not a sentence. Explicitly NOT mirrored. */
+html[dir="rtl"] .tricolore {
+  flex-direction: row;
+}
+
+/* ══ FORM CONTROLS ══════════════════════════════════════════════════ */
+
+/* A search field's icon sits at the reading edge in both directions.
+   Tailwind's left-3 does not move, so it is set logically here. */
+html[dir="rtl"] .field-icon-start {
+  left: auto;
+  right: 0.875rem;
+}
+html[dir="rtl"] .field-pad-start {
+  padding-left: 0.75rem;
+  padding-right: 2.5rem;
+}
+
+/* Numeric and machine inputs stay LTR whatever the page: an NNI typed
+   right-to-left is an NNI entered wrong. */
+html[dir="rtl"] input[inputmode="numeric"],
+html[dir="rtl"] input[type="tel"],
+html[dir="rtl"] input[type="email"],
+html[dir="rtl"] input[type="password"],
+html[dir="rtl"] input.font-mono {
+  direction: ltr;
+  text-align: right;   /* the reading edge, still */
+}
+
+/* ══ FREE TEXT ══════════════════════════════════════════════════════
+
+   A justification written by a commission member may be in either language,
+   and the member chooses. `dir="auto"` reads the first strong character and
+   sets direction from it — the only correct handling for text of unknown
+   direction.
+
+   Applied as a class so it can be searched for; the attribute does the work.
+   ══════════════════════════════════════════════════════════════════ */
+.user-text {
+  unicode-bidi: plaintext;
+}
+
+/* ══ PRINT ══════════════════════════════════════════════════════════ */
+@media print {
+  html[dir="rtl"] { direction: rtl; }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   À AJOUTER à la fin de src/app/globals.css, APRÈS les règles RTL
+   déjà en place.
+   ══════════════════════════════════════════════════════════════════
+
+   ⚠️ LES ESPACES DE L'AUTORITÉ NE SE RETOURNENT PAS — pour l'instant.
+
+   /ar/admin et /ar/reviewer sont des routes valides et seront un jour en
+   arabe. Mais leur texte est français aujourd'hui, et leurs mises en page
+   ont été construites pour un seul sens : tableaux, rail de phases, barre de
+   cohorte, écran d'examen à deux colonnes.
+
+   Une page française retournée est pire que l'une ou l'autre langue faite
+   correctement. La direction est donc figée tant que le texte l'est.
+
+   La garde porte sur <html data-space="staff">, posé par la mise en page
+   racine et maintenu par HtmlLang lors des navigations client. Quand les
+   catalogues de l'administration existeront, ce bloc disparaît d'un seul
+   tenant. */
+
+html[data-space="staff"] {
+  direction: ltr !important;
+}
+
+/* Le sous-arbre entier, pour que rien n'hérite d'un dir résiduel. */
+html[data-space="staff"] body,
+html[data-space="staff"] body * {
+  direction: ltr;
+}
+
+/* La police latine, quel que soit le préfixe de l'URL. */
+html[data-space="staff"] body {
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+/* Et l'interlettrage retrouvé : les petites capitales de l'administration
+   en dépendent, et la règle RTL le neutralise partout ailleurs. */
+html[data-space="staff"] [class*="tracking-"] {
+  letter-spacing: revert !important;
+}
+
+.tabular,
+[class*="font-mono"],
+td [class*="text-["],
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Inter a une hauteur d'x généreuse : les petites capitales de l'interface
+   respirent un peu plus qu'avec une grotesque condensée. */
+[class*="uppercase"][class*="tracking-"] {
+  font-feature-settings: "cv05" 1;   /* l à empattement, distinct du I */
+}
