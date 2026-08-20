@@ -1,22 +1,4 @@
 "use client";
-// src/components/candidate/EmploymentCard.tsx
-//
-// Specialisation and outlet — the two fields printed on the card that nothing
-// else in the system asks for. Collected here because a dossier without them
-// can be approved by the commission and then fail at issuance, which is the
-// one moment nobody can do anything about it.
-//
-// ───────────────────────────────────────────────────────────────────────
-// ⚠️ THE CARD PREVIEW STAYS IN ARABIC IN BOTH LANGUAGES.
-//
-// It is not a translation of the form — it is a facsimile of a physical
-// object. The adopted card prints التخصص and المؤسسة, and it prints them in
-// Arabic whoever the holder is.
-//
-// Showing a French reader "Spécialité : Reportage" would be a comfortable
-// lie: they would then be surprised by their own card. The whole point of
-// this block is to say "here is what will actually be printed".
-// ───────────────────────────────────────────────────────────────────────
 
 import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
@@ -29,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Field, FieldLabel, FieldDescription, FieldError } from "@/components/ui/field";
 import { apiFetch, ApiError } from "@/lib/api/client";
 import { applicationKeys } from "@/lib/api/applications";
+import { useFieldError } from "@/lib/useFieldError";
 
 interface Specialisation {
   id: number;
@@ -66,6 +49,7 @@ export function EmploymentCard({
 }) {
   const t = useTranslations("employment");
   const locale = useLocale();
+  const resolve = useFieldError();
   const qc = useQueryClient();
   const arabic = locale === "ar";
 
@@ -95,8 +79,14 @@ export function EmploymentCard({
       qc.invalidateQueries({ queryKey: applicationKeys.readiness(applicationId) });
       toast.success(t("savedTitle"), { description: t("savedBody") });
     },
-    onError: (e) =>
-      setError(e instanceof ApiError ? (e.problem.detail ?? e.message) : t("tryAgain")),
+    // onError: (e) =>
+    //   setError(e instanceof ApiError ? (e.problem.detail ?? e.message) : t("tryAgain")),
+        onError: (e) =>
+      // ⚠️ resolve(): the backend now sends KEYS
+      // ("blockers.INSTITUTION_MISSING"), not sentences. Without this a
+      // candidate would read the key itself on screen.
+      setError(resolve(
+        e instanceof ApiError ? (e.problem.detail ?? e.message) : t("tryAgain"))),
   });
 
   function submit() {

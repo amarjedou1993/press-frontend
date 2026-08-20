@@ -30,6 +30,7 @@ import { Eye, EyeOff, ShieldCheck, Languages } from "lucide-react";
 import { PressCard } from "@/components/public/PressCard";
 import { LocaleSwitcher } from "@/components/LocaleSwitcher";
 import { Guilloche, OfficialSeal, TricolorRule } from "@/components/public/patterns";
+import { useFieldError } from "@/lib/useFieldError";
 
 export function AuthShell({
   title, subtitle, children, footer,
@@ -259,13 +260,13 @@ export function AuthShell({
  * finished sentences. Checking whether the key exists lets both work through
  * the same prop, so no call site had to change.
  */
-function useFieldError() {
-  const t = useTranslations();
-  return (error?: string) => {
-    if (!error) return undefined;
-    return t.has(error) ? t(error) : error;
-  };
-}
+// function useFieldError() {
+//   const t = useTranslations();
+//   return (error?: string) => {
+//     if (!error) return undefined;
+//     return t.has(error) ? t(error) : error;
+//   };
+// }
 
 export function Field({
   label, error, ...inputProps

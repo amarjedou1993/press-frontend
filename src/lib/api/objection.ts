@@ -1,23 +1,32 @@
 // src/lib/api/objection.ts
-// Mirrors ObjectionController.
-//
-// As with the submission gate and the correction panel, the SERVER decides
-// whether the right may be exercised and says why not if not. One object
-// carries the verdict, the deadline, and the reason — so the form and its
-// explanation can never disagree.
-
 import { apiFetch } from "./client";
 
 export interface ObjectionEligibility {
   canObject: boolean;
-  /** Present when it cannot be filed — the server's own French wording. */
+
+  /**
+   * ⚠️ WHY THERE ARE THREE OF THESE, AND WHICH ONE TO USE.
+   *
+   * `blockedReason` is a CODE — "ALREADY_FILED", "DEADLINE_PASSED". It is the
+   * translation key, and it is what a screen should read.
+   *
+   * The two sentences exist for logs and for anything that cannot translate.
+   * One of them, DEADLINE_PASSED, embeds a date formatted server-side — which
+   * is exactly why a screen must not use it: the date would be French inside
+   * an Arabic page. `deadline` travels separately for that reason.
+   */
+  blockedReason?: string | null;
   blockedReasonFr?: string | null;
+  blockedReasonAr?: string | null;
+
   deadline: string | null;          // yyyy-MM-dd
   daysRemaining: number;
   alreadyFiled: boolean;
+
   /** The rejection being contested, for the form's context. */
   contestedJustification?: string | null;
   contestedGroundLabelFr?: string | null;
+  contestedGroundLabelAr?: string | null;
 }
 
 export interface ObjectionReasonOption {
@@ -26,6 +35,7 @@ export interface ObjectionReasonOption {
   labelFr: string;
   labelAr: string;
   hintFr?: string | null;
+  hintAr?: string | null;
   /** OTHER — the argument does all the work. */
   freeForm: boolean;
 }
@@ -55,10 +65,19 @@ export function getObjectionReasons(applicationId: number) {
   );
 }
 
-export function getFiledObjection(applicationId: number) {
-  return apiFetch<FiledObjection | null>(
+/**
+ * The objection already filed, or null.
+ *
+ * ⚠️ The endpoint answers 204 when none exists — an absence stated in the
+ * status line rather than a 200 with an empty body. apiFetch returns
+ * undefined for an empty body, which this normalises to null so the caller
+ * has one shape to check.
+ */
+export async function getFiledObjection(applicationId: number) {
+  const filed = await apiFetch<FiledObjection | undefined>(
     `/api/applications/${applicationId}/objection/filed`
   );
+  return filed ?? null;
 }
 
 export function fileObjection(

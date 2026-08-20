@@ -1,7 +1,4 @@
 "use client";
-// src/app/[locale]/(candidate)/profile/page.tsx
-//
-// The identity record, and the photograph that goes on the card.
 
 import { useEffect, useMemo } from "react";
 import { useTranslations } from "next-intl";
@@ -18,7 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Field, FieldLabel, FieldDescription, FieldError } from "@/components/ui/field";
 import { DatePicker } from "@/components/ui/date-picker";
 import { VerificationBanner } from "@/components/candidate/VerificationBanner";
-import { PhotoUpload, photoKeys, fetchPhotoStatus } from "@/components/candidate/PhotoUpload";
+import { PhotoUpload, photoKeys } from "@/components/candidate/PhotoUpload";
 import { IssuedCardPreview } from "@/components/candidate/IssuedCardPreview";
 import { Guilloche, OfficialSeal, MicroprintRule } from "@/components/public/patterns";
 import { getMe, updateAccount, updateProfile, accountKeys } from "@/lib/api/account";
@@ -27,24 +24,11 @@ import {
 } from "@/lib/schemas-candidate";
 import { ApiError } from "@/lib/api/client";
 import { useAuthStore } from "@/lib/auth";
-import { useFieldError } from "@/lib/useFieldError";
 
 export default function ProfilePage() {
   const t = useTranslations("profile");
   const tCommon = useTranslations("common");
   const tValidation = useTranslations("validation");
-
-  /**
-   * ⚠️ THE SERVER SENDS KEYS NOW.
-   *
-   * ProfileController answers with "validation.nniOrPassport" and
-   * "validation.nniTaken" rather than finished sentences — so that the same
-   * rule reads the same way whether the client or the server caught it.
-   *
-   * Without resolve(), a candidate would read the key itself in a toast.
-   */
-  const resolve = useFieldError();
-
   const qc = useQueryClient();
   const token = useAuthStore((st) => st.token);
   const me = useQuery({ queryKey: accountKeys.me, queryFn: getMe });
@@ -81,22 +65,22 @@ export default function ProfilePage() {
   const liveAccount = accountForm.watch();
   const liveProfile = profileForm.watch();
 
-  /**
-   * The photo status.
-   *
-   * ⚠️ Same query key and same function as PhotoUpload's, so TanStack serves
-   * both from one request. The function is IMPORTED rather than rewritten:
-   * two implementations of the same fetch drift, and this one decides whether
-   * the completeness badge is telling the truth.
-   */
+  // The photo must be fetched WITH the token — a plain <img src> gets 401.
   const photoStatus = useQuery({
     queryKey: photoKeys.status,
-    queryFn: () => fetchPhotoStatus(token),
+    queryFn: async () => {
+      const base = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
+      const res = await fetch(`${base}/api/me/photo/status`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        cache: "no-store",
+      });
+      if (!res.ok) return { hasPhoto: false, uploadedAt: null, ageing: false };
+      return res.json() as Promise<{ hasPhoto: boolean; uploadedAt: string | null; ageing: boolean }>;
+    },
   });
 
   const errText = (e: unknown) =>
-    resolve(e instanceof ApiError ? (e.problem.detail ?? e.message) : undefined)
-      ?? tCommon("retry");
+    e instanceof ApiError ? (e.problem.detail ?? e.message) : tCommon("retry");
 
   const saveAccount = useMutation({
     mutationFn: (v: AccountValues) =>
@@ -128,7 +112,7 @@ export default function ProfilePage() {
       if (e instanceof ApiError && e.problem.status === 409) {
         profileForm.setError("nni", {
           type: "server",
-          message: resolve(e.problem.detail) ?? tValidation("nniTaken"),
+          message: e.problem.detail ?? tValidation("nniTaken"),
         });
         return;
       }
@@ -184,7 +168,7 @@ export default function ProfilePage() {
           aria-hidden="true"
         />
         <Guilloche
-          className="rtl-mirror pointer-events-none absolute -right-24 -top-28 h-[330px] w-[330px] text-white opacity-[0.06]"
+          className="pointer-events-none absolute -right-24 -top-28 h-[330px] w-[330px] text-white opacity-[0.06]"
           rings={34}
         />
 
@@ -238,12 +222,9 @@ export default function ProfilePage() {
                     {t("missingCount", { count: missing.length })}
                   </p>
                   {/* NAMED, not merely counted — otherwise the candidate scans
-                      two forms hunting for the empty field.
-                      ⚠️ The separator comes from the catalogue: this is
-                      composed text, and its punctuation is a choice rather
-                      than an oversight. */}
+                      two forms hunting for the empty field. */}
                   <p className="mt-2.5 border-t border-white/15 pt-2.5 text-[11px] leading-relaxed text-white/55">
-                    {missing.join(t("missingSeparator"))}
+                    {missing.join(" · ")}
                   </p>
                 </>
               )}
@@ -293,11 +274,7 @@ export default function ProfilePage() {
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
                     <FieldLabel htmlFor={field.name}>{t("contact.fullName")}</FieldLabel>
-                    {/* ⚠️ dir="auto": a candidate types their name in their
-                        own script, whatever language the form is in. The
-                        first person to register here typed «حامد فال». */}
-                    <Input {...field} id={field.name} dir="auto"
-                      aria-invalid={fieldState.invalid} />
+                    <Input {...field} id={field.name} aria-invalid={fieldState.invalid} />
                     <FieldDescription>
                       {t("contact.fullNameHint")}
                     </FieldDescription>
@@ -311,10 +288,7 @@ export default function ProfilePage() {
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
                     <FieldLabel htmlFor={field.name}>{t("contact.phone")}</FieldLabel>
-                    {/* dir="ltr": a number is a Latin string, and the caret
-                        jumps at each digit group inside an RTL field. */}
                     <Input {...field} id={field.name} type="tel" inputMode="numeric"
-                      dir="ltr" className="text-start"
                       placeholder="22 12 34 56" aria-invalid={fieldState.invalid} />
                     {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                   </Field>
@@ -325,8 +299,7 @@ export default function ProfilePage() {
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--line)] bg-[#fbfcfb] px-6 py-3.5">
               <p className="flex min-w-0 items-center gap-2 text-[12.5px] text-[var(--slate)]">
                 <Mail className="h-3.5 w-3.5 flex-none text-[var(--muted-fg)]" />
-                {/* dir="ltr": an address reorders around its @ and its dot. */}
-                <span dir="ltr" className="truncate">{me.data?.email}</span>
+                <span className="truncate">{me.data?.email}</span>
                 {me.data?.emailVerified && (
                   <span className="inline-flex flex-none items-center gap-1 rounded-full bg-[var(--green-tint)] px-2 py-0.5 text-[10.5px] font-bold text-[var(--green-700)]">
                     <Check className="h-2.5 w-2.5" /> {t("contact.verified")}
@@ -378,12 +351,9 @@ export default function ProfilePage() {
                       <FieldLabel htmlFor={field.name}>
                         {t("identity.nni")}
                       </FieldLabel>
-                      {/* dir="ltr": ten digits, read left to right on every
-                          document that carries them. */}
                       <Input {...field} value={field.value ?? ""} id={field.name}
                         inputMode="numeric" placeholder="1234567890"
-                        dir="ltr" className="font-mono text-start"
-                        aria-invalid={fieldState.invalid} />
+                        className="font-mono" aria-invalid={fieldState.invalid} />
                       <FieldDescription>{t("identity.nniHint")}</FieldDescription>
                       {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                     </Field>
@@ -401,8 +371,7 @@ export default function ProfilePage() {
                         </span>
                       </FieldLabel>
                       <Input {...field} value={field.value ?? ""} id={field.name}
-                        dir="ltr" className="font-mono text-start"
-                        aria-invalid={fieldState.invalid} />
+                        className="font-mono" aria-invalid={fieldState.invalid} />
                       {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                     </Field>
                   )}
@@ -443,10 +412,7 @@ export default function ProfilePage() {
                         <MapPin className="me-1 inline h-3.5 w-3.5 align-[-2px] text-[var(--green-600)]" />
                         {t("identity.birthplace")}
                       </FieldLabel>
-                      {/* dir="auto": «Nouakchott» and «نواكشوط» are both
-                          correct, and the field follows what is typed. */}
-                      <Input {...field} id={field.name} dir="auto"
-                        placeholder={t("identity.birthplacePlaceholder")}
+                      <Input {...field} id={field.name} placeholder={t("identity.birthplacePlaceholder")}
                         aria-invalid={fieldState.invalid} />
                       {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                     </Field>
@@ -512,9 +478,8 @@ export default function ProfilePage() {
             <div className="p-5">
               {/* THE SHARED SPECIMEN — the same component the dashboard and
                   the dossier render, so all three show the card that will
-                  actually be printed.
-                  categoryLabel is null on purpose: there is no dossier yet on
-                  this page, so no category has been chosen. */}
+                  actually be printed. The previous local version listed
+                  Naissance and Lieu, which the adopted card does not carry. */}
               <IssuedCardPreview
                 fullName={liveAccount.fullName}
                 nni={liveProfile.nni?.trim() || liveProfile.passportNo?.trim()}

@@ -1,144 +1,279 @@
-// src/app/[locale]/not-found.tsx
-//
-// A 404 here is usually reached by someone following a link that MOVED — an
-// old bookmark, a printed circular, an e-mail sent months ago. So it does not
-// apologise and stop: it offers the three things anyone is actually here for,
-// each with a line saying what it is for.
-//
-// ⚠️ Reached only because of the [...rest] catch-all beside this file. Next
-// resolves the route tree before rendering, so an unmatched URL never enters
-// [locale] on its own and falls through to the root not-found.
+// // src/app/not-found.tsx
+// //
+// // The ROOT fallback — reached when nothing matched at all, including cases
+// // where the locale itself is unknown.
+// //
+// // ───────────────────────────────────────────────────────────────────────
+// // ⚠️ NO HOOKS, NO TRANSLATIONS, NO LOCALISED Link.
+// //
+// // This file lives OUTSIDE [locale]. There is no request locale here, so
+// // getTranslations() has nothing to resolve against and next-intl's Link
+// // cannot build an href. Either one throws — turning a 404 into a 500, which
+// // is the one thing worse than a missing page.
+// //
+// // So it carries BOTH languages statically and links with plain <a> to
+// // explicit locale paths. It is a lifeboat: it must work when everything else
+// // has failed, including the i18n layer.
+// //
+// // The localised 404 — the one people will actually see — is at
+// // src/app/[locale]/not-found.tsx and has the full design.
+// // ───────────────────────────────────────────────────────────────────────
 
-import { getTranslations } from "next-intl/server";
-import { ArrowRight, Search, FileText, Home } from "lucide-react";
-import {
-  Guilloche, OfficialSeal, MicroprintRule, TricolorRule,
-} from "@/components/public/patterns";
-import { routes } from "@/lib/routes";
-import Link from "next/link";
-// import { Link } from "@/i18n/navigation";
+// export const metadata = {
+//   title: "Page introuvable · هذه الصفحة غير موجودة",
+// };
+
+// export default function RootNotFound() {
+//   return (
+//     <html lang="fr" dir="ltr">
+//       <body
+//         style={{
+//           margin: 0,
+//           minHeight: "100vh",
+//           display: "flex",
+//           flexDirection: "column",
+//           alignItems: "center",
+//           justifyContent: "center",
+//           padding: "48px 24px",
+//           background: "linear-gradient(168deg, #08251a 0%, #0b3524 100%)",
+//           color: "#ffffff",
+//           fontFamily: "'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+//           textAlign: "center",
+//         }}
+//       >
+//         {/* The tricolour, inline — no stylesheet is guaranteed here either. */}
+//         <div style={{ display: "flex", width: 72, height: 5, marginBottom: 32 }}>
+//           <i style={{ flex: 1, background: "#00a95c" }} />
+//           <i style={{ flex: 1, background: "#ffd700" }} />
+//           <i style={{ flex: 1, background: "#d01c1f" }} />
+//         </div>
+
+//         <p
+//           style={{
+//             margin: 0,
+//             fontSize: 11,
+//             letterSpacing: "0.3em",
+//             textTransform: "uppercase",
+//             color: "rgba(255,255,255,.35)",
+//             fontFamily: "monospace",
+//           }}
+//         >
+//           Erreur 404
+//         </p>
+
+//         {/* Both languages, always. Somebody who cannot read the page cannot
+//             leave it — and here we do not know which one they read. */}
+//         <h1 style={{ margin: "16px 0 0", fontSize: 30, lineHeight: 1.2 }}>
+//           Cette page n&apos;existe pas
+//         </h1>
+//         <p
+//           dir="rtl"
+//           lang="ar"
+//           style={{ margin: "10px 0 0", fontSize: 22, color: "rgba(255,255,255,.5)" }}
+//         >
+//           هذه الصفحة غير موجودة
+//         </p>
+
+//         <div
+//           style={{
+//             display: "flex",
+//             gap: 12,
+//             marginTop: 36,
+//             flexWrap: "wrap",
+//             justifyContent: "center",
+//           }}
+//         >
+//           {/* ⚠️ Plain <a>, and an EXPLICIT locale in each path. next-intl's
+//               Link would need a locale from context that does not exist here,
+//               and a bare "/" would land on the same missing route again. */}
+//           <a
+//             href="/fr"
+//             style={{
+//               display: "inline-block",
+//               padding: "12px 26px",
+//               borderRadius: 10,
+//               background: "#ffffff",
+//               color: "#0b3524",
+//               textDecoration: "none",
+//               fontSize: 14,
+//               fontWeight: 700,
+//             }}
+//           >
+//             Accueil
+//           </a>
+//           <a
+//             href="/ar"
+//             dir="rtl"
+//             lang="ar"
+//             style={{
+//               display: "inline-block",
+//               padding: "12px 26px",
+//               borderRadius: 10,
+//               border: "1px solid rgba(255,255,255,.3)",
+//               color: "#ffffff",
+//               textDecoration: "none",
+//               fontSize: 14,
+//               fontWeight: 700,
+//             }}
+//           >
+//             الرئيسية
+//           </a>
+//         </div>
+
+//         <p
+//           style={{
+//             margin: "40px 0 0",
+//             fontSize: 11,
+//             letterSpacing: "0.14em",
+//             textTransform: "uppercase",
+//             color: "rgba(255,255,255,.28)",
+//           }}
+//         >
+//           République Islamique de Mauritanie
+//         </p>
+//       </body>
+//     </html>
+//   );
+// }
+
+
+// src/app/not-found.tsx
+//
+// The ROOT fallback — reached when nothing matched at all, including cases
+// where the locale itself is unknown.
+//
+// ───────────────────────────────────────────────────────────────────────
+// ⚠️ NO <html>, NO <body>.
+//
+// This file renders INSIDE RootLayout, which already owns the document. An
+// earlier version wrapped itself in its own <html> and <body> — two nested
+// documents, which is invalid HTML and breaks hydration outright.
+//
+// ⚠️ AND NO HOOKS EITHER.
+//
+// It lives outside [locale], so there is no request locale: getTranslations()
+// has nothing to resolve against and next-intl's Link cannot build an href.
+// Either one throws, turning a 404 into a 500 — the only thing worse than a
+// missing page.
+//
+// So it carries BOTH languages statically and links with plain <a> to
+// explicit locale paths. It is a lifeboat: it must work when everything else
+// has failed, including the i18n layer.
+//
+// The localised 404 — the one people actually see — is at
+// src/app/[locale]/not-found.tsx and has the full design.
+// ───────────────────────────────────────────────────────────────────────
 
 export const metadata = {
-  title: "Page introuvable — Accréditation presse",
+  title: "Page introuvable · هذه الصفحة غير موجودة",
 };
 
-export default async function NotFound() {
-  const t = await getTranslations("notFound");
-
-  const WAYS = [
-    {
-      href: routes.publicJournalists,
-      Icon: Search,
-      label: t("registryLabel"),
-      hint: t("registryHint"),
-    },
-    {
-      href: routes.publicSessions,
-      Icon: FileText,
-      label: t("sessionsLabel"),
-      hint: t("sessionsHint"),
-    },
-    {
-      href: routes.home,
-      Icon: Home,
-      label: t("homeLabel"),
-      hint: t("homeHint"),
-    },
-  ];
-
+export default function RootNotFound() {
   return (
     <main
-      className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 py-16 text-white"
       style={{
-        background:
-          "radial-gradient(900px 460px at 50% -20%, rgba(255,215,0,.12), transparent 62%), radial-gradient(700px 420px at 85% 118%, rgba(0,169,92,.20), transparent 60%), linear-gradient(168deg, #08251a 0%, var(--green-900) 48%, #0d3a27 100%)",
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "48px 24px",
+        background: "linear-gradient(168deg, #08251a 0%, #0b3524 100%)",
+        color: "#ffffff",
+        textAlign: "center",
       }}
     >
-      <Guilloche
-        className="pointer-events-none absolute -left-52 -top-56 h-[620px] w-[620px] text-white opacity-[0.055]"
-        rings={50}
-      />
-      <Guilloche
-        className="pointer-events-none absolute -bottom-64 -right-44 h-[460px] w-[460px] text-[var(--gold-500)] opacity-[0.05]"
-        rings={34}
-      />
-      <div
-        className="pointer-events-none absolute inset-0 opacity-[0.05]"
-        style={{ backgroundImage: "repeating-linear-gradient(112deg,#fff 0 1px,transparent 1px 13px)" }}
-        aria-hidden="true"
-      />
-
-      <div className="relative z-10 w-full max-w-lg text-center">
-        <span className="relative mx-auto flex h-[92px] w-[92px] items-center justify-center">
-          <span
-            className="absolute inset-0 rounded-full"
-            style={{ background: "radial-gradient(circle, rgba(255,215,0,.18), transparent 70%)" }}
-            aria-hidden="true"
-          />
-          <OfficialSeal
-            className="seal-turn relative h-full w-full"
-            color="var(--gold-500)"
-            id="notfound-seal"
-          />
-        </span>
-
-        {/* The code, set as a serial rather than shouted. A giant "404" is a
-            developer's joke; this is a ministry. */}
-        <p className="mt-7 font-mono text-[11px] uppercase tracking-[0.3em] text-white/35">
-          {t("code")}
-        </p>
-
-        <h1 className="engraved-dark mt-4 text-[32px] font-extrabold leading-tight tracking-tight sm:text-[38px]">
-          {t("title")}
-        </h1>
-        {/* The other language, always — a page nobody can read is a page
-            nobody can leave. It stays even when the interface is already
-            Arabic: the pairing is the point. */}
-        <p
-          dir={t("titleOtherDir")}
-          lang={t("titleOtherLang")}
-          className="mt-2.5 text-[20px] font-semibold text-white/45"
-        >
-          {t("titleOther")}
-        </p>
-
-        <span className="foil-rule mx-auto mt-6 block h-px w-28 opacity-50" aria-hidden="true" />
-
-        <p className="mx-auto mt-6 max-w-sm text-[14px] leading-relaxed text-white/55">
-          {t("body")}
-        </p>
-
-        {/* the three things anyone is actually here for */}
-        <ul className="mt-9 space-y-2.5 text-start">
-          {WAYS.map((way) => (
-            <li key={way.href}>
-              <Link
-                href={way.href}
-                className="group flex items-center gap-4 rounded-2xl border border-white/12 bg-black/25 px-5 py-4 backdrop-blur-sm transition-all hover:border-[var(--gold-500)]/45 hover:bg-black/35"
-              >
-                <span className="flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-white/10 ring-1 ring-inset ring-white/15">
-                  <way.Icon className="h-4 w-4 text-[var(--gold-500)]" />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-[13.5px] font-bold">{way.label}</span>
-                  <span className="block text-[12px] leading-relaxed text-white/45">
-                    {way.hint}
-                  </span>
-                </span>
-                {/* rtl-flip: an arrow saying "go" must point the way the
-                    reader travels. */}
-                <ArrowRight className="rtl-flip h-4 w-4 flex-none text-white/35 transition-all group-hover:text-[var(--gold-500)]" />
-              </Link>
-            </li>
-          ))}
-        </ul>
+      {/* The tricolour, inline — this file must not depend on a stylesheet
+          that may not have loaded when everything else has failed. */}
+      <div style={{ display: "flex", width: 72, height: 5, marginBottom: 32 }}>
+        <i style={{ flex: 1, background: "#00a95c" }} />
+        <i style={{ flex: 1, background: "#ffd700" }} />
+        <i style={{ flex: 1, background: "#d01c1f" }} />
       </div>
 
-      <MicroprintRule
-        className="absolute inset-x-0 bottom-3 text-center text-white opacity-[0.13]"
-        repeat={16}
-      />
-      <TricolorRule className="absolute inset-x-0 bottom-0" />
+      <p
+        style={{
+          margin: 0,
+          fontSize: 11,
+          letterSpacing: "0.3em",
+          textTransform: "uppercase",
+          color: "rgba(255,255,255,.35)",
+          fontFamily: "monospace",
+        }}
+      >
+        Erreur 404
+      </p>
+
+      {/* Both languages, always. Somebody who cannot read the page cannot
+          leave it — and here we do not know which one they read. */}
+      <h1 style={{ margin: "16px 0 0", fontSize: 30, lineHeight: 1.2 }}>
+        Cette page n&apos;existe pas
+      </h1>
+      <p
+        dir="rtl"
+        lang="ar"
+        style={{ margin: "10px 0 0", fontSize: 22, color: "rgba(255,255,255,.5)" }}
+      >
+        هذه الصفحة غير موجودة
+      </p>
+
+      <div
+        style={{
+          display: "flex",
+          gap: 12,
+          marginTop: 36,
+          flexWrap: "wrap",
+          justifyContent: "center",
+        }}
+      >
+        {/* ⚠️ Plain <a>, and an EXPLICIT locale in each path. next-intl's Link
+            would need a locale from context that does not exist here, and a
+            bare "/" would land on the same missing route again. */}
+        <a
+          href="/fr"
+          style={{
+            display: "inline-block",
+            padding: "12px 26px",
+            borderRadius: 10,
+            background: "#ffffff",
+            color: "#0b3524",
+            textDecoration: "none",
+            fontSize: 14,
+            fontWeight: 700,
+          }}
+        >
+          Accueil
+        </a>
+        <a
+          href="/ar"
+          dir="rtl"
+          lang="ar"
+          style={{
+            display: "inline-block",
+            padding: "12px 26px",
+            borderRadius: 10,
+            border: "1px solid rgba(255,255,255,.3)",
+            color: "#ffffff",
+            textDecoration: "none",
+            fontSize: 14,
+            fontWeight: 700,
+          }}
+        >
+          الرئيسية
+        </a>
+      </div>
+
+      <p
+        style={{
+          margin: "40px 0 0",
+          fontSize: 11,
+          letterSpacing: "0.14em",
+          textTransform: "uppercase",
+          color: "rgba(255,255,255,.28)",
+        }}
+      >
+        République Islamique de Mauritanie
+      </p>
     </main>
   );
 }

@@ -31,8 +31,8 @@ import { routes } from "@/lib/routes";
 /**
  * The hero's FIELD, per outcome — good news should not look like bad news.
  *
- * Only the colour lives here now; every word comes from the catalogue under
- * the status's own name, so a decision reads in the candidate's language.
+ * Only the colour lives here; every word comes from the catalogue under the
+ * status's own name, so a decision reads in the candidate's language.
  */
 const FIELD: Partial<Record<ApplicationStatus, string>> = {
   ACCEPTED:
@@ -47,6 +47,26 @@ const FIELD: Partial<Record<ApplicationStatus, string>> = {
     "radial-gradient(700px 340px at 85% -25%, rgba(255,215,0,.26), transparent 60%), linear-gradient(158deg, #33290a 0%, #2c2408 60%, #1f1a06 100%)",
 };
 
+/**
+ * ⚠️ THE CARD'S FIELD OVERRIDES THE DOSSIER'S.
+ *
+ * A dossier reaches CARD_ISSUED and never moves again; a suspension or
+ * withdrawal afterwards lives on the CARD. Without this, someone whose card
+ * had just been revoked opened their dashboard to a GREEN hero announcing
+ * "Carte de presse éditée" — the system congratulating them on the credential
+ * it had taken away.
+ */
+const CARD_FIELD: Record<string, string> = {
+  SUSPENDED:
+    "radial-gradient(700px 340px at 85% -25%, rgba(255,215,0,.26), transparent 60%), linear-gradient(158deg, #33290a 0%, #2c2408 60%, #1f1a06 100%)",
+  REVOKED:
+    "radial-gradient(700px 340px at 85% -25%, rgba(208,28,31,.20), transparent 60%), linear-gradient(158deg, #2a1114 0%, #221a19 60%, #1a1512 100%)",
+  // Ash. Expiry is not a sanction — every card expires, and the holder did
+  // nothing wrong.
+  EXPIRED:
+    "radial-gradient(700px 340px at 85% -25%, rgba(255,255,255,.06), transparent 62%), linear-gradient(158deg, #2b3833 0%, #222d29 55%, #1b2420 100%)",
+};
+
 const DEFAULT_FIELD =
   "radial-gradient(700px 340px at 88% -25%, rgba(255,215,0,.15), transparent 60%), linear-gradient(158deg, var(--green-900) 0%, #0e3d29 60%, #0b3524 100%)";
 
@@ -55,6 +75,11 @@ const CTA_SOLID: Partial<Record<ApplicationStatus, string>> = {
   CORRECTION_REQUESTED: "var(--gold-700)",
   REJECTED: "var(--red-500)",
   FINAL_REJECTION: "var(--red-500)",
+};
+
+const CARD_CTA_SOLID: Record<string, string> = {
+  SUSPENDED: "var(--gold-700)",
+  REVOKED: "var(--red-500)",
 };
 
 function daysUntil(iso: string) {
@@ -102,6 +127,18 @@ export default function DashboardPage() {
   const issuedCard = current?.status === "CARD_ISSUED";
   const card = myCard.data;
 
+  /**
+   * The card's state, when it says something the dossier cannot.
+   *
+   * ⚠️ Only once a card EXISTS. An ACCEPTED dossier awaiting issuance has no
+   * card, and must not be dressed as a sanction.
+   */
+  const cardOverride = card && CARD_FIELD[card.status] ? card.status : null;
+  const cardWithheld = !!card && card.usable === false;
+
+  /** The catalogue block the hero reads. */
+  const heroKey = cardOverride ? `card.${cardOverride}` : current?.status;
+
   const fmtDate = (iso?: string | null) => {
     if (!iso) return "—";
     const d = new Date(iso.length === 10 ? iso + "T00:00:00" : iso);
@@ -122,7 +159,11 @@ export default function DashboardPage() {
       ) : (
         <section
           className="relative overflow-hidden rounded-[20px] text-white shadow-[0_24px_60px_-34px_rgba(11,46,31,.85)]"
-          style={{ background: (current && FIELD[current.status]) ?? DEFAULT_FIELD }}
+          style={{
+            background: cardOverride
+              ? CARD_FIELD[cardOverride]
+              : (current && FIELD[current.status]) ?? DEFAULT_FIELD,
+          }}
         >
           <Guilloche
             className="rtl-mirror pointer-events-none absolute -right-24 -top-28 h-[340px] w-[340px] text-white opacity-[0.06]"
@@ -152,14 +193,14 @@ export default function DashboardPage() {
                   <>
                     <div className="mt-3 flex flex-wrap items-center gap-3">
                       <h2 className="engraved-dark text-[27px] font-extrabold leading-tight tracking-tight">
-                        {th(`${current.status}.headline`)}
+                        {th(`${heroKey}.headline`)}
                       </h2>
                       <span dir="ltr" className="font-mono text-[11.5px] text-white/35">
                         {t("dossierNo", { id: current.id })}
                       </span>
                     </div>
                     <p className="mt-2.5 max-w-lg text-[14px] leading-relaxed text-white/60">
-                      {th(`${current.status}.body`)}
+                      {th(`${heroKey}.body`)}
                     </p>
                   </>
                 ) : openSession ? (
@@ -211,7 +252,11 @@ export default function DashboardPage() {
               )}
             </div>
 
-            {current && (
+            {/* ⚠️ The rail is hidden once the CARD has been withheld. It shows
+                the dossier's four stages ending in "Décision" — a completed
+                journey, in green, beneath a withdrawal notice. The dossier did
+                complete; saying so here would only contradict the headline. */}
+            {current && !cardOverride && (
               <div className="mt-7 rounded-xl bg-black/25 px-5 py-5">
                 <DossierProgress status={current.status} />
               </div>
@@ -247,12 +292,15 @@ export default function DashboardPage() {
                   href={routes.candidate.application}
                   className="group inline-flex items-center gap-2 rounded-xl px-6 py-3 text-[14px] font-extrabold transition-all hover:-translate-y-0.5"
                   style={{
-                    background: CTA_SOLID[current.status] ?? "#fff",
-                    color: CTA_SOLID[current.status] ? "#fff" : "var(--green-900)",
+                    background: cardOverride
+                      ? (CARD_CTA_SOLID[cardOverride] ?? "#fff")
+                      : (CTA_SOLID[current.status] ?? "#fff"),
+                    color: (cardOverride ? CARD_CTA_SOLID[cardOverride] : CTA_SOLID[current.status])
+                      ? "#fff" : "var(--green-900)",
                     boxShadow: "0 12px 28px -14px rgba(0,0,0,.7)",
                   }}
                 >
-                  {th(`${current.status}.cta`)}
+                  {th(`${heroKey}.cta`)}
                   <ArrowRight className="rtl-flip h-4 w-4" />
                 </Link>
               ) : openSession ? (
@@ -287,11 +335,18 @@ export default function DashboardPage() {
           <div className="flex items-center gap-2.5 border-b border-[var(--line)] px-6 py-4">
             <OfficialSeal
               className="h-5 w-5 flex-none"
-              color="var(--green-700)"
+              color={cardWithheld ? "var(--red-700)" : "var(--green-700)"}
               id="dash-card-seal"
             />
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--green-700)]">
-              {issuedCard ? t("yourCard") : t("yourCardPending")}
+            {/* ⚠️ THREE STATES. "Votre carte de presse" above a withdrawn card
+                reads as though it were still theirs. The panel stays — a
+                holder may need to quote the number — but the heading must not
+                contradict the notice above it. */}
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em]"
+              style={{ color: cardWithheld ? "var(--red-700)" : "var(--green-700)" }}>
+              {cardWithheld
+                ? t("yourCardWithheld")
+                : issuedCard ? t("yourCard") : t("yourCardPending")}
             </p>
             <span className="foil-rule h-px flex-1 opacity-40" aria-hidden="true" />
           </div>
@@ -354,7 +409,7 @@ export default function DashboardPage() {
                         {t("cardIs", { status: tc(card.status).toLowerCase() })}
                       </p>
                       {card.statusReason && (
-                        <p dir="auto" className="user-text mt-0.5 text-[12px] leading-relaxed text-[var(--red-700)]">
+                        <p dir="auto" className="user-text mt-0.5 whitespace-pre-wrap text-[12px] leading-relaxed text-[var(--red-700)]">
                           {card.statusReason}
                         </p>
                       )}

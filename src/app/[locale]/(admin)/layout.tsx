@@ -49,7 +49,8 @@
 "use client";
 // src/app/(admin)/layout.tsx — guard + chrome for SUPER_ADMIN.
 
-import { usePathname } from "next/navigation";
+// import { usePathname } from "next/navigation";
+import { usePathname } from "@/i18n/navigation";
 import { LayoutDashboard, CalendarDays, Users, IdCard, Gavel } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { navMatcher } from "@/lib/nav";

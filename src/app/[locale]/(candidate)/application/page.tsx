@@ -79,9 +79,18 @@ export default function ApplicationPage() {
   });
 
   const status = detail.data?.application.status;
+
+  /**
+   * ⚠️ "Favourable" describes the DOSSIER, not the card.
+   *
+   * A withdrawn card still sits on a CARD_ISSUED application — the dossier
+   * never moves again once a card exists. So this stays true after a
+   * revocation, which is correct: the holder should still be able to see
+   * their card's number and dates. What the card is WORTH is a separate
+   * question, answered below.
+   */
   const favourable = status === "ACCEPTED" || status === "CARD_ISSUED";
 
-  /* The holder's own card — number, category and validity. */
   const myCard = useQuery({
     queryKey: myCardKeys.card,
     queryFn: getMyCard,
@@ -170,6 +179,9 @@ export default function ApplicationPage() {
   const kind = STATUS_KIND[application.status];
   const editable = application.editable;
   const card = myCard.data;
+
+  /** Whether the card is in force TODAY, whatever the dossier says. */
+  const cardWithheld = !!card && card.usable === false;
 
   const decided = ["ACCEPTED", "CARD_ISSUED", "REJECTED", "FINAL_REJECTION"]
     .includes(application.status);
@@ -286,11 +298,20 @@ export default function ApplicationPage() {
         </section>
       )}
 
-      {/* ══ the decision — renders nothing while still in progress ══ */}
+      {/* ══ the decision — renders nothing while still in progress ══
+          ⚠️ THE CARD'S STATE GOES IN TOO.
+          A dossier reaches CARD_ISSUED and stays there for ever; a suspension
+          or withdrawal afterwards is recorded on the CARD. Without these three
+          props the panel keeps announcing "your card has been issued" — in
+          green, under the ministry's seal — to somebody the Ministry has just
+          sanctioned. */}
       <DecisionOutcome
         status={application.status}
         timeline={timeline}
         applicationId={application.id}
+        cardStatus={card?.status}
+        cardStatusReason={card?.statusReason}
+        cardStatusChangedAt={card?.statusChangedAt}
       />
 
       {/* The right to contest, beneath the decision it contests. */}
@@ -454,13 +475,21 @@ export default function ApplicationPage() {
               <div className="flex items-center gap-2.5 border-b border-[var(--line)] px-5 py-3.5">
                 <OfficialSeal
                   className="h-4 w-4 flex-none"
-                  color="var(--green-700)"
+                  color={cardWithheld ? "var(--red-700)" : "var(--green-700)"}
                   id="app-card-seal"
                 />
-                <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--green-700)]">
-                  {application.status === "CARD_ISSUED"
-                    ? t("yourCard")
-                    : t("yourCardPending")}
+                {/* ⚠️ THREE STATES, NOT TWO.
+                    "Votre carte de presse" above a withdrawn card reads as
+                    though it is still theirs. The panel stays — a holder may
+                    need to quote the number even after a withdrawal — but its
+                    heading must not contradict the notice above it. */}
+                <p className="text-[10px] font-bold uppercase tracking-[0.16em]"
+                  style={{ color: cardWithheld ? "var(--red-700)" : "var(--green-700)" }}>
+                  {cardWithheld
+                    ? t("yourCardWithheld")
+                    : application.status === "CARD_ISSUED"
+                      ? t("yourCard")
+                      : t("yourCardPending")}
                 </p>
               </div>
 
@@ -493,7 +522,12 @@ export default function ApplicationPage() {
                           style={{ color: card.usable ? "var(--green-700)" : "var(--red-700)" }}>
                           {t("cardIs", { status: tc(card.status).toLowerCase() })}
                         </p>
-                        {card.statusReason && (
+                        {/* ⚠️ The reason is NOT repeated here when the notice
+                            above already carries it in full — the panel above
+                            quotes it as a considérant, and printing the same
+                            paragraph twice on one screen makes neither look
+                            authoritative. */}
+                        {card.statusReason && !cardWithheld && (
                           <p dir="auto" className="user-text mt-0.5 text-[12px] leading-relaxed text-[var(--red-700)]">
                             {card.statusReason}
                           </p>

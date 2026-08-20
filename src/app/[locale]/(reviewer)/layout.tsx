@@ -38,7 +38,8 @@
 "use client";
 // src/app/(reviewer)/layout.tsx — guard + chrome for REVIEWER.
 
-import { usePathname } from "next/navigation";
+// import { usePathname } from "next/navigation";
+import { usePathname } from "@/i18n/navigation";
 import { Scale, IdCard } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { navMatcher } from "@/lib/nav";

@@ -34,6 +34,11 @@ export const myCardKeys = {
  * The endpoint answers 204, which apiFetch resolves to undefined — having no
  * card yet is a normal state for a candidate, not an error.
  */
-export function getMyCard() {
-  return apiFetch<MyCard | undefined>("/api/me/card");
+// export function getMyCard() {
+//   return apiFetch<MyCard | undefined>("/api/me/card");
+// }
+
+export async function getMyCard() {
+  const card = await apiFetch<MyCard | undefined>("/api/me/card");
+  return card ?? null;
 }

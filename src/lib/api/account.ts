@@ -10,16 +10,6 @@ export interface ProfileResponse {
   birthplace: string;
 }
 
-// export interface MeResponse {
-//   id: number;
-//   email: string;
-//   fullName: string;
-//   phone?: string | null;
-//   role: string;
-//   emailVerified: boolean;
-//   profile?: ProfileResponse | null;
-//   profileComplete: boolean;
-// }
 
 export interface MeResponse {
   id: number;

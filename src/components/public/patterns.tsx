@@ -1,13 +1,22 @@
 // src/components/public/patterns.tsx
-// The visual vocabulary of official documents, as pure SVG server components:
-// guilloche rosettes, an engraved seal, microprint rules, paper grain.
-// No images, no client JS — a few kilobytes that make the page look printed
-// rather than templated, and stay sharp at any zoom on any connection.
+//
+// The engraving vocabulary of a state document: guilloche rosettes, woven
+// bands, an official seal, microprint rules, the national tricolour.
+//
+// ───────────────────────────────────────────────────────────────────────
+// ⚠️ NO HOOKS IN THIS FILE.
+//
+// These are imported by SERVER components (PublicFooter, the home page) as
+// well as client ones. useTranslations() would break the server callers, and
+// getTranslations() would break the client ones.
+//
+// So anything language-dependent is either FIXED AND BILINGUAL — the seal,
+// which is an object rather than a sentence — or passed in as a prop.
+// ───────────────────────────────────────────────────────────────────────
 
 /* ── Guilloche rosette ───────────────────────────────────────────
-   The interference pattern on banknotes and certificates: many ellipses
-   rotated about a common centre. Mathematically generated, so it costs
-   ~1KB and scales infinitely. */
+   The lathe pattern on banknotes and certificates: overlapping ellipses
+   rotated about a centre. */
 export function Guilloche({
   className = "",
   rings = 42,
@@ -87,9 +96,19 @@ export function GuillocheBand({
 }
 
 /* ── Official seal ───────────────────────────────────────────────
-   Engraved concentric rings, text following a circular path, the
-   national mark at the centre. The device that says "issued by an
-   authority" faster than any words. */
+   Engraved concentric rings, text following a circular path, the national
+   mark at the centre. The device that says "issued by an authority" faster
+   than any words.
+
+   ⚠️ BILINGUAL AND FIXED — it does NOT follow the reader.
+
+   A seal is an OBJECT, not a sentence. The physical seal of a Mauritanian
+   ministry carries Arabic and French together, and it carries both whoever
+   is looking at it. A seal that changed language with the interface would be
+   a seal nobody could recognise twice.
+
+   Arabic leads on the upper arc, as on the state's own documents.
+   ─────────────────────────────────────────────────────────────── */
 export function OfficialSeal({
   className = "",
   color = "var(--gold-500)",
@@ -121,16 +140,31 @@ export function OfficialSeal({
           />
         ))}
       </g>
-      <text fill={color} fontSize="11.5" fontWeight="700" letterSpacing="3.4">
+
+      {/* ⚠️ ARABIC ON THE UPPER ARC — letterSpacing MUST be 0.
+          Tracking separates letterforms that are meant to join; at this size
+          the word would read as loose marks rather than a word. And
+          direction="rtl" is required, or the glyphs run backwards along the
+          path. */}
+      <text
+        fill={color}
+        fontSize="12"
+        fontWeight="700"
+        letterSpacing="0"
+        direction="rtl"
+        style={{ fontFamily: "var(--font-arabic), serif" }}
+      >
         <textPath href={`#${id}-top`} startOffset="50%" textAnchor="middle">
-          MINISTÈRE DE LA CULTURE
+          وزارة الثقافة
         </textPath>
       </text>
-      <text fill={color} fontSize="10.5" fontWeight="600" letterSpacing="2.6" opacity="0.85">
+
+      <text fill={color} fontSize="10" fontWeight="600" letterSpacing="2.4" opacity="0.85">
         <textPath href={`#${id}-bottom`} startOffset="50%" textAnchor="middle">
-          RÉPUBLIQUE ISLAMIQUE DE MAURITANIE
+          MINISTÈRE DE LA CULTURE — R.I.M.
         </textPath>
       </text>
+
       {/* national mark at centre */}
       <g transform="translate(100 100)">
         <rect x="-13" y="-11" width="7" height="22" rx="3.5" fill="var(--green-500)" />
@@ -142,10 +176,18 @@ export function OfficialSeal({
 }
 
 /* ── Microprint rule ─────────────────────────────────────────────
-   The hairline of repeated micro-text along a document's edge. Real
-   security printing; here it doubles as a section divider. */
+   The hairline of repeated micro-text along a document's edge. Real security
+   printing; here it doubles as a section divider.
+
+   ⚠️ LATIN, AND DELIBERATELY SO. At 6.5px with 0.3em tracking this is not
+   text — it is TEXTURE, and nobody reads it in any language. The tracking is
+   the whole effect, and tracking is precisely what Arabic cannot survive:
+   the letters would separate into unreadable marks rather than becoming a
+   fine grey line.
+
+   A caller wanting different content passes `text`. */
 export function MicroprintRule({
-  text = "· ACCRÉDITATION PRESSE · RÉPUBLIQUE ISLAMIQUE DE MAURITANIE · ",
+  text = "· ACCREDITATION PRESSE · REPUBLIQUE ISLAMIQUE DE MAURITANIE · ",
   className = "",
   repeat = 6,
 }: {
@@ -155,6 +197,9 @@ export function MicroprintRule({
 }) {
   return (
     <div
+      // dir="ltr": a Latin string rendered inside an RTL page would have its
+      // middle dots reordered, breaking the even rhythm the effect depends on.
+      dir="ltr"
       className={`overflow-hidden whitespace-nowrap font-mono text-[6.5px] leading-none tracking-[0.3em] ${className}`}
       aria-hidden="true"
     >
@@ -164,8 +209,8 @@ export function MicroprintRule({
 }
 
 /* ── Paper grain ─────────────────────────────────────────────────
-   A turbulence filter: the faint tooth of printed stock. Keeps large
-   dark areas from looking like flat digital fills. */
+   A turbulence filter: the faint tooth of printed stock. Keeps large dark
+   areas from looking like flat digital fills. */
 export function Grain({ className = "", opacity = 0.5 }: { className?: string; opacity?: number }) {
   return (
     <svg className={className} aria-hidden="true">
@@ -179,11 +224,18 @@ export function Grain({ className = "", opacity = 0.5 }: { className?: string; o
 }
 
 /* ── Tricolour rule ──────────────────────────────────────────────
-   The national palette as a structural element, used to open and close
-   major sections. */
+   The national palette as a structural element, used to open and close major
+   sections.
+
+   ⚠️ NOT mirrored. Green–gold–red is the order on the flag, and a flag does
+   not reverse for a reader. */
 export function TricolorRule({ className = "", thin = false }: { className?: string; thin?: boolean }) {
   return (
-    <div className={`flex ${thin ? "h-[3px]" : "h-1.5"} w-full overflow-hidden ${className}`} aria-hidden="true">
+    <div
+      dir="ltr"
+      className={`flex ${thin ? "h-[3px]" : "h-1.5"} w-full overflow-hidden ${className}`}
+      aria-hidden="true"
+    >
       <i className="flex-1 bg-[var(--green-500)]" />
       <i className="flex-1 bg-[var(--gold-500)]" />
       <i className="flex-1 bg-[var(--red-500)]" />
@@ -192,8 +244,11 @@ export function TricolorRule({ className = "", thin = false }: { className?: str
 }
 
 /* ── Section overline ────────────────────────────────────────────
-   Numbered label + rule: the typographic signature of an official
-   document, and what gives the page its editorial rhythm. */
+   Numbered label + rule: the typographic signature of an official document,
+   and what gives the page its editorial rhythm.
+
+   The rule extends towards the END of the line, so the label always sits at
+   the reading edge — flex handles that on its own. */
 export function Overline({
   index,
   children,
@@ -208,8 +263,14 @@ export function Overline({
   return (
     <div className="flex items-center gap-4">
       {index && (
-        <span className={`font-mono text-[11px] font-bold ${color}`}>{index}</span>
+        // dir="ltr" on the numeral: "01" is a figure, not a word.
+        <span dir="ltr" className={`flex-none font-mono text-[11px] font-bold ${color}`}>
+          {index}
+        </span>
       )}
+      {/* ⚠️ tracking-[0.22em] would pull Arabic apart. The global RTL rule in
+          globals.css neutralises tracking-* utilities under dir="rtl", so
+          this is safe — but it is the reason that rule exists. */}
       <span className={`text-[10.5px] font-bold uppercase tracking-[0.22em] ${color}`}>
         {children}
       </span>

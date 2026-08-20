@@ -1,11 +1,4 @@
 "use client";
-// src/components/candidate/PhotoUpload.tsx
-//
-// The photograph that will be printed on the card.
-//
-// Every check runs BEFORE anything crosses the wire — size, format, real
-// pixel dimensions, aspect ratio. A candidate on a weak connection should not
-// upload four megabytes to be told the picture is landscape.
 
 import { useRef, useState } from "react";
 import { useTranslations } from "next-intl";
@@ -38,17 +31,7 @@ export interface PhotoStatus {
 
 export const photoKeys = { status: ["me", "photo", "status"] as const };
 
-/**
- * Whether a photograph exists, and whether it is ageing.
- *
- * ⚠️ EXPORTED, because the profile page needs the same answer.
- *
- * It was written twice — once here and once inline in the page — under the
- * same query key. TanStack deduplicated the request, so nothing was visibly
- * wrong; but two implementations of one fetch drift, and this one decides
- * whether the page's completeness count is telling the truth.
- */
-export async function fetchPhotoStatus(token: string | null): Promise<PhotoStatus> {
+async function fetchStatus(token: string | null): Promise<PhotoStatus> {
   const res = await fetch(`${BASE}/api/me/photo/status`, {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
     cache: "no-store",
@@ -57,14 +40,7 @@ export async function fetchPhotoStatus(token: string | null): Promise<PhotoStatu
   return res.json();
 }
 
-/**
- * Read the real dimensions before sending anything over the wire.
- *
- * ⚠️ It rejects with a KEY, fully qualified. This is a plain function outside
- * any component, so it has no access to translations — and the resolver reads
- * the ROOT namespace, which is why the "photo." prefix is not optional. A
- * bare "notAnImage" would reach the screen as that literal word.
- */
+/** Read the real dimensions before sending anything over the wire. */
 function inspect(file: File): Promise<{ width: number; height: number }> {
   return new Promise((resolve, reject) => {
     const url = URL.createObjectURL(file);
@@ -75,6 +51,8 @@ function inspect(file: File): Promise<{ width: number; height: number }> {
     };
     img.onerror = () => {
       URL.revokeObjectURL(url);
+      // A CODE, not a sentence — the caller translates it.
+      // reject(new Error("notAnImage"));
       reject(new Error("photo.notAnImage"));
     };
     img.src = url;
@@ -99,7 +77,7 @@ export function PhotoUpload({
 
   const status = useQuery({
     queryKey: photoKeys.status,
-    queryFn: () => fetchPhotoStatus(token),
+    queryFn: () => fetchStatus(token),
   });
 
   // Fetched WITH the token — this is what makes the photo visible at all.
@@ -124,9 +102,9 @@ export function PhotoUpload({
         body: form,
       });
       if (!res.ok) {
-        // The SERVER's own message if it sent one — which may itself be a key
-        // ("validation.…") or a finished sentence. Either resolves below.
-        let message = "photo.uploadFailed";
+        // The SERVER's own message if it sent one — already in the caller's
+        // language. Otherwise our key, translated below.
+        let message = "uploadFailed";
         try {
           const body = await res.json();
           message = body.detail ?? body.message ?? message;
@@ -140,10 +118,9 @@ export function PhotoUpload({
       toast.success(t("savedTitle"), { description: t("savedBody") });
     },
     onError: (e) => {
-      const raw = e instanceof Error ? e.message : "photo.uploadFailed";
-      // ⚠️ resolve() RETURNS the resolved string. A key becomes its sentence;
-      // anything it does not recognise passes through unchanged.
-      setError(resolve(raw));
+      const raw = e instanceof Error ? e.message : "uploadFailed";
+      // A key resolves; a server sentence passes through unchanged.
+      setError(resolve(raw) ? t(raw) : raw);
     },
   });
 
@@ -153,7 +130,7 @@ export function PhotoUpload({
         method: "DELETE",
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
-      if (!res.ok) throw new Error("photo.deleteFailed");
+      if (!res.ok) throw new Error("deleteFailed");
     },
     onSuccess: () => {
       refresh();
@@ -170,7 +147,6 @@ export function PhotoUpload({
     setError(undefined);
     if (!file) return;
 
-    // These are OURS, and `t` is already scoped to "photo" — no prefix here.
     if (file.size === 0) { setError(t("emptyFile")); return; }
     if (!["image/jpeg", "image/png"].includes(file.type)) {
       setError(t("wrongFormat"));
@@ -196,8 +172,8 @@ export function PhotoUpload({
       }
       upload.mutate(file);
     } catch (e) {
-      // From inspect(), which rejects with a fully-qualified key.
-      const raw = e instanceof Error ? e.message : "photo.unreadable";
+      const raw = e instanceof Error ? e.message : "unreadable";
+      // setError(t.has(raw) ? t(raw) : raw);
       setError(resolve(raw));
     }
   }

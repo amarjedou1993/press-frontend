@@ -1,19 +1,5 @@
 "use client";
-// src/components/candidate/ObjectionPanel.tsx
-//
-// The candidate's one recourse against a rejection.
-//
-// ───────────────────────────────────────────────────────────────────────
-// ⚠️ TWO PIECES OF FREE TEXT MEET ON THIS SCREEN, IN EITHER LANGUAGE.
-//
-// The DECISION being contested — written by a commission member — and the
-// candidate's own ARGUMENT. Neither is translated: a member writes in the
-// language they use, and a candidate answers in theirs. They may not match.
-//
-// Both carry dir="auto". A French refusal quoted inside an Arabic page, or an
-// Arabic argument echoed back in a French one, must still read correctly:
-// this is the document a second member will judge.
-// ───────────────────────────────────────────────────────────────────────
+
 
 import { useState } from "react";
 import { useFormatter, useLocale, useTranslations } from "next-intl";
@@ -35,7 +21,6 @@ import {
 } from "@/lib/api/objection";
 import { applicationKeys } from "@/lib/api/applications";
 import { ApiError } from "@/lib/api/client";
-import { useFieldError } from "@/lib/useFieldError";
 
 function deadlineTone(days: number) {
   if (days <= 2) return { bg: "var(--red-tint)", fg: "var(--red-700)", edge: "var(--red-500)" };
@@ -52,10 +37,8 @@ export function ObjectionPanel({
   visible: boolean;
 }) {
   const t = useTranslations("objection");
-  const tb = useTranslations("objectionBlocked");
   const locale = useLocale();
   const format = useFormatter();
-  const resolve = useFieldError();
   const qc = useQueryClient();
   const arabic = locale === "ar";
 
@@ -97,11 +80,9 @@ export function ObjectionPanel({
     },
     onError: (e) => {
       setConfirming(false);
-      // ⚠️ resolve(): the service now throws KEYS —
-      // "objectionBlocked.ALREADY_FILED", "validation.argumentTooShort".
-      // Without this the candidate reads the key itself.
-      setError(resolve(
-        e instanceof ApiError ? (e.problem.detail ?? e.message) : t("tryAgain")));
+      setError(e instanceof ApiError
+        ? (e.problem.detail ?? e.message)
+        : t("tryAgain"));
     },
   });
 
@@ -110,11 +91,6 @@ export function ObjectionPanel({
   if (!eligibility.data) return null;
 
   const e = eligibility.data;
-
-  /** The deadline, in the reader's own locale — never the server's string. */
-  const deadlineText = e.deadline
-    ? format.dateTime(new Date(e.deadline + "T00:00:00"), "long")
-    : "";
 
   /* ══ already filed — show what was said ══ */
   if (e.alreadyFiled) {
@@ -182,16 +158,11 @@ export function ObjectionPanel({
 
   /* ══ cannot be filed — say why ══ */
   if (!e.canObject) {
-    /**
-     * ⚠️ FROM THE CODE, NOT THE SENTENCE.
-     *
-     * The server sends both. Its DEADLINE_PASSED sentence embeds a date it
-     * formatted in French — useless to an Arabic page, which composes its own
-     * from `deadline`. The other four codes ignore the parameter.
-     */
-    const blocked = e.blockedReason && tb.has(e.blockedReason)
-      ? tb(e.blockedReason, { deadline: deadlineText })
-      : t("notAvailableBody");
+    // The backend's reason if it speaks the reader's language, else a plain
+    // catalogue sentence. Never a French phrase under an Arabic heading.
+    const blocked = arabic
+      ? (e.blockedReasonAr ?? t("notAvailableBody"))
+      : (e.blockedReasonFr ?? t("notAvailableBody"));
 
     return (
       <section className="flex items-start gap-4 rounded-2xl border border-[var(--line)] bg-white p-6">
@@ -202,7 +173,7 @@ export function ObjectionPanel({
           <p className="text-[14px] font-extrabold text-[var(--green-900)]">
             {t("notAvailable")}
           </p>
-          <p className="mt-1.5 max-w-2xl text-[13.5px] leading-relaxed text-[var(--slate)]">
+          <p dir="auto" className="mt-1.5 max-w-2xl text-[13.5px] leading-relaxed text-[var(--slate)]">
             {blocked}
           </p>
         </div>
@@ -215,10 +186,6 @@ export function ObjectionPanel({
   const length = argument.trim().length;
   const tooShort = length < MIN_ARGUMENT_LENGTH;
   const ready = reasonId !== null && !tooShort;
-
-  const contestedGround = arabic
-    ? (e.contestedGroundLabelAr ?? e.contestedGroundLabelFr)
-    : e.contestedGroundLabelFr;
 
   return (
     <>
@@ -250,7 +217,8 @@ export function ObjectionPanel({
                   {" "}
                   {t.rich("fileBefore", {
                     b: (c) => <b>{c}</b>,
-                    date: deadlineText,
+                    date: format.dateTime(
+                      new Date(e.deadline + "T00:00:00"), "long"),
                   })}
                 </>
               )}
@@ -275,9 +243,11 @@ export function ObjectionPanel({
             <p className="flex flex-wrap items-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--red-700)]">
               <FileText className="h-3 w-3 flex-none" />
               {t("contestedDecision")}
-              {contestedGround && (
+              {(arabic ? e.contestedGroundLabelAr : e.contestedGroundLabelFr) && (
                 <span className="rounded-full bg-[var(--red-tint)] px-2 py-0.5 text-[10px] normal-case tracking-normal">
-                  {contestedGround}
+                  {arabic
+                    ? (e.contestedGroundLabelAr ?? e.contestedGroundLabelFr)
+                    : e.contestedGroundLabelFr}
                 </span>
               )}
             </p>
@@ -363,7 +333,7 @@ export function ObjectionPanel({
           />
 
           <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-            <p dir="ltr" className="font-mono text-[11.5px] rtl:text-end"
+            <p dir="ltr" className="font-mono text-[11.5px]"
               style={{ color: tooShort ? "var(--muted-fg)" : "var(--green-700)" }}>
               {t("charCount", { length, min: MIN_ARGUMENT_LENGTH })}
             </p>
@@ -391,7 +361,7 @@ export function ObjectionPanel({
 
           <Button size="sm" className="flex-none" disabled={!ready || submit.isPending}
             onClick={() => setConfirming(true)}>
-            <Send className="h-4 w-4 flex-none" />
+            <Send className="h-4 w-4" />
             {t("fileObjection")}
           </Button>
         </div>
@@ -407,10 +377,10 @@ export function ObjectionPanel({
           </AlertDialogHeader>
 
           {/* ⚠️ OUTSIDE the description. AlertDialogDescription renders a <p>,
-              and nesting a block element in it makes the browser close the
-              <p> early — the server and client trees then diverge. It is also
-              a WARNING rather than a description: this is the candidate's
-              only recourse. */}
+              and the previous version nested a <span className="block"> in
+              it — the browser closes the <p> at the block element and the
+              trees diverge. It is also a WARNING rather than a description:
+              this is the candidate's only recourse. */}
           <p className="text-[13px] font-medium leading-relaxed text-[var(--red-500)]">
             {t("confirmWarning")}
           </p>

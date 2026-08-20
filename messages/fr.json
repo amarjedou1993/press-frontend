@@ -29,6 +29,7 @@
   "placeholder": "Choisir une date"
 },
 
+
   "nav": {
     "home": "Accueil",
     "sessions": "Sessions",
@@ -40,6 +41,8 @@
     "myApplication": "Mon dossier",
     "myProfile": "Mon profil"
   },
+
+
   "sessionStatus": {
     "PLANNED": "Programmée",
     "RECEIVING": "Réception des dossiers",
@@ -307,7 +310,10 @@
     "birthplaceRequired": "Le lieu de naissance est requis.",
     "max200": "200 caractères maximum.",
     "urlRequired": "L'adresse du lien est requise.",
-    "urlInvalid": "Adresse invalide (exemple : https://exemple.mr/article)"
+    "urlInvalid": "Adresse invalide (exemple : https://exemple.mr/article)",
+     "groundInvalid": "Motif de réclamation invalide.",
+      "argumentTooShort": "Exposez votre contestation en 30 caractères au minimum. Le membre de la commission qui réexaminera votre dossier doit comprendre ce que vous contestez.",
+      "groundRequired": "Sélectionnez un motif."
   },
   "candidateShell": {
     "title": "Espace candidat",
@@ -353,7 +359,8 @@
     "toHandle": "{count} à traiter",
     "open": "Ouvrir",
     "start": "Commencer",
-    "previousApplications": "Mes demandes précédentes"
+    "previousApplications": "Mes demandes précédentes",
+    "yourCardWithheld": "Votre carte — non valable"
   },
   "dashboardHero": {
     "DRAFT": {
@@ -400,7 +407,24 @@
       "headline": "Décision définitive",
       "body": "Après réexamen, la décision de rejet est confirmée. Vous pourrez déposer une nouvelle demande lors d'une prochaine session.",
       "cta": "Consulter la décision"
-    }
+    },
+    "card": {
+  "SUSPENDED": {
+    "headline": "Carte de presse suspendue",
+    "body": "Votre carte est temporairement retirée de la circulation. Toute vérification la signalera comme suspendue.",
+    "cta": "Consulter la décision"
+  },
+  "REVOKED": {
+    "headline": "Carte de presse retirée",
+    "body": "Votre carte n'est plus valable. Le Ministère l'a retirée sur proposition de la commission.",
+    "cta": "Consulter la décision"
+  },
+  "EXPIRED": {
+    "headline": "Carte de presse expirée",
+    "body": "Votre carte a atteint sa date de validité. Vous pourrez en demander une nouvelle lors de la prochaine session.",
+    "cta": "Consulter mon dossier"
+  }
+}
   },
   "shell": {
     "toggleMenu": "Basculer le menu",
@@ -408,6 +432,41 @@
     "signOut": "Déconnexion",
     "accreditation": "Accréditation"
   },
+
+  "changedOn": "Modifiée le",
+
+    "card": {
+      "SUSPENDED": {
+        "seal": "SUSPENDUE",
+        "kicker": "Mesure conservatoire",
+        "title": "Votre carte de presse est suspendue",
+        "lede": "Votre carte est temporairement retirée de la circulation. Toute vérification du code qu'elle porte la signalera comme suspendue.",
+        "reasonLabel": "Motif de la suspension",
+        "nextHeading": "Ce que cela signifie",
+        "nextBody": "Une suspension est une mesure <b>conservatoire et réversible</b>. Votre accréditation n'est pas retirée. Pour toute contestation, adressez-vous au Ministère."
+      },
+
+      "REVOKED": {
+        "seal": "RETIRÉE",
+        "kicker": "Décision de retrait",
+        "title": "Votre carte de presse a été retirée",
+        "lede": "Votre carte n'est plus valable. Toute vérification du code qu'elle porte la signalera comme retirée.",
+        "reasonLabel": "Motif du retrait",
+        "nextHeading": "Suite de la procédure",
+        "nextBody": "Le retrait d'une carte est prononcé par le Ministère sur proposition de la commission. Vous pourrez déposer une <b>nouvelle candidature</b> lors d'une prochaine session. Pour toute contestation, adressez-vous au Ministère."
+      },
+
+      "EXPIRED": {
+        "seal": "EXPIRÉE",
+        "kicker": "Échéance",
+        "title": "Votre carte de presse est arrivée à échéance",
+        "lede": "Votre carte a atteint sa date de validité. Ce n'est pas une sanction : chaque carte a une durée déterminée.",
+        "reasonLabel": "Observation",
+        "nextHeading": "Renouveler votre accréditation",
+        "nextBody": "Vous pouvez déposer une nouvelle demande lors de la <b>prochaine session de candidature</b>. Les dates sont publiées sur le site du Ministère, et vous serez informé par courriel de leur ouverture."
+      }
+    },
+
   "roles": {
     "CANDIDATE": "Candidat",
     "REVIEWER": "Commission d'examen",
@@ -458,7 +517,8 @@
     "submittedBody": "Votre demande a été transmise à la commission d'examen.",
     "submitRefused": "Soumission refusée",
     "conditionsUnmet": "Certaines conditions ne sont pas remplies.",
-    "tryAgain": "Réessayez."
+    "tryAgain": "Réessayez.",
+    "yourCardWithheld": "Votre carte — non valable"
   },
   "newApplication": {
     "title": "Nouvelle demande de carte de presse",
@@ -503,6 +563,8 @@
     "ministry": "Ministère de la Culture, des Arts, de la Communication et des Relations avec le Parlement",
     "reference": "Référence",
     "decidedOn": "Rendue le",
+    "changedOn": "Modifiée le",
+
     "ACCEPTED": {
       "seal": "ACCORDÉE",
       "kicker": "Notification de décision",
@@ -547,6 +609,36 @@
       "reasonLabel": "Motif de la décision définitive",
       "nextHeading": "Prochaine session",
       "nextBody": "Vous pourrez déposer une nouvelle demande lors d'une prochaine session de candidature. Les conditions et le calendrier seront publiés par le Ministère."
+    },
+
+    "card": {
+      "SUSPENDED": {
+        "seal": "SUSPENDUE",
+        "kicker": "Mesure conservatoire",
+        "title": "Votre carte de presse est suspendue",
+        "lede": "Votre carte est temporairement retirée de la circulation. Toute vérification du code qu'elle porte la signalera comme suspendue.",
+        "reasonLabel": "Motif de la suspension",
+        "nextHeading": "Ce que cela signifie",
+        "nextBody": "Une suspension est une mesure <b>conservatoire et réversible</b>. Votre accréditation n'est pas retirée. Pour toute contestation, adressez-vous au Ministère."
+      },
+      "REVOKED": {
+        "seal": "RETIRÉE",
+        "kicker": "Décision de retrait",
+        "title": "Votre carte de presse a été retirée",
+        "lede": "Votre carte n'est plus valable. Toute vérification du code qu'elle porte la signalera comme retirée.",
+        "reasonLabel": "Motif du retrait",
+        "nextHeading": "Suite de la procédure",
+        "nextBody": "Le retrait d'une carte est prononcé par le Ministère sur proposition de la commission. Vous pourrez déposer une <b>nouvelle candidature</b> lors d'une prochaine session. Pour toute contestation, adressez-vous au Ministère."
+      },
+      "EXPIRED": {
+        "seal": "EXPIRÉE",
+        "kicker": "Échéance",
+        "title": "Votre carte de presse est arrivée à échéance",
+        "lede": "Votre carte a atteint sa date de validité. Ce n'est pas une sanction : chaque carte a une durée déterminée.",
+        "reasonLabel": "Observation",
+        "nextHeading": "Renouveler votre accréditation",
+        "nextBody": "Vous pouvez déposer une nouvelle demande lors de la <b>prochaine session de candidature</b>. Les dates sont publiées sur le site du Ministère, et vous serez informé par courriel de leur ouverture."
+      }
     }
   },
   "documentType": {
@@ -787,6 +879,7 @@
     "completeTitle": "Profil complet",
     "completeBody": "Rien ne vous empêche de déposer un dossier.",
     "missingCount": "{count, plural, one {# élément manquant} other {# éléments manquants}}",
+    "missingSeparator": " · ",
     "missing": {
       "fullName": "nom complet",
       "nniOrPassport": "NNI ou passeport",

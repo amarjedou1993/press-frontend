@@ -6,6 +6,8 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
+import { useFieldError } from "@/lib/useFieldError"
+
 
 function FieldSet({ className, ...props }: React.ComponentProps<"fieldset">) {
   return (
@@ -173,6 +175,77 @@ function FieldSeparator({
   )
 }
 
+// function FieldError({
+//   className,
+//   children,
+//   errors,
+//   ...props
+// }: React.ComponentProps<"div"> & {
+//   errors?: Array<{ message?: string } | undefined>
+// }) {
+//   const content = useMemo(() => {
+//     if (children) {
+//       return children
+//     }
+
+//     if (!errors?.length) {
+//       return null
+//     }
+
+//     const uniqueErrors = [
+//       ...new Map(errors.map((error) => [error?.message, error])).values(),
+//     ]
+
+//     if (uniqueErrors?.length == 1) {
+//       return uniqueErrors[0]?.message
+//     }
+
+//     return (
+//       <ul className="ml-4 flex list-disc flex-col gap-1">
+//         {uniqueErrors.map(
+//           (error, index) =>
+//             error?.message && <li key={index}>{error.message}</li>
+//         )}
+//       </ul>
+//     )
+//   }, [children, errors])
+
+//   if (!content) {
+//     return null
+//   }
+
+//   return (
+//     <div
+//       role="alert"
+//       data-slot="field-error"
+//       className={cn("text-sm font-normal text-destructive", className)}
+//       {...props}
+//     >
+//       {content}
+//     </div>
+//   )
+// }
+
+/**
+ * ⚠️ MODIFIED FROM THE SHADCN ORIGINAL — resolves message KEYS.
+ *
+ * The validators and Zod schemas in this project emit keys rather than
+ * sentences ("validation.email", "blockers.INSTITUTION_MISSING"), because
+ * they run before a locale is known. The SERVER emits keys too, for the same
+ * rules, so that a constraint reads identically whichever side caught it.
+ *
+ * The stock component prints `error.message` verbatim, which would put
+ * "validation.nniLength" on screen beneath the NNI field — in every form in
+ * the system.
+ *
+ * useFieldError() resolves anything it recognises against the root namespace
+ * and passes anything else through unchanged, so a finished sentence from an
+ * older path still works.
+ *
+ * ⚠️ RE-APPLY THIS AFTER `npx shadcn add field`. Regenerating the component
+ * silently restores the stock version, and nothing fails — keys simply start
+ * appearing in the interface.
+ */
 function FieldError({
   className,
   children,
@@ -181,6 +254,8 @@ function FieldError({
 }: React.ComponentProps<"div"> & {
   errors?: Array<{ message?: string } | undefined>
 }) {
+  const resolve = useFieldError()
+
   const content = useMemo(() => {
     if (children) {
       return children
@@ -190,23 +265,32 @@ function FieldError({
       return null
     }
 
-    const uniqueErrors = [
-      ...new Map(errors.map((error) => [error?.message, error])).values(),
+    // Deduplicate on the RESOLVED text, not the key: two different keys can
+    // resolve to the same sentence, and showing it twice helps nobody.
+    const messages = [
+      ...new Set(
+        errors
+          .map((error) => resolve(error?.message))
+          .filter((message): message is string => !!message)
+      ),
     ]
 
-    if (uniqueErrors?.length == 1) {
-      return uniqueErrors[0]?.message
+    if (messages.length === 0) {
+      return null
+    }
+
+    if (messages.length === 1) {
+      return messages[0]
     }
 
     return (
-      <ul className="ml-4 flex list-disc flex-col gap-1">
-        {uniqueErrors.map(
-          (error, index) =>
-            error?.message && <li key={index}>{error.message}</li>
-        )}
+      <ul className="ms-4 flex list-disc flex-col gap-1">
+        {messages.map((message, index) => (
+          <li key={index}>{message}</li>
+        ))}
       </ul>
     )
-  }, [children, errors])
+  }, [children, errors, resolve])
 
   if (!content) {
     return null
@@ -216,6 +300,9 @@ function FieldError({
     <div
       role="alert"
       data-slot="field-error"
+      // dir="auto": a server message may arrive in either language, and an
+      // Arabic sentence in an LTR block puts its punctuation at the wrong end.
+      dir="auto"
       className={cn("text-sm font-normal text-destructive", className)}
       {...props}
     >
@@ -223,6 +310,7 @@ function FieldError({
     </div>
   )
 }
+
 
 export {
   Field,

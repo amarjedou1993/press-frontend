@@ -1,20 +1,5 @@
 "use client";
-// src/app/(admin)/admin/cards/page.tsx
-// Issuing cards, for the super admin.
-//
-// The commission decides who is entitled to a card; the Authority issues it.
-// Keeping those hands separate is what makes the credential an institutional
-// act rather than one reviewer's — hence SUPER_ADMIN only.
-//
-// BUILT FOR VOLUME. A national press corps produces hundreds of cards per
-// session, and an administrator works through them in an afternoon. So both
-// lists carry search, filters, pagination and select-all — a screen that
-// requires two hundred individual clicks is a screen nobody uses correctly.
-//
-// ONE NUANCE THAT MATTERS: "select all" selects everything MATCHING THE
-// CURRENT FILTER, not merely the visible page. The count says so explicitly,
-// because a select-all that silently covers only one page is how someone
-// prints forty cards believing they printed two hundred.
+
 
 import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";

@@ -5,24 +5,24 @@
 // screen a candidate sees, and the one they may print or forward.
 //
 // ───────────────────────────────────────────────────────────────────────
-// ⚠️ THE APPLICATION'S STATUS IS NOT THE CARD'S STATUS.
+// ⚠️ THE REASON IS FREE TEXT IN AN UNKNOWN LANGUAGE.
 //
-// A dossier reaches CARD_ISSUED and stays there for ever. What happens to the
-// card afterwards — suspension, withdrawal, expiry — is recorded on the CARD,
-// and the application never moves again.
+// A commission member writes their justification in French or in Arabic —
+// their choice, and the system never translates it. So an Arabic reader may
+// open a French refusal, and the reverse.
 //
-// So a holder whose card had been withdrawn was still being shown "Your card
-// has been issued", in green, with the ministry's seal on it. The system was
-// congratulating someone it had just sanctioned.
+// `dir="auto"` is the only correct handling: the browser reads the first
+// strong directional character and sets direction from it. Without it, an
+// Arabic paragraph inside an LTR block renders with its punctuation at the
+// wrong end — on the grounds of a refusal, which is not a place for a
+// rendering fault.
 //
-// This component now takes the card's status too, and the card's state wins:
-// what a holder needs to know is what their credential is worth TODAY.
+// The surrounding notice IS translated: the act, the heading, the procedure
+// that follows. Only the member's own words are left as written.
 // ───────────────────────────────────────────────────────────────────────
 
 import { useFormatter, useLocale, useTranslations } from "next-intl";
-import {
-  Check, X, IdCard, Scale, Gavel, ShieldAlert, ShieldOff, Clock, FileText,
-} from "lucide-react";
+import { Check, X, IdCard, Scale, Gavel, ShieldAlert, Clock, FileText } from "lucide-react";
 import type { ApplicationStatus, TimelineEntry } from "@/lib/api/applications";
 
 /* ══════════════ engraving ══════════════ */
@@ -44,9 +44,12 @@ function Rosette({ className, stroke }: { className?: string; stroke: string }) 
 /**
  * An official seal impression.
  *
- * ⚠️ THE MONOGRAM STAYS LATIN, THE LABEL TRANSLATES, AND ARABIC GETS NO
- * TRACKING — it would separate joined letterforms, and a seal is where that
- * would be most visible.
+ * ⚠️ THE MONOGRAM STAYS LATIN, THE LABEL TRANSLATES. "MCACRP" is an emblem —
+ * the same object as the coat of arms — while "ACCORDÉE" is a word describing
+ * what happened, and an Arabic reader should read it.
+ *
+ * And letterSpacing goes to ZERO for Arabic: tracking separates joined
+ * letterforms, and a seal is exactly where that would be most visible.
  */
 function Seal({ className, stroke, label, arabic }: {
   className?: string; stroke: string; label: string; arabic: boolean;
@@ -81,9 +84,10 @@ function Seal({ className, stroke, label, arabic }: {
 /* ══════════════ the outcomes ══════════════ */
 
 interface Palette {
+  /** The header's engraved field. */
   field: string;
-  accent: string;
-  softBg: string;
+  accent: string;       // seal, rules, icon plate
+  softBg: string;       // the reason block
   softInk: string;
 }
 
@@ -111,29 +115,18 @@ const PENDING_PALETTE: Palette = {
 };
 
 /**
- * Ash, for a card that simply reached its date.
- *
- * ⚠️ EXPIRY IS NOT A SANCTION. Every card expires; the holder did nothing
- * wrong. Burgundy here would tell someone they had been punished for the
- * passage of time.
+ * Only the VISUAL shape lives here now; every word comes from the catalogue,
+ * under the status's own name.
  */
-const LAPSED_PALETTE: Palette = {
-  field: "linear-gradient(158deg, #2b3833 0%, #222d29 55%, #1b2420 100%)",
-  accent: "#b9c4bd",
-  softBg: "#f3f4f3",
-  softInk: "#4b5563",
-};
-
 interface Outcome {
   palette: Palette;
   Icon: React.ElementType;
-  /** Whether the notice carries a written reason. */
+  /** Whether the notice carries the member's written reason. */
   hasReason: boolean;
-  /** A grave "what next" — set apart in the sanction's own colour. */
+  /** A grave "what next" — the objection right, set apart. */
   grave: boolean;
 }
 
-/** Keyed on the APPLICATION's status. */
 const OUTCOMES: Partial<Record<ApplicationStatus, Outcome>> = {
   ACCEPTED: {
     palette: ACCEPTED_PALETTE, Icon: Check, hasReason: true, grave: false,
@@ -149,24 +142,6 @@ const OUTCOMES: Partial<Record<ApplicationStatus, Outcome>> = {
   },
   FINAL_REJECTION: {
     palette: REFUSED_PALETTE, Icon: Scale, hasReason: true, grave: false,
-  },
-};
-
-/**
- * Keyed on the CARD's status, and these OVERRIDE the above.
- *
- * A withdrawn card is the holder's present reality; the acceptance that
- * preceded it is history.
- */
-const CARD_OUTCOMES: Record<string, Outcome> = {
-  SUSPENDED: {
-    palette: PENDING_PALETTE, Icon: ShieldAlert, hasReason: true, grave: true,
-  },
-  REVOKED: {
-    palette: REFUSED_PALETTE, Icon: ShieldOff, hasReason: true, grave: true,
-  },
-  EXPIRED: {
-    palette: LAPSED_PALETTE, Icon: Clock, hasReason: false, grave: false,
   },
 };
 
@@ -188,55 +163,31 @@ export function DecisionOutcome({
   status,
   timeline,
   applicationId,
-  /**
-   * The card's own status, when one exists.
-   *
-   * ⚠️ WITHOUT THIS the component cannot tell an issued card from a withdrawn
-   * one: the application says CARD_ISSUED in both cases.
-   */
-  cardStatus,
-  /** Why the card is in that state — the Authority's own words. */
-  cardStatusReason,
-  /** When the card's status last changed. */
-  cardStatusChangedAt,
 }: {
   status: ApplicationStatus;
   timeline: TimelineEntry[];
   applicationId?: number;
-  cardStatus?: string | null;
-  cardStatusReason?: string | null;
-  cardStatusChangedAt?: string | null;
 }) {
   const t = useTranslations("decision");
   const locale = useLocale();
   const format = useFormatter();
   const arabic = locale === "ar";
 
-  /* ── which notice, and about what ── */
-
-  // The card's state wins where it says something the application cannot.
-  const cardOverride = cardStatus && CARD_OUTCOMES[cardStatus];
-  const outcome = cardOverride ?? OUTCOMES[status];
+  const outcome = OUTCOMES[status];
   if (!outcome) return null;   // still in progress — the timeline tells that story
 
-  /** The catalogue block: "card.REVOKED" or the application status's own. */
-  const key = cardOverride ? `card.${cardStatus}` : status;
-
   const decisive = decisiveReason(timeline, status);
-
-  // A card notice quotes the CARD's reason and date; an application notice
-  // quotes the decision's.
-  const reasonText = cardOverride ? cardStatusReason : decisive?.text;
-  const dateSource = cardOverride ? cardStatusChangedAt : decisive?.at;
-
   const { palette: p, Icon } = outcome;
-  const decidedOn = dateSource ? format.dateTime(new Date(dateSource), "long") : null;
+
+  const decidedOn = decisive?.at
+    ? format.dateTime(new Date(decisive.at), "long")
+    : null;
 
   // A decision reference, as an administrative act carries.
   //
-  // ⚠️ NOT translated and NOT mirrored: the holder may quote it in a letter
-  // or read it down a telephone, and it must be the same string whichever
-  // language they were reading.
+  // ⚠️ NOT translated and NOT mirrored. It is an identifier: the candidate may
+  // quote it in a letter or read it down a telephone, and it must be the same
+  // string whichever language they were reading.
   const reference = applicationId && decisive?.at
     ? `MCACRP/${new Date(decisive.at).getFullYear()}/${String(applicationId).padStart(5, "0")}`
     : null;
@@ -249,6 +200,7 @@ export function DecisionOutcome({
     >
       {/* ══ engraved header ══ */}
       <div className="relative overflow-hidden" style={{ background: p.field }}>
+        {/* security print */}
         <div className="pointer-events-none absolute inset-0 opacity-[0.06]"
           style={{ backgroundImage: "repeating-linear-gradient(115deg,#fff 0 1px,transparent 1px 11px)" }}
           aria-hidden="true" />
@@ -257,15 +209,16 @@ export function DecisionOutcome({
         <Seal
           className="rtl-mirror pointer-events-none absolute -right-6 top-1/2 h-44 w-44 -translate-y-1/2 opacity-[0.13]"
           stroke={p.accent}
-          label={t(`${key}.seal`)}
+          label={t(`${status}.seal`)}
           arabic={arabic}
         />
 
         <div className="relative px-7 py-7 sm:px-8 sm:py-8">
+          {/* institutional line */}
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <span className="text-[10px] font-extrabold uppercase tracking-[0.24em]"
               style={{ color: p.accent }}>
-              {t(`${key}.kicker`)}
+              {t(`${status}.kicker`)}
             </span>
             <span className="h-3 w-px" style={{ background: `${p.accent}66` }} aria-hidden="true" />
             <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/45">
@@ -286,14 +239,15 @@ export function DecisionOutcome({
 
             <div className="min-w-0 flex-1">
               <h3 className="text-[22px] font-extrabold leading-tight text-white sm:text-[25px]">
-                {t(`${key}.title`)}
+                {t(`${status}.title`)}
               </h3>
               <p className="mt-2.5 max-w-2xl text-[14px] leading-relaxed text-white/70">
-                {t(`${key}.lede`)}
+                {t(`${status}.lede`)}
               </p>
             </div>
           </div>
 
+          {/* the act's identifiers */}
           {(reference || decidedOn) && (
             <dl className="mt-6 flex flex-wrap gap-x-8 gap-y-3 border-t pt-4"
               style={{ borderColor: "rgba(255,255,255,.14)" }}>
@@ -310,7 +264,7 @@ export function DecisionOutcome({
               {decidedOn && (
                 <div>
                   <dt className="text-[9px] font-bold uppercase tracking-[0.16em] text-white/40">
-                    {cardOverride ? t("changedOn") : t("decidedOn")}
+                    {t("decidedOn")}
                   </dt>
                   <dd className="mt-0.5 flex items-center gap-1.5 text-[12.5px] text-white/85">
                     <Clock className="h-3 w-3 flex-none" /> {decidedOn}
@@ -323,27 +277,27 @@ export function DecisionOutcome({
       </div>
 
       {/* ══ the reason, set apart as a considérant ══ */}
-      {reasonText && outcome.hasReason && (
+      {decisive?.text && outcome.hasReason && (
         <div className="px-7 py-6 sm:px-8">
           <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em]"
             style={{ color: p.softInk }}>
             <FileText className="h-3 w-3 flex-none" />
-            {t(`${key}.reasonLabel`)}
+            {t(`${status}.reasonLabel`)}
           </p>
 
           <blockquote
             className="mt-3 rounded-e-xl border-s-[3px] px-5 py-4"
             style={{ borderColor: p.softInk, background: p.softBg }}
           >
-            {/* ⚠️ dir="auto" — written by a member or by the Authority, in
-                whichever language they use, and never translated.
-                pre-wrap: the text carries its own line breaks, and rewrapping
-                a legal reason changes how it reads. */}
+            {/* ⚠️ dir="auto" — the member wrote this in French or in Arabic,
+                and the system does not translate an administrative act.
+                pre-wrap: the justification carries its own line breaks, and
+                rewrapping a legal reason changes how it reads. */}
             <p
               dir="auto"
               className="user-text whitespace-pre-wrap text-[14px] leading-[1.75] text-[var(--ink)]"
             >
-              {reasonText}
+              {decisive.text}
             </p>
           </blockquote>
         </div>
@@ -371,11 +325,11 @@ export function DecisionOutcome({
         <div className="min-w-0">
           <p className="text-[12.5px] font-extrabold uppercase tracking-[0.1em]"
             style={{ color: outcome.grave ? p.softInk : "var(--green-700)" }}>
-            {t(`${key}.nextHeading`)}
+            {t(`${status}.nextHeading`)}
           </p>
           <p className="mt-1.5 max-w-3xl text-[13.5px] leading-relaxed"
             style={{ color: outcome.grave ? p.softInk : "var(--slate)" }}>
-            {t.rich(`${key}.nextBody`, { b: (c) => <b className="font-bold">{c}</b> })}
+            {t.rich(`${status}.nextBody`, { b: (c) => <b className="font-bold">{c}</b> })}
           </p>
         </div>
       </div>
