@@ -1,13 +1,15 @@
 "use client";
-// src/app/[locale]/(admin)/admin/cards/page.tsx
+
 
 import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   IdCard, Printer, FileSpreadsheet, AlertTriangle, Check, X,
-  Layers, Camera, Loader2, Search, Download, History,
-  ShieldCheck, ShieldAlert, CalendarRange,
+  Layers, Camera, Loader2, Search, ExternalLink, Download,
+  History,
+  ShieldCheck,
+  ShieldAlert,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -26,6 +28,7 @@ import { useAuthStore } from "@/lib/auth";
 import { ApiError } from "@/lib/api/client";
 import { CardHistoryDialog } from "@/components/card/CardHistoryDialog";
 import { CardStatusActions } from "@/components/card/CardStatusActions";
+import { OfficialSeal } from "@/components/public/patterns";
 
 const STATUS_TONE: Record<string, { bg: string; fg: string }> = {
   VALID:     { bg: "var(--green-tint)", fg: "var(--green-700)" },
@@ -56,17 +59,6 @@ export default function AdminCardsPage() {
   const [selectedCards, setSelectedCards] = useState<Set<number>>(new Set());
   const [registrySearch, setRegistrySearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
-  /**
-   * ⚠️ THE SESSION FILTER — the unit the Authority actually works in.
-   *
-   * Cards are issued and renewed in COHORTS: everyone accredited in one
-   * session shares an expiry date, so "print this session" is a real task
-   * and "print these forty individuals" is not. Printing runs and Excel
-   * exports both follow this filter.
-   *
-   * Stored as a string because a <select> value always is; "" means all.
-   */
-  const [sessionFilter, setSessionFilter] = useState("");
   const [registryPage, setRegistryPage] = useState(1);
   const [registryPageSize, setRegistryPageSize] = useState(12);
 
@@ -77,7 +69,7 @@ export default function AdminCardsPage() {
   const issuable = useQuery({ queryKey: cardKeys.issuable, queryFn: getIssuable });
   const registry = useQuery({ queryKey: cardKeys.registry, queryFn: getRegistry });
 
-  // Which card the history / status dialogs are acting on.
+   // Which card the history / status dialogs are acting on.
   const [historyFor, setHistoryFor] = useState<CardItem | null>(null);
   const [statusFor, setStatusFor] = useState<CardItem | null>(null);
 
@@ -102,43 +94,23 @@ export default function AdminCardsPage() {
   const readyVisible = ready.slice(
     (readySafePage - 1) * issuablePageSize, readySafePage * issuablePageSize);
 
-  /* ══ the sessions present in the registry ══
-     Derived from the cards themselves rather than fetched: a session with no
-     issued card has nothing to print, and offering it would be an empty
-     promise. Newest first — that is the one being worked on. */
-  const sessions = useMemo(() => {
-    const seen = new Map<number, string>();
-    for (const card of registry.data ?? []) {
-      if (card.sessionId != null && !seen.has(card.sessionId)) {
-        seen.set(card.sessionId, card.sessionLabel ?? `Session ${card.sessionId}`);
-      }
-    }
-    return [...seen.entries()]
-      .map(([id, label]) => ({ id, label }))
-      .sort((a, b) => b.id - a.id);
-  }, [registry.data]);
-
   /* ══ registry: filtered, then paged ══ */
 
   const filteredCards = useMemo(() => {
     const term = registrySearch.trim().toLowerCase();
     return (registry.data ?? []).filter((c) => {
-      if (sessionFilter && String(c.sessionId) !== sessionFilter) return false;
       if (statusFilter && c.status !== statusFilter) return false;
       if (!term) return true;
       return c.holderFullName.toLowerCase().includes(term)
           || c.cardNumber.toLowerCase().includes(term)
           || (c.categoryLabelFr ?? "").toLowerCase().includes(term);
     });
-  }, [registry.data, registrySearch, statusFilter, sessionFilter]);
+  }, [registry.data, registrySearch, statusFilter]);
 
   const cardPageCount = Math.max(1, Math.ceil(filteredCards.length / registryPageSize));
   const cardSafePage = Math.min(registryPage, cardPageCount);
   const cardsVisible = filteredCards.slice(
     (cardSafePage - 1) * registryPageSize, cardSafePage * registryPageSize);
-
-  const activeFilters = !!(registrySearch || statusFilter || sessionFilter);
-  const currentSession = sessions.find((s) => String(s.id) === sessionFilter);
 
   /* ══ mutations ══ */
 
@@ -178,15 +150,8 @@ export default function AdminCardsPage() {
     }),
   });
 
-  /**
-   * ⚠️ THE EXPORT FOLLOWS THE SESSION FILTER.
-   *
-   * "Export everything and sort it in Excel" is the work the application
-   * exists to remove. When a session is selected the workbook contains that
-   * session, and the button says so.
-   */
   const exportRegistry = useMutation({
-    mutationFn: () => downloadRegistry(token, currentSession?.id ?? null),
+    mutationFn: () => downloadRegistry(token),
     onError: (e) => toast.error("Export impossible", {
       description: e instanceof Error ? e.message : "Réessayez.",
     }),
@@ -205,6 +170,9 @@ export default function AdminCardsPage() {
     && ready.every((i) => selected.has(i.applicationId));
   const allCardsSelected = filteredCards.length > 0
     && filteredCards.every((c) => selectedCards.has(c.cardId));
+
+  const openVerification = (token_: string) =>
+    window.open(`/verifier/${token_}`, "_blank", "noopener,noreferrer");
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
@@ -230,13 +198,13 @@ export default function AdminCardsPage() {
             </h2>
             <p className="mt-2 max-w-lg text-[14px] leading-relaxed text-white/65">
               Les candidatures acceptées par la commission donnent lieu à une
-              carte éditée par le Ministère.
+              carte éditée par le MCACRP.
             </p>
           </div>
 
           <div className="flex gap-3">
             <div className="rounded-xl border border-white/15 bg-black/20 px-5 py-3.5 text-center">
-              <p className="font-mono text-[26px] font-extrabold leading-none">
+              <p className="text-[26px] font-extrabold leading-none">
                 {issuable.isLoading ? "—" : ready.length}
               </p>
               <p className="mt-1.5 text-[9.5px] font-bold uppercase tracking-[0.14em] text-white/50">
@@ -244,7 +212,7 @@ export default function AdminCardsPage() {
               </p>
             </div>
             <div className="rounded-xl border border-white/15 bg-black/20 px-5 py-3.5 text-center">
-              <p className="font-mono text-[26px] font-extrabold leading-none">
+              <p className="text-[26px] font-extrabold leading-none">
                 {registry.isLoading ? "—" : (registry.data?.length ?? 0)}
               </p>
               <p className="mt-1.5 text-[9.5px] font-bold uppercase tracking-[0.14em] text-white/50">
@@ -313,7 +281,10 @@ export default function AdminCardsPage() {
         </div>
       )}
 
-      {/* ══ blocked, above the working list ══ */}
+      {/* ══ blocked, above the working list ══
+          These need a fix elsewhere — a photograph, a specialisation — so
+          they are surfaced separately rather than sitting inert among rows
+          the administrator is trying to select. */}
       {blocked.length > 0 && (
         <div className="overflow-hidden rounded-2xl border border-[var(--gold-500)]/50 bg-[var(--gold-tint)]">
           <div className="flex items-center gap-3 px-5 py-3.5">
@@ -376,7 +347,7 @@ export default function AdminCardsPage() {
             />
           </div>
 
-          <Button size="sm" disabled={selected.size === 0}
+          <Button size="xs" disabled={selected.size === 0}
             onClick={() => setConfirmIssue(true)}>
             <IdCard className="h-3.5 w-3.5" />
             Éditer {selected.size > 0 && `(${selected.size})`}
@@ -393,6 +364,7 @@ export default function AdminCardsPage() {
           </p>
         ) : (
           <>
+            {/* select-all header */}
             <div className="flex items-center gap-4 border-b border-[var(--line)] bg-[#fbfcfb] px-5 py-2.5">
               <Checkbox
                 checked={allReadySelected}
@@ -463,7 +435,7 @@ export default function AdminCardsPage() {
             </p>
             <p className="text-[12px] text-[var(--slate)]">
               {filteredCards.length} carte{filteredCards.length > 1 ? "s" : ""}
-              {activeFilters && ` sur ${registry.data?.length ?? 0}`}
+              {(registrySearch || statusFilter) && ` sur ${registry.data?.length ?? 0}`}
               {selectedCards.size > 0 && (
                 <span className="font-semibold text-[var(--green-700)]">
                   {" "}· {selectedCards.size} sélectionnée{selectedCards.size > 1 ? "s" : ""}
@@ -472,13 +444,11 @@ export default function AdminCardsPage() {
             </p>
           </div>
 
-          {/* ⚠️ The button SAYS what it will export. "Exporter tout" beside a
-              session filter is a promise the export does not keep. */}
-          <Button size="sm" variant="outline"
+          <Button size="xs" variant="outline"
             disabled={exportRegistry.isPending}
             onClick={() => exportRegistry.mutate()}>
             <FileSpreadsheet className="h-3.5 w-3.5" />
-            {currentSession ? "Exporter cette session" : "Exporter tout"}
+            Exporter tout
           </Button>
         </div>
 
@@ -496,37 +466,6 @@ export default function AdminCardsPage() {
             />
           </div>
 
-          {/* ⚠️ THE SESSION FILTER, first among the filters and marked with a
-              calendar: it is the one an administrator reaches for when the
-              task is "print this cohort", which is most of the time.
-              Hidden entirely when only one session exists — a select with a
-              single option is furniture. */}
-          {sessions.length > 1 && (
-            <div className="relative">
-              <CalendarRange className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--muted-fg)]" />
-              <select
-                value={sessionFilter}
-                onChange={(e) => {
-                  setSessionFilter(e.target.value);
-                  setRegistryPage(1);
-                  // ⚠️ The selection is CLEARED on a session change. Keeping
-                  // it would leave cards ticked that are no longer visible,
-                  // and "Imprimer (40)" would then print a set nobody can
-                  // see on screen.
-                  setSelectedCards(new Set());
-                }}
-                aria-label="Filtrer par session"
-                className="h-9 rounded-lg border bg-white pl-9 pr-3 text-[13px] font-semibold outline-none focus-visible:ring-2 focus-visible:ring-[var(--green-500)]/25"
-                style={{ borderColor: sessionFilter ? "var(--green-500)" : "var(--line)" }}
-              >
-                <option value="">Toutes les sessions</option>
-                {sessions.map((s) => (
-                  <option key={s.id} value={String(s.id)}>{s.label}</option>
-                ))}
-              </select>
-            </div>
-          )}
-
           <select
             value={statusFilter}
             onChange={(e) => { setStatusFilter(e.target.value); setRegistryPage(1); }}
@@ -539,12 +478,9 @@ export default function AdminCardsPage() {
             ))}
           </select>
 
-          {activeFilters && (
+          {(registrySearch || statusFilter) && (
             <button type="button"
-              onClick={() => {
-                setRegistrySearch(""); setStatusFilter(""); setSessionFilter("");
-                setRegistryPage(1); setSelectedCards(new Set());
-              }}
+              onClick={() => { setRegistrySearch(""); setStatusFilter(""); setRegistryPage(1); }}
               className="text-[12px] font-semibold text-[var(--muted-fg)] underline underline-offset-2 hover:text-[var(--ink)]">
               effacer les filtres
             </button>
@@ -564,7 +500,7 @@ export default function AdminCardsPage() {
             </select>
           </label>
 
-          <Button size="sm"
+          <Button size="xs"
             disabled={selectedCards.size === 0 || printBatch.isPending}
             onClick={() => printBatch.mutate()}>
             {printBatch.isPending
@@ -578,12 +514,13 @@ export default function AdminCardsPage() {
           <Skeleton className="m-5 h-24" />
         ) : filteredCards.length === 0 ? (
           <p className="px-5 py-10 text-center text-[13.5px] text-[var(--slate)]">
-            {activeFilters
+            {registrySearch || statusFilter
               ? "Aucune carte ne correspond à ces filtres."
               : "Aucune carte éditée pour le moment."}
           </p>
         ) : (
           <>
+            {/* select-all header */}
             <div className="flex items-center gap-4 border-b border-[var(--line)] bg-[#fbfcfb] px-5 py-2.5">
               <Checkbox
                 checked={allCardsSelected}
@@ -595,26 +532,28 @@ export default function AdminCardsPage() {
               />
               {/* Says FILTERED, not "this page": a select-all that silently
                   covers one page is how someone prints forty cards believing
-                  they printed two hundred. It NAMES the session when one is
-                  chosen, because that is the sentence the administrator is
-                  checking before pressing Imprimer. */}
+                  they printed two hundred. */}
               <span className="text-[12px] font-semibold text-[var(--slate)]">
                 {allCardsSelected
                   ? "Tout désélectionner"
                   : `Sélectionner les ${filteredCards.length} carte${filteredCards.length > 1 ? "s" : ""}`}
-                {currentSession
-                  ? ` de la ${currentSession.label.toLowerCase()}`
-                  : activeFilters && " correspondant aux filtres"}
+                {(registrySearch || statusFilter) && " correspondant aux filtres"}
               </span>
             </div>
 
             <ul className="divide-y divide-[var(--line)]">
               {cardsVisible.map((card) => (
+                // <CardRow
+                //   key={card.cardId}
+                //   card={card}
+                //   selected={selectedCards.has(card.cardId)}
+                //   onToggle={() => toggle(selectedCards, card.cardId, setSelectedCards)}
+                //   onDownload={() => downloadCardPdf(card.cardId, card.cardNumber, token)}
+                // />
                 <CardRow
                   key={card.cardId}
                   card={card}
                   selected={selectedCards.has(card.cardId)}
-                  showSession={!sessionFilter}
                   onToggle={() => toggle(selectedCards, card.cardId, setSelectedCards)}
                   onDownload={() => downloadCardPdf(card.cardId, card.cardNumber, token)}
                   onHistory={() => setHistoryFor(card)}
@@ -645,16 +584,13 @@ export default function AdminCardsPage() {
             <AlertDialogDescription>
               Chaque carte recevra un numéro officiel et une signature
               électronique. Les titulaires seront informés par e-mail.
+              <br />
+              <span className="mt-2 block font-medium text-[var(--ink)]">
+                Le numéro attribué est définitif : il figure sur un document
+                officiel et ne peut pas être réattribué.
+              </span>
             </AlertDialogDescription>
           </AlertDialogHeader>
-
-          {/* OUTSIDE the description: AlertDialogDescription renders a <p>,
-              and this is a WARNING rather than a description of the act. */}
-          <p className="text-[13px] font-medium leading-relaxed text-[var(--ink)]">
-            Le numéro attribué est définitif : il figure sur un document
-            officiel et ne peut pas être réattribué.
-          </p>
-
           <AlertDialogFooter>
             <AlertDialogCancel>Annuler</AlertDialogCancel>
             <AlertDialogAction onClick={() => issue.mutate()} disabled={issue.isPending}>
@@ -686,13 +622,19 @@ export default function AdminCardsPage() {
 
 /* ══ one row of the registry ══ */
 
+// function CardRow({
+//   card, selected, onToggle, onDownload,
+// }: {
+//   card: CardItem;
+//   selected: boolean;
+//   onToggle: () => void;
+//   onDownload: () => void;
+// }) {
 function CardRow({
-  card, selected, showSession, onToggle, onDownload, onHistory, onStatus,
+  card, selected, onToggle, onDownload, onHistory, onStatus,
 }: {
   card: CardItem;
   selected: boolean;
-  /** Hidden when a session filter is active — every row would repeat it. */
-  showSession: boolean;
   onToggle: () => void;
   onDownload: () => void;
   onHistory: () => void;
@@ -718,12 +660,6 @@ function CardRow({
         </p>
         <p className="text-[12px] text-[var(--slate)]">
           {card.categoryLabelFr}
-          {showSession && card.sessionLabel && (
-            <>
-              <span className="mx-1.5 opacity-40">·</span>
-              {card.sessionLabel}
-            </>
-          )}
           <span className="mx-1.5 opacity-40">·</span>
           valable jusqu&apos;au{" "}
           {new Date(card.expiresAt).toLocaleDateString("fr-FR")}
@@ -741,7 +677,16 @@ function CardRow({
         {card.statusLabelFr}
       </span>
 
-      <div className="flex flex-none items-center gap-1">
+      {/* <button
+        type="button"
+        onClick={onDownload}
+        title="Télécharger cette carte"
+        aria-label={`Télécharger la carte ${card.cardNumber}`}
+        className="flex-none rounded-lg p-1.5 text-[var(--muted-fg)] transition-colors hover:bg-white hover:text-[var(--green-700)]"
+      >
+        <Download className="h-4 w-4" />
+      </button> */}
+        <div className="flex flex-none items-center gap-1">
         <button
           type="button"
           onClick={onHistory}

@@ -290,8 +290,24 @@
     "verifyIncompleteBody": "Ouvrez le lien directement depuis votre e-mail, sans le recopier.",
     "verifyFailedTitle": "Lien invalide ou expiré",
     "verifyLinkExpired": "Ce lien n'est plus valable.",
-    "verifyFailedNext": "Connectez-vous : un bandeau vous permettra de recevoir un nouveau lien."
-  },
+    "verifyFailedNext": "Connectez-vous : un bandeau vous permettra de recevoir un nouveau lien.",
+        "resetTitle": "Nouveau mot de passe",
+    "resetSubtitle": "Choisissez un mot de passe pour votre compte.",
+    "resetSubmit": "Modifier mon mot de passe",
+    "resetDoneTitle": "Mot de passe modifié",
+    "resetDoneBody": "Vous pouvez maintenant vous connecter.",
+    "resetUnavailable": "Réinitialisation impossible.",
+
+    "newPassword": "Nouveau mot de passe",
+    "confirmPassword": "Confirmer le mot de passe",
+    "passwordPolicy": "8 caractères min., une lettre et un chiffre",
+
+    "invalidLinkTitle": "Lien invalide",
+    "invalidLinkSubtitle": "Ce lien de réinitialisation est incomplet.",
+    "openFromEmail": "Ouvrez le lien directement depuis votre e-mail.",
+    "requestNewLink": "Demander un nouveau lien",
+    "linkNoLongerValid": "Ce lien n'est plus valable."
+    },
   "validation": {
     "requiredEmail": "Veuillez saisir votre adresse e-mail.",
     "requiredPassword": "Veuillez saisir votre mot de passe.",
@@ -311,9 +327,10 @@
     "max200": "200 caractères maximum.",
     "urlRequired": "L'adresse du lien est requise.",
     "urlInvalid": "Adresse invalide (exemple : https://exemple.mr/article)",
-     "groundInvalid": "Motif de réclamation invalide.",
-      "argumentTooShort": "Exposez votre contestation en 30 caractères au minimum. Le membre de la commission qui réexaminera votre dossier doit comprendre ce que vous contestez.",
-      "groundRequired": "Sélectionnez un motif."
+    "groundInvalid": "Motif de réclamation invalide.",
+    "argumentTooShort": "Exposez votre contestation en 30 caractères au minimum. Le membre de la commission qui réexaminera votre dossier doit comprendre ce que vous contestez.",
+    "groundRequired": "Sélectionnez un motif.",
+    "passwordMismatch": "Les deux mots de passe ne correspondent pas."
   },
   "candidateShell": {
     "title": "Espace candidat",

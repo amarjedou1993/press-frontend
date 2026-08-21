@@ -39,7 +39,8 @@ function ProgressRing({ satisfied, total }: { satisfied: number; total: number }
       {/* ⚠️ NOT mirrored under RTL. A progress ring is a gauge, not a
           sentence: it fills clockwise in both directions, the way a clock
           face or a fuel gauge does. */}
-      <svg viewBox="0 0 68 68" className="h-full w-full -rotate-90" dir="ltr">
+      {/* <svg viewBox="0 0 68 68" className="h-full w-full -rotate-90" dir="ltr"> */}
+      <svg viewBox="0 0 68 68" className="h-full w-full -rotate-90">
         <circle cx="34" cy="34" r={R} fill="none" stroke="var(--line)" strokeWidth="6" />
         <circle
           cx="34" cy="34" r={R} fill="none"

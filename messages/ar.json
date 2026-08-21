@@ -261,7 +261,7 @@
     "registerHasAccount": "لديك حساب بالفعل؟",
     "registerSignIn": "تسجيل الدخول",
     "registerUnavailable": "تعذر إنشاء الحساب. تحقق من اتصالك وحاول مرة أخرى.",
-    "passwordHint": "8 محارف على الأقل، حرف ورقم",
+    "passwordHint": "حروف على الأقل، حرف ورقم 8",
     "forgotTitle": "نسيت كلمة السر",
     "forgotSubtitle": "سنرسل لك رابطًا لاختيار كلمة سر جديدة.",
     "forgotSubmit": "إرسال الرابط",
@@ -287,7 +287,23 @@
     "verifyIncompleteBody": "افتح الرابط مباشرة من بريدك الإلكتروني، دون نسخه.",
     "verifyFailedTitle": "رابط غير صالح أو منتهي الصلاحية",
     "verifyLinkExpired": "لم يعد هذا الرابط صالحًا.",
-    "verifyFailedNext": "سجّل الدخول: سيمكّنك شريط في أعلى الصفحة من طلب رابط جديد."
+    "verifyFailedNext": "سجّل الدخول: سيمكّنك شريط في أعلى الصفحة من طلب رابط جديد.",
+        "resetTitle": "كلمة سر جديدة",
+    "resetSubtitle": "اختر كلمة سر لحسابك.",
+    "resetSubmit": "تغيير كلمة سري",
+    "resetDoneTitle": "تم تغيير كلمة السر",
+    "resetDoneBody": "يمكنك الآن تسجيل الدخول.",
+    "resetUnavailable": "تعذرت إعادة التعيين.",
+
+    "newPassword": "كلمة السر الجديدة",
+    "confirmPassword": "تأكيد كلمة السر",
+    "passwordPolicy": "8 حروف على الأقل، حرف ورقم",
+
+    "invalidLinkTitle": "رابط غير صالح",
+    "invalidLinkSubtitle": "رابط إعادة التعيين هذا غير مكتمل.",
+    "openFromEmail": "افتح الرابط مباشرة من بريدك الإلكتروني.",
+    "requestNewLink": "طلب رابط جديد",
+    "linkNoLongerValid": "لم يعد هذا الرابط صالحًا."
   },
 
   
@@ -299,7 +315,7 @@
     "requiredPhone": "يرجى إدخال رقم هاتفك.",
     "email": "بريد إلكتروني غير صالح (مثال: nom@domaine.mr).",
     "phone": "رقم غير صالح — 8 أرقام تبدأ بـ 2 أو 3 أو 4.",
-    "password": "8 محارف على الأقل، تتضمن حرفًا ورقمًا.",
+    "password": "8 حروف على الأقل، تتضمن حرفًا ورقمًا.",
     "emailTaken": "يوجد حساب مسجل بهذا البريد الإلكتروني.",
     "nniLength": "يجب أن يتكون الرقم الوطني من 10 أرقام.",
     "nniOrPassport": "أدخل رقمك الوطني أو رقم جواز سفرك.",
@@ -313,7 +329,8 @@
     "urlInvalid": "عنوان غير صالح (مثال: https://exemple.mr/article)",
     "groundInvalid": "مبرر تظلم غير صالح.",
     "argumentTooShort": "اعرض طعنك في 30 محرفًا على الأقل. يجب أن يفهم عضو اللجنة الذي سيعيد دراسة ملفك ما الذي تطعن فيه.",
-    "groundRequired": "اختر مبررًا."
+    "groundRequired": "اختر مبررًا.",
+    "passwordMismatch": "كلمتا السر غير متطابقتين."
   },
   "candidateShell": {
     "title": "فضاء المترشح",

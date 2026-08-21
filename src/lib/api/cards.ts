@@ -18,6 +18,19 @@ export interface IssuableItem {
   blockerFr?: string | null;
 }
 
+// export interface CardItem {
+//   cardId: number;
+//   cardNumber: string;
+//   holderFullName: string;
+//   categoryLabelFr: string;
+//   issuedAt: string;
+//   expiresAt: string;
+//   status: "VALID" | "SUSPENDED" | "REVOKED" | "EXPIRED";
+//   statusLabelFr: string;
+//   expired: boolean;
+//   printCount: number;
+// }
+
 export interface CardItem {
   cardId: number;
   cardNumber: string;
@@ -29,6 +42,17 @@ export interface CardItem {
   statusLabelFr: string;
   expired: boolean;
   printCount: number;
+
+  /**
+   * La session qui a produit cette carte.
+   *
+   * ⚠️ Les cartes sont éditées et renouvelées par COHORTES — tous les
+   * accrédités d'une session partagent leur date d'expiration — donc c'est
+   * l'unité dans laquelle l'autorité imprime et exporte.
+   */
+  sessionId?: number | null;
+  /** « Session du 12 mars 2026 » — composée côté serveur, une seule fois. */
+  sessionLabel?: string | null;
 }
 
 export interface IssueOutcome {
@@ -122,7 +146,24 @@ export function downloadBatchPdf(cardIds: number[], layout: PageLayout,
   }, token, "cartes.pdf");
 }
 
-export function downloadRegistry(token: string | null) {
-  return download("/api/admin/cards/export", { method: "GET" }, token,
-    "registre-cartes.xlsx");
+// export function downloadRegistry(token: string | null) {
+//   return download("/api/admin/cards/export", { method: "GET" }, token,
+//     "registre-cartes.xlsx");
+// }
+
+export function downloadRegistry(token: string | null, sessionId?: number | null) {
+  // Le filtre part au serveur : filtrer après la génération du classeur
+  // reviendrait à télécharger deux cents lignes pour en garder quarante.
+  const path = sessionId
+    ? `/api/admin/cards/export/session/${sessionId}`
+    : "/api/admin/cards/export";
+
+  // ⚠️ Le nom de repli distingue les exports. Trois classeurs nommés
+  // « registre-cartes.xlsx » dans un dossier Téléchargements, c'est ainsi
+  // qu'on envoie le mauvais à l'imprimeur.
+  const fallback = sessionId
+    ? `cartes-session-${sessionId}.xlsx`
+    : "registre-cartes.xlsx";
+
+  return download(path, { method: "GET" }, token, fallback);
 }

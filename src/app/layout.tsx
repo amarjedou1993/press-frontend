@@ -159,21 +159,32 @@ export const metadata: Metadata = {
     + "des Arts, de la Communication et des Relations avec le Parlement",
 };
 
-export default async function RootLayout({
-  children,
-}: Readonly<{ children: React.ReactNode }>) {
-  const locale = (await headers()).get("x-locale") ?? routing.defaultLocale;
+// export default async function RootLayout({
+//   children,
+// }: Readonly<{ children: React.ReactNode }>) {
+//   const locale = (await headers()).get("x-locale") ?? routing.defaultLocale;
+//   return (
+//     <html
+//       lang={locale}
+//       dir={dirOf(locale)}
+//       className={`${inter.variable} ${cairo.variable} ${plexMono.variable}`}
+//       suppressHydrationWarning
+//     >
+//       <body className="font-sans antialiased">
+//         {/* Auth needs no provider (Zustand store) — Query is the only
+//             context the tree carries. */}
+//         <QueryProvider>{children}</QueryProvider>
+//       </body>
+//     </html>
+//   );
+// }
 
+
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html
-      lang={locale}
-      dir={dirOf(locale)}
-      className={`${inter.variable} ${cairo.variable} ${plexMono.variable}`}
-      suppressHydrationWarning
-    >
+    <html suppressHydrationWarning
+      className={`${inter.variable} ${cairo.variable} ${plexMono.variable}`}>
       <body className="font-sans antialiased">
-        {/* Auth needs no provider (Zustand store) — Query is the only
-            context the tree carries. */}
         <QueryProvider>{children}</QueryProvider>
       </body>
     </html>
