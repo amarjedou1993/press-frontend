@@ -100,10 +100,10 @@
 // to /fr, so by the time a request reaches here the locale is already right.
 
 import type { Metadata } from "next";
-import { headers } from "next/headers";
-import { Inter, Cairo, IBM_Plex_Mono } from "next/font/google";
+// import { headers } from "next/headers";
+import { Inter, Cairo, IBM_Plex_Mono} from "next/font/google";
 import { QueryProvider } from "@/components/QueryProvider";
-import { routing, dirOf } from "@/i18n/routing";
+// import { routing, dirOf } from "@/i18n/routing";
 import "./globals.css";
 
 /**
