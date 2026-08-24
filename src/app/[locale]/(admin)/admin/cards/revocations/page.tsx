@@ -1,30 +1,4 @@
 "use client";
-// src/app/(admin)/admin/cards/revocations/page.tsx
-// The Authority's decision queue.
-//
-// Each item here asks one question: should this journalist's accreditation
-// end? So each is laid out as the two things needed to answer it — WHAT THE
-// COMMISSION ALLEGES, and WHOSE CARD it concerns — rather than as a row in a
-// table with a menu.
-//
-// A DECISION EITHER WAY IS EXPLAINED. Executing takes an optional note;
-// DECLINING REQUIRES one, because a refusal the proposer cannot read is a
-// refusal they will simply repeat.
-//
-// ───────────────────────────────────────────────────────────────────────
-// NO CLIENT-SIDE CHECK ON WHO PROPOSED THIS.
-//
-// An earlier version disabled the buttons when the viewing administrator was
-// the proposer. That rule is enforced in CardLifecycleService.executeRevocation
-// — "le retrait d'une carte exige deux intervenants distincts" — tested by
-// theProposerCannotExecuteTheirOwnProposal, and refused with a message that
-// explains itself.
-//
-// Duplicating it here would be a SECOND implementation of a rule about who may
-// end someone's accreditation, and the two could only ever drift apart. The
-// proposer is named on every card; an administrator recognises their own
-// proposal, and the server answers if they try anyway.
-// ───────────────────────────────────────────────────────────────────────
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";

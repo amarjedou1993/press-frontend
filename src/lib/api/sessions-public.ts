@@ -1,8 +1,3 @@
-// src/lib/api/sessions-public.ts
-// CLIENT-side access to the public endpoints, for the candidate space.
-// (lib/api/public.ts is the SERVER-side equivalent used by the public pages —
-// same endpoints, different execution context, so they stay separate.)
-
 import { apiFetch } from "./client";
 
 export interface OpenSession {

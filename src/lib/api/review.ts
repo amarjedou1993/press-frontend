@@ -78,16 +78,6 @@ export interface DecisionHistoryEntry {
   at: string;
 }
 
-// export interface AvailableActions {
-//   canClaim: boolean;
-//   canRelease: boolean;
-//   canDecide: boolean;
-//   canRequestCorrection: boolean;
-//   canRejectAsIncomplete: boolean;
-//   correctionUnavailableReason?: string | null;
-//   incompleteRejectionUnavailableReason?: string | null;
-// }
-
 export interface ObjectionSummary {
   reasonLabelFr?: string | null;
   reasonLabelAr?: string | null;

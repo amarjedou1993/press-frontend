@@ -1,6 +1,3 @@
-// src/lib/api/session-results.ts
-// What a session produced, and what it still needs.
-
 import { apiFetch } from "./client";
 
 export interface CategoryTally {

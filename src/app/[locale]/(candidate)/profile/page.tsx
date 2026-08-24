@@ -1,7 +1,4 @@
 "use client";
-// src/app/[locale]/(candidate)/profile/page.tsx
-//
-// The identity record, and the photograph that goes on the card.
 
 import { useEffect, useMemo } from "react";
 import { useTranslations } from "next-intl";

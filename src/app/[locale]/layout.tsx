@@ -1,10 +1,3 @@
-// src/app/[locale]/layout.tsx
-// EVERY space lives under here — public, authentication, candidate, and the
-// Authority's own. One tree, one set of hooks, one router.
-//
-// It does not render <html>: the root layout does, because it must set `dir`
-// before the first paint and sits above this segment.
-
 import { notFound } from "next/navigation";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { setRequestLocale } from "next-intl/server";

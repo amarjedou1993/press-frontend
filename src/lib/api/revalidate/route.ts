@@ -1,19 +1,3 @@
-// src/app/api/revalidate/route.ts
-// On-demand ISR purge, called by the BACKEND when session state changes.
-//
-// Why this exists: the public pages are cached (revalidate: 60) so that a
-// press release linking to /sessions costs the backend one request per minute
-// instead of thousands. The price is staleness — up to a minute, or until the
-// next build if the page was pre-rendered. That is unacceptable exactly when
-// it matters most: the moment a session opens and journalists are refreshing.
-//
-// So the backend tells us the instant something changes, and we drop the
-// cached render. Best of both: cached by default, live when it counts.
-//
-// Auth: a shared secret in the X-Revalidate-Token header. This endpoint can
-// only invalidate a cache — it exposes no data and mutates nothing — but it
-// is public, so an unauthenticated caller could otherwise force cache misses.
-
 import { revalidatePath } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 

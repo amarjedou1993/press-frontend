@@ -1,44 +1,5 @@
-// "use client";
-// // src/app/(reviewer)/layout.tsx — guard + chrome for REVIEWER.
-// import { usePathname } from "next/navigation";
-// import { Scale, FolderOpen, IdCard } from "lucide-react";
-// import { AppShell } from "@/components/AppShell";
-// import { routes } from "@/lib/routes";
-
-// export default function ReviewerLayout({ children }: { children: React.ReactNode }) {
-//   const path = usePathname();
-//   return (
-//     <AppShell
-//       requireRole="REVIEWER"
-//       title="Commission d'examen"
-//       subtitle="Examen des candidatures"
-//       groups={[
-//         {
-//           items: [
-//             {
-//               label: "Dossiers",
-//               href: routes.reviewer.home,
-//               icon: <Scale className="h-[17px] w-[17px]" />,
-//               active: path === routes.reviewer.home,
-//             },
-//             { label: "Registre des cartes", href: routes.reviewer.cards,
-//               icon: <IdCard className="h-[17px] w-[17px]" />,
-//               active: path.startsWith(routes.reviewer.cards) 
-//               // active: path === routes.reviewer.home || /^\/reviewer\/\d+$/.test(path),
-//             },
-//           ],
-//         },
-//       ]}
-//     >
-//       {children}
-//     </AppShell>
-//   );
-// }
-
 "use client";
-// src/app/(reviewer)/layout.tsx — guard + chrome for REVIEWER.
 
-// import { usePathname } from "next/navigation";
 import { usePathname } from "@/i18n/navigation";
 import { Scale, IdCard } from "lucide-react";
 import { AppShell } from "@/components/AppShell";

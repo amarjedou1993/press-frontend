@@ -1,24 +1,4 @@
 "use client";
-// src/app/(admin)/admin/users/page.tsx
-//
-// ───────────────────────────────────────────────────────────────────────
-// THIS IS THE COMMISSION, NOT A USER TABLE.
-//
-// These are the people who decide whether a journalist is accredited. A
-// spreadsheet of rows says they are records; a roll of members says they are
-// an institution — which is what they are, and what the règlement treats them
-// as.
-//
-// So each member is a CARD bearing the state seal, and the screen opens with
-// the one fact that governs everything else: HOW MANY ARE ACTIVE.
-//
-// ONE RULE MAKES THAT NUMBER MATTER. A reclamation must be examined by a
-// member OTHER than the author of the contested decision. With a single
-// active member the objection right cannot be honoured at all — ObjectionService
-// refuses at filing, and a rejected journalist discovers it instead of the
-// Authority. That warning belongs here, where it can be acted on, and it is
-// the reason this page has a hero rather than a header.
-// ───────────────────────────────────────────────────────────────────────
 
 import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";

@@ -1,11 +1,4 @@
 "use client";
-// src/app/[locale]/(candidate)/dashboard/page.tsx
-//
-// It answers one question: WHAT SHOULD I DO NOW?
-//
-// Everything else is subordinate to that. The hero is state-dependent, the
-// deadline appears to whoever can still act on it, and the blockers are
-// stated as a quantity rather than an exhortation.
 
 import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { useQuery } from "@tanstack/react-query";

@@ -1,8 +1,3 @@
-// src/lib/api/sessions.ts
-// Session endpoints. The response now carries the ALLOTTED durations, the
-// current phase's start/end, and daysRemainingInPhase computed SERVER-SIDE —
-// the client no longer does calendar math it can get wrong.
-
 import { apiFetch } from "./client";
 
 export type SessionStatus =

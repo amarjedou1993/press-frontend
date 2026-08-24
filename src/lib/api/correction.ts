@@ -1,10 +1,3 @@
-// src/lib/api/correction.ts
-// Mirrors CorrectionController.
-//
-// As with the submission gate, the SERVER decides whether a resubmission is
-// possible and says what is missing. `readyToResubmit` and `remainingFr` come
-// from the same object — so the button and the explanation can never disagree.
-
 import { apiFetch } from "./client";
 
 export interface OutstandingItem {

@@ -252,22 +252,6 @@ export function AuthShell({
 /* ══════════════════════════════════════════════════════════════════
    FORM PRIMITIVES — same signatures, unchanged API
    ══════════════════════════════════════════════════════════════════ */
-
-/**
- * Resolve a validation key, or pass a sentence through unchanged.
- *
- * Client validators return keys ("validation.email"); the SERVER returns
- * finished sentences. Checking whether the key exists lets both work through
- * the same prop, so no call site had to change.
- */
-// function useFieldError() {
-//   const t = useTranslations();
-//   return (error?: string) => {
-//     if (!error) return undefined;
-//     return t.has(error) ? t(error) : error;
-//   };
-// }
-
 export function Field({
   label, error, ...inputProps
 }: { label: string; error?: string } & React.ComponentProps<typeof Input>) {

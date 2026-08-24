@@ -1,17 +1,3 @@
-// src/lib/routes.ts
-// THE single place any URL string is written. Nothing else in the app should
-// contain a route literal.
-//
-// Why this exists in a filesystem-routed framework: App Router DERIVES routes
-// from folders, but call sites still hardcode strings. Centralising them buys:
-//   · autocomplete instead of memory
-//   · one edit when a route moves (rename the folder, fix one line here)
-//   · dynamic segments as FUNCTIONS, so an id can't be forgotten
-//   · a readable map of the whole application in one screen
-//
-// Convention: keys mirror the route-group structure, so routes.admin.sessions
-// lives under src/app/(admin)/admin/sessions/.
-
 export const routes = {
   /* ── public ─────────────────────────────────────────── */
   home: "/",
@@ -30,18 +16,13 @@ export const routes = {
   /* ── candidate space ────────────────────────────────── */
   candidate: {
     dashboard: "/dashboard",
-    application: "/application",              // week 3
-    newApplication: "/application/new",       // week 3
-    correction: "/application/correction",    // week 5
-    profile: "/profile",                      // week 3
+    application: "/application",             
+    newApplication: "/application/new",       
+    correction: "/application/correction",    
+    profile: "/profile",                      
   },
 
   /* ── reviewer space ─────────────────────────────────── */
-  // reviewer: {
-  //   pool: "/pool",                            // week 4
-  //   review: (applicationId: number | string) => `/review/${applicationId}`, // week 4
-  // },
-
   reviewer: {
       home: "/reviewer",
       cards: "/reviewer/cartes", 

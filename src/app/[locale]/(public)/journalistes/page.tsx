@@ -1,25 +1,4 @@
 "use client";
-// src/app/[locale]/(public)/journalistes/page.tsx
-//
-// ───────────────────────────────────────────────────────────────────────
-// A REGISTER IS AN INDEXED DIRECTORY, AND THIS ONE INDEXES TWO SCRIPTS.
-//
-// Names arrive as the holder typed them at registration — «حامد فال» or
-// «Mohamed Ould Ahmed». The previous rail filed by Latin initial and dropped
-// everything else under "#": on the day the Arabic interface opened, half the
-// register would have sat in one bucket.
-//
-// So each name is filed under its OWN script. The rail shows the reader's
-// script; the other appears in a named section beneath — never "#".
-//
-// SEARCH FIRST, BROWSE SECOND. The real question is almost never "show me
-// everyone" but "is THIS person accredited", asked by an editor about a
-// freelancer or a ministry about someone at a door.
-//
-// AND NO PHOTOGRAPHS. The verification page shows one, to somebody already
-// holding the card. A public list of faces, sortable by outlet, is a
-// directory of every journalist in Mauritania.
-// ───────────────────────────────────────────────────────────────────────
 
 import { useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";

@@ -1,8 +1,4 @@
 "use client";
-// src/app/[locale]/(candidate)/application/page.tsx
-//
-// The candidate's working surface: what the dossier is, what it still needs,
-// and the act of submitting it.
 
 import { useState } from "react";
 import { useFormatter, useLocale, useTranslations } from "next-intl";

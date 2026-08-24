@@ -1,22 +1,4 @@
 "use client";
-// src/app/(reviewer)/reviewer/cartes/page.tsx
-// Issued cards, and the commission's own proposals.
-//
-// THIS SCREEN EXISTS FOR ONE ACT: proposing that a card be withdrawn. Every
-// other feature here — the search, the filters, the pagination — is in service
-// of finding the right card before doing something serious to it.
-//
-// So it is built around two questions a member actually has:
-//
-//   "WHICH CARD?"       — the register, searchable, with each card's status
-//                          and whether a proposal already stands against it
-//
-//   "WHAT DID I FILE?"  — their own proposals, with their outcomes, and the
-//                          ability to withdraw one still awaiting decision
-//
-// The second tab matters more than it looks. A member who proposes a
-// withdrawal has started something they cannot finish, and a system that gives
-// them no way to see what became of it invites them to propose again.
 
 import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";

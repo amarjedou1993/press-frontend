@@ -1,20 +1,3 @@
-// src/lib/api/files.ts
-// Fetching protected files from a JWT-secured API.
-//
-// THE PROBLEM THIS SOLVES
-// <img src="/api/me/photo"> and <a href="/api/.../file"> make PLAIN browser
-// requests. They cannot carry an Authorization header, so every protected
-// file returned 401 and failed silently — the photo simply never appeared,
-// and "Consulter le fichier" would have done the same.
-//
-// The fix is to fetch with the token, turn the response into a Blob, and use
-// an object URL. The alternatives are worse: cookie auth would mean a second
-// auth mechanism, and a token in the query string would put credentials in
-// browser history and server logs.
-//
-// Object URLs hold memory until revoked, so every consumer must clean up —
-// which is why useAuthenticatedFile exists rather than a bare helper.
-
 import { useEffect, useState } from "react";
 import { useAuthStore } from "@/lib/auth";
 

@@ -1,6 +1,3 @@
-// src/lib/api/account.ts
-// Mirrors ProfileController (/api/me) and AccountController (/api/auth/*).
-
 import { apiFetch } from "./client";
 
 export interface ProfileResponse {

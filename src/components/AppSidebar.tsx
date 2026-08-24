@@ -1,16 +1,4 @@
 "use client";
-// src/components/AppSidebar.tsx
-//
-// ⚠️ THE SIDEBAR MOVES SIDES WITH THE LANGUAGE.
-//
-// A sidebar is chrome at the READING EDGE — the side a reader's eye starts
-// from. shadcn positions it with physical CSS and defaults to "left", so
-// dir="rtl" alone leaves it on the wrong side of an Arabic page: the content
-// indents away from the reader rather than towards them.
-//
-// The admin and reviewer spaces need no exception. The proxy redirects
-// /ar/admin to /fr/admin, so useLocale() is always "fr" there and the rail
-// stays left on its own.
 
 import { useLocale, useTranslations } from "next-intl";
 import { LogOut, ChevronsLeft, Lock } from "lucide-react";

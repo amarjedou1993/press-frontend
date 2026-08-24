@@ -1,18 +1,4 @@
 "use client";
-// src/app/(reviewer)/reviewer/page.tsx
-// The commission's working screen.
-//
-// Built for the real case: a national press corps produces hundreds of
-// dossiers per session, and one member works through them in an afternoon.
-// So it offers
-//   · the SHAPE of the queue, not just its size
-//   · two densities — cards to scan, rows for volume
-//   · filters that show what they are doing, and undo one at a time
-//   · CLAIM WITHOUT LEAVING the list
-//   · KEYBOARD NAVIGATION: ↑ ↓ ← → to move, Enter to open, C to claim
-//
-// Sorted by longest wait by default: that is the fair order, and the one the
-// review deadline cares about.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";

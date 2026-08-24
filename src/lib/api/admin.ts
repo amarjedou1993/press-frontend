@@ -1,6 +1,3 @@
-// src/lib/api/admin.ts
-// Reviewer management endpoints, mirroring AdminReviewerController.
-
 import { apiFetch } from "./client";
 
 export interface ReviewerResponse {

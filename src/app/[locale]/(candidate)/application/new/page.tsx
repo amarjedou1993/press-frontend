@@ -1,8 +1,4 @@
 "use client";
-// src/app/[locale]/(candidate)/application/new/page.tsx
-//
-// Choosing a category — the one decision that shapes everything after it,
-// since the required documents follow from it.
 
 import { useState } from "react";
 import { useFormatter, useLocale, useTranslations } from "next-intl";

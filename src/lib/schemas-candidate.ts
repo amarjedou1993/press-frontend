@@ -1,15 +1,3 @@
-// src/lib/schemas-candidate.ts
-//
-// ⚠️ THE MESSAGES ARE KEYS, NOT SENTENCES — same reasoning as validation.ts.
-//
-// A zod message is fixed when the schema is DEFINED, which is module load —
-// long before a locale is known. Making the schema a factory would work, but
-// every call site would have to build it inside a component and memoise it.
-//
-// Emitting keys instead costs nothing: react-hook-form carries the string to
-// FieldError, and the Field component resolves it. The schemas stay module
-// constants and every call site is unchanged.
-
 import { z } from "zod";
 
 export const NNI_REGEX = /^\d{10}$/;

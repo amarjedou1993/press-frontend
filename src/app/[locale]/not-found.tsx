@@ -1,14 +1,3 @@
-// src/app/[locale]/not-found.tsx
-//
-// A 404 here is usually reached by someone following a link that MOVED — an
-// old bookmark, a printed circular, an e-mail sent months ago. So it does not
-// apologise and stop: it offers the three things anyone is actually here for,
-// each with a line saying what it is for.
-//
-// ⚠️ Reached only because of the [...rest] catch-all beside this file. Next
-// resolves the route tree before rendering, so an unmatched URL never enters
-// [locale] on its own and falls through to the root not-found.
-
 import { getTranslations } from "next-intl/server";
 import { ArrowRight, Search, FileText, Home } from "lucide-react";
 import {

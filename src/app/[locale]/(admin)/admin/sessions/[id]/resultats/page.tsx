@@ -1,24 +1,4 @@
 "use client";
-// src/app/(admin)/admin/sessions/[id]/resultats/page.tsx
-//
-// WHAT A SESSION PRODUCED — and, while it is running, what it still needs.
-//
-// ONE SCREEN FOR BOTH, because they are the same question asked at different
-// moments. A running session shows its figures as PROGRESS; a closed one shows
-// the same figures as RESULTS. Two screens would mean two implementations of
-// the same arithmetic, drifting until a closed session disagreed with what it
-// had shown the day before.
-//
-// THE SIGNATURE IS THE COHORT BAR. A session is a group of people who applied
-// together and were sorted into outcomes — that narrowing IS the session, and
-// a single proportional measure says more at a glance than any number of
-// tiles. Accepted in green, rejected in red, still in progress in gold: the
-// national colours, used here because they happen to be exactly the right
-// semantics.
-//
-// AND THE OUTSTANDING WORK COMES FIRST while the session is open. An
-// administrator opening this mid-session should learn what needs pushing, not
-// merely what has happened.
 
 import { useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";

@@ -1,9 +1,3 @@
-// src/lib/api/journalists.ts
-// The public register of accredited journalists.
-//
-// No authentication: an editor verifying a freelancer has no account, and
-// should not need one to get an answer the Authority stands behind.
-
 export interface PublicJournalist {
   fullName: string;
   categoryLabelFr?: string | null;

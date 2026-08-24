@@ -1,34 +1,3 @@
-// src/proxy.ts
-//
-// ───────────────────────────────────────────────────────────────────────
-// ONE RULE: every route carries a locale.
-//
-// An earlier version excluded /admin and /reviewer, on the reasoning that
-// those spaces are French. That boundary produced three faults in one
-// afternoon:
-//
-//   · a member signing in landed on /fr/reviewer, which did not exist
-//   · AppShell threw "No intl context found" outside the [locale] tree
-//   · the RTL direction leaked into a French interface and mirrored it
-//
-// All three were the same fault: a rule with an exception, and components
-// obliged to know which side of it they were on.
-//
-// ───────────────────────────────────────────────────────────────────────
-// AND THE AUTHORITY'S SPACES REDIRECT RATHER THAN RENDER.
-//
-// Their text is French until the strings are extracted. /ar/admin therefore
-// becomes /fr/admin — it does not render French under an Arabic URL.
-//
-// A CSS guard was the alternative: let the page render and pin its direction.
-// That corrects a symptom. A page whose address says Arabic and whose content
-// is French is a page whose URL lies, and whoever bookmarks or forwards it
-// passes the lie on.
-//
-// The redirect is 307 — temporary — so no browser or proxy caches it once the
-// guard is lifted. Lifting it is one deletion: this block, and STAFF_LOCALE.
-// ───────────────────────────────────────────────────────────────────────
-
 import createMiddleware from "next-intl/middleware";
 import { NextRequest, NextResponse } from "next/server";
 import { routing, STAFF_LOCALE } from "./i18n/routing";

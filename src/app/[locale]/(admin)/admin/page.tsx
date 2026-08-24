@@ -1,32 +1,4 @@
 "use client";
-// src/app/(admin)/admin/page.tsx
-//
-// THE SUBJECT OF THIS SCREEN IS A CYCLE, NOT A SET OF COUNTS.
-//
-// HAPA's work runs in candidacy sessions divided into four phases —
-// réception, examen, correction, réclamation. Where the Authority stands in
-// that cycle determines what everything else means: forty dossiers awaiting
-// review is normal in the examination phase and alarming on its last day.
-//
-// Below the rail, everything is ordered by CONSEQUENCE rather than by
-// category: a withdrawal proposal outranks a card to issue, which outranks a
-// count.
-//
-// ───────────────────────────────────────────────────────────────────────
-// AND THE REGISTER NOW REPORTS THE CARD POPULATION, not only this cycle's.
-//
-// "How many accredited journalists are there?" is the question a minister
-// asks, and nothing in the admin space answered it. The session results
-// screen reports a CYCLE; the public register lists valid holders; neither
-// tells the Authority how many cards are in force today, nor how many lapse
-// this quarter.
-//
-// All three figures are arithmetic over data the page already fetches — no
-// endpoint, no query. The one that earns its place most is EXPIRENT BIENTÔT:
-// forty cards lapsing in March means a session should open in January, and
-// knowing that in December is the difference between a planned cycle and a
-// scramble.
-// ───────────────────────────────────────────────────────────────────────
 
 import { useMemo } from "react";
 import { useRouter } from "next/navigation";

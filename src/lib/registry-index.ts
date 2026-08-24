@@ -1,22 +1,3 @@
-// src/lib/registry-index.ts
-// Filing a name under a letter, in either script.
-//
-// ───────────────────────────────────────────────────────────────────────
-// WHY THIS EXISTS.
-//
-// The register was indexed by Latin initial: accents folded, anything else
-// filed under "#". The first candidate to register typed «حامد فال» — so on
-// the day the Arabic interface opens, an Arabic reader would find every
-// Arabic-script name heaped under a single "#".
-//
-// A rail that files half a register in one bucket is worse than no rail: it
-// looks like an index and behaves like a pile.
-//
-// So each name is filed under its OWN script, and the page shows the rail
-// matching the reader's language with the other script in a named section
-// beneath — never "#".
-// ───────────────────────────────────────────────────────────────────────
-
 /** The twenty-eight letters, in the order a directory uses. */
 export const ARABIC_ALPHABET = [
   "ا", "ب", "ت", "ث", "ج", "ح", "خ", "د", "ذ", "ر", "ز", "س", "ش",

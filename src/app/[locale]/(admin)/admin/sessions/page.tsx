@@ -1,32 +1,4 @@
 "use client";
-// src/app/(admin)/admin/sessions/page.tsx
-//
-// ───────────────────────────────────────────────────────────────────────
-// SESSIONS ARE A SEQUENCE, NOT A COLLECTION.
-//
-// One runs at a time; the others are the record of cycles already closed.
-// The page is built as that sequence — the current cycle in full, the closed
-// ones as a chronological register beneath it.
-//
-// THREE THINGS CHANGED.
-//
-// 1. THE HEADER WAS A BARE <h2>. Every other admin screen opens with a hero
-//    carrying the seal and the count. This one announced itself in 14px grey
-//    and then showed a gradient card — the page's own title was quieter than
-//    its content.
-//
-// 2. ⚠️ THE ARCHIVE'S "STATUT" COLUMN ALWAYS SAID "CLÔTURÉE". It could not
-//    say anything else: the table is filtered to closed sessions. A column
-//    whose value never varies is a column that costs width and returns
-//    nothing.
-//
-// 3. THE ARCHIVE WAS A DATATABLE — with search, sorting and pagination, for
-//    a list that will hold two to four rows a year. Machinery without a
-//    purpose. It is now a chronological register showing each closed cycle's
-//    span, which is what someone consulting it actually wants.
-//
-// The ACTIVE SESSION CARD is untouched. It works, and it has been tuned.
-// ───────────────────────────────────────────────────────────────────────
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";

@@ -1,8 +1,3 @@
-// src/lib/auth.ts
-// Session store (Zustand). Pure client state; never mirrors server data.
-// Route knowledge now lives in lib/routes.ts — homeForRole is re-exported
-// here so existing imports keep working.
-
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { registerAuthBridge } from "./api/client";

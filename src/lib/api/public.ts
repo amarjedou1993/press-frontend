@@ -1,12 +1,3 @@
-// src/lib/api/public.ts
-// SERVER-SIDE fetching for the public pages: no credentials, cached by Next.
-//
-// These helpers degrade gracefully — a backend hiccup must never crash a
-// public page — but they no longer degrade SILENTLY. An unreachable or
-// rejecting API now logs to the server console with the status, because a
-// swallowed 401 is indistinguishable from "no sessions" and that cost us an
-// afternoon.
-
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
 
 export interface PublicSession {

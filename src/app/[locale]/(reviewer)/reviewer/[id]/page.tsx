@@ -1,29 +1,4 @@
 "use client";
-// src/app/(reviewer)/reviewer/[id]/page.tsx
-// The examination screen — where an accreditation is decided.
-//
-// Everything the commission needs is on ONE page, from ONE request:
-// identity and photograph, every document previewable in place, the
-// completeness breakdown, prior decisions, and the decision panel. A
-// reviewer assembling this from four screens will not read it all, and a
-// partial view is how a decision gets taken on incomplete information.
-//
-// ───────────────────────────────────────────────────────────────────────
-// A RECLAMATION IS NOT AN ORDINARY REVIEW, and the screen now says so.
-//
-// Previously the two looked identical — same green field, same heading. But
-// they are different acts:
-//
-//   In a first review, a member examines a dossier.
-//   In a reclamation, a member judges whether a COLLEAGUE'S REFUSAL was
-//   right — knowing the colleague cannot respond, and that this is the
-//   candidate's ONE chance. V1.3 §J bars the original decider from it for
-//   exactly that reason.
-//
-// A gold field, the scales in place of the round marker, and one sentence
-// stating what is being decided. ObjectionBrief still carries the substance;
-// this carries the weight.
-// ───────────────────────────────────────────────────────────────────────
 
 import { use } from "react";
 import { useRouter } from "next/navigation";

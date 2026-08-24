@@ -1,14 +1,3 @@
-// src/lib/schemas.ts
-// Zod schemas = single source of truth for form validation; French,
-// field-specific messages render under their own input via <FieldError>.
-//
-// zod v4 notes:
-//  · no `invalid_type_error` (renamed in v4)
-//  · NO z.coerce.number() — in v4 its INPUT type is `unknown`, which no
-//    @hookform/resolvers overload accepts. The form holds real numbers
-//    instead (the inputs convert on change), so z.number() is correct
-//    and the types line up cleanly.
-
 import { z } from "zod";
 
 export const PHONE_REGEX = /^(\+222)?[234]\d{7}$/;
