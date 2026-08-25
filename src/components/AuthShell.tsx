@@ -252,6 +252,7 @@ export function AuthShell({
 /* ══════════════════════════════════════════════════════════════════
    FORM PRIMITIVES — same signatures, unchanged API
    ══════════════════════════════════════════════════════════════════ */
+
 export function Field({
   label, error, ...inputProps
 }: { label: string; error?: string } & React.ComponentProps<typeof Input>) {
@@ -286,21 +287,28 @@ export function PasswordField({
   const message = resolve(error);
   const [visible, setVisible] = useState(false);
 
+  // ⚠️ Branched, not logical.
+  //
+  // pe-11 and end-0 SHOULD do this on their own — they are exactly what
+  // logical properties are for. They do not resolve in this subtree, which
+  // means `dir` is not reaching it, so the reading edge is computed here
+  // instead of inferred from the document.
+  //
+  // See the note below: this is a workaround, not the right answer.
+  const arabic = useLocale() === "ar";
+
   return (
     <div className="mb-5 space-y-2">
       <Label htmlFor={id}>{label}</Label>
       <div className="relative">
-        {/* pe-11 rather than pr-11: the reveal button sits at the END of the
-            field, which is the left in Arabic. */}
+        {/* The reveal button sits at the END of the field — the right in
+            French, the left in Arabic — and the padding follows it, so the
+            icon never covers the text. */}
         <Input
           id={id}
           type={visible ? "text" : "password"}
           aria-invalid={!!message}
-          // A password is typed left-to-right whatever the page: it may
-          // contain Latin letters and digits, and mixing directions inside
-          // one field makes the caret jump.
-          dir="ltr"
-          className={`pe-11 text-start ${message ? "border-[var(--red-500)]" : ""}`}
+          className={`${arabic ? "pl-11" : "pr-11"} ${message ? "border-[var(--red-500)]" : ""}`}
           {...inputProps}
         />
         <button
@@ -308,7 +316,7 @@ export function PasswordField({
           onClick={() => setVisible((v) => !v)}
           aria-label={visible ? t("hidePassword") : t("showPassword")}
           aria-pressed={visible}
-          className="absolute inset-y-0 end-0 flex w-11 items-center justify-center text-[var(--muted-fg)] transition-colors hover:text-[var(--green-700)]"
+          className={`absolute inset-y-0 ${arabic ? "left-0" : "right-0"} flex w-11 items-center justify-center text-[var(--muted-fg)] transition-colors hover:text-[var(--green-700)]`}
         >
           {visible ? <EyeOff size={18} /> : <Eye size={18} />}
         </button>
