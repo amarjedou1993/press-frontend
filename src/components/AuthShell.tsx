@@ -360,8 +360,14 @@ export function FormError({ message }: { message?: string }) {
   const text = resolve(message);
   if (!text) return null;
   return (
-    <Alert variant="destructive" className="mb-5">
-      <AlertDescription>{text}</AlertDescription>
+    // ⚠️ text-start overrides the Alert's baked-in text-left.
+    //
+    // shadcn's alert hardcodes `text-left` and `pr-18` — physical properties
+    // chosen when nobody expected an RTL page. dir="auto" fixes the reading
+    // ORDER of the Arabic, but alignment is a separate declaration and the
+    // component's own class wins until this one arrives after it.
+    <Alert variant="destructive" className="mb-5 text-start">
+      <AlertDescription dir="auto">{text}</AlertDescription>
     </Alert>
   );
 }
