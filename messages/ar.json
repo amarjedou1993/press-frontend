@@ -306,7 +306,21 @@
     "linkNoLongerValid": "لم يعد هذا الرابط صالحًا."
   },
 
-  
+  "password": {
+        "title": "تغيير كلمة السر",
+        "subtitle": "أدخل كلمة سرك الحالية، ثم الجديدة.",
+        "current": "كلمة السر الحالية",
+        "new": "كلمة السر الجديدة",
+        "confirm": "تأكيد كلمة السر الجديدة",
+        "policy": "8 محارف على الأقل، حرف ورقم",
+        "submit": "تغيير كلمة السر",
+        "saving": "جارٍ التغيير…",
+        "cancel": "إلغاء",
+        "doneTitle": "تم تغيير كلمة السر",
+        "doneBody": "استعملها عند تسجيل الدخول القادم.",
+        "failedTitle": "تعذر التغيير",
+        "tryAgain": "حاول مرة أخرى."
+      },
 
   "validation": {
     "requiredEmail": "يرجى إدخال بريدك الإلكتروني.",
@@ -330,7 +344,10 @@
     "groundInvalid": "مبرر تظلم غير صالح.",
     "argumentTooShort": "اعرض طعنك في 30 محرفًا على الأقل. يجب أن يفهم عضو اللجنة الذي سيعيد دراسة ملفك ما الذي تطعن فيه.",
     "groundRequired": "اختر مبررًا.",
-    "passwordMismatch": "كلمتا السر غير متطابقتين."
+    "passwordMismatch": "كلمتا السر غير متطابقتين.",
+    "currentPasswordWrong": "كلمة السر الحالية غير صحيحة.",
+    "passwordUnchanged": "هذه كلمة سرك الحالية بالفعل.",
+    "noLocalPassword": "يستعمل حسابك هوية خدماتي: لا توجد كلمة سر لتغييرها."
   },
   "candidateShell": {
     "title": "فضاء المترشح",
@@ -447,7 +464,10 @@
     "toggleMenu": "طي القائمة أو فتحها",
     "collapse": "طي القائمة",
     "signOut": "تسجيل الخروج",
-    "accreditation": "الاعتماد"
+    "accreditation": "الاعتماد",
+    "accountMenu": "قائمة الحساب",
+    "language": "اللغة",
+    "changePassword": "تغيير كلمة السر"
   },
   "application": {
     "eyebrow": "ملف الترشح",

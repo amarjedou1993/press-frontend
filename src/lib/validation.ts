@@ -29,6 +29,14 @@ export const V = {
    */
   passwordMismatch: "validation.passwordMismatch",
 
+    /** ⚠️ Le mot de passe actuel est faux — 401, pas un échec de politique. */
+  currentPasswordWrong: "validation.currentPasswordWrong",
+
+  /** Le nouveau est identique à l'ancien : valide, mais sans effet. */
+  passwordUnchanged: "validation.passwordUnchanged",
+  /** Le compte utilise l'identification Khidmaty : il n'a pas de mot de passe à changer. */
+  noLocalPassword: "validation.noLocalPassword",
+
   /** Renvoyé par le SERVEUR (409), pas par un validateur — mais c'est notre
       phrase, donc elle vit avec les autres. */
   emailTaken: "validation.emailTaken",

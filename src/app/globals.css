@@ -1,11 +1,3 @@
-/* src/app/globals.css
-   ─────────────────────────────────────────────────────────────
-   AUTHORITATIVE merge: RIM design tokens + the COMPLETE shadcn token set.
-   The @theme inline block maps EVERY token shadcn components consume —
-   missing entries there is why dialogs/popovers/the calendar rendered
-   with transparent backgrounds.
-   Palette (couleurs_rim.pdf): green #00A95C · red #D01C1F · gold #FFD700
-   ───────────────────────────────────────────────────────────── */
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -83,6 +75,9 @@
   --sidebar-accent-foreground: #ffffff;
   --sidebar-border: rgb(255 255 255 / 0.1);
   --sidebar-ring: #ffd700;
+
+  /* A Latin run inside Arabic text needs the Latin face by name. */
+  --font-latin: var(--font-sans);
 }
 
 /* EVERY token bridged into Tailwind utilities. A missing line here means a
@@ -127,6 +122,9 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
+/* ⚠️ This sets a DEFAULT border colour on every element. It is why a border
+   that refuses to take a colour usually needs its utility to be more
+   specific, not different. */
 * { border-color: var(--border); }
 
 html, body {
@@ -139,7 +137,6 @@ body {
   font-family: var(--font-sans), system-ui, sans-serif;
 }
 
-[dir="rtl"] { font-family: var(--font-arabic), var(--font-sans), sans-serif; }
 .font-mono { font-family: var(--font-mono), ui-monospace, monospace; }
 
 :focus-visible { outline: 2px solid var(--gold-500); outline-offset: 2px; }
@@ -159,15 +156,21 @@ input:focus-visible { outline: none; }
 [role="listbox"] {
   background-color: #ffffff;
 }
+
 [data-slot="tooltip-content"] {
   background-color: var(--green-900);
   color: #ffffff;
 }
+
 [data-slot="dialog-overlay"],
 [data-slot="alert-dialog-overlay"] {
   background-color: rgb(11 46 31 / 0.45);
   backdrop-filter: blur(2px);
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   MOTION
+   ══════════════════════════════════════════════════════════════════ */
 
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(14px); }
@@ -264,10 +267,25 @@ input:focus-visible { outline: none; }
   .gold-foil { background-position: 40% 50%; }
 }
 
-
-/* NEW for I18n */
 /* ══════════════════════════════════════════════════════════════════
-   BILINGUE — à ajouter à la fin de src/app/globals.css
+   TYPOGRAPHY, both languages
+   ══════════════════════════════════════════════════════════════════ */
+
+.tabular,
+[class*="font-mono"],
+td [class*="text-["],
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Inter has a generous x-height: the interface's small caps breathe a little
+   more than they would with a condensed grotesque. */
+[class*="uppercase"][class*="tracking-"] {
+  font-feature-settings: "cv05" 1;   /* serifed l, distinct from I */
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   BILINGUAL
    ══════════════════════════════════════════════════════════════════
 
    THE ARABIC FACE IS APPLIED BY DIRECTION, NOT BY CLASS.
@@ -278,13 +296,27 @@ input:focus-visible { outline: none; }
    applies it to the whole document at once.
    ══════════════════════════════════════════════════════════════════ */
 
-:root {
-  --font-latin: var(--font-sans);
-}
-
-/* The whole document, when Arabic. */
 html[dir="rtl"] body {
   font-family: var(--font-arabic), var(--font-sans), system-ui, sans-serif;
+}
+
+/*
+ * ⚠️ AND ANY ELEMENT MARKED RTL, WHATEVER THE PAGE'S LANGUAGE.
+ *
+ * This is the rule that makes Arabic look right on the FRENCH pages: the card
+ * specimen, a bilingual label, a category name shown in both scripts. Each of
+ * those carries dir="rtl" on itself while the document is French.
+ *
+ * Without it they inherit Inter, which has no Arabic glyphs — and the browser
+ * substitutes whatever it can find, which is how the same word ends up
+ * looking different on two screens.
+ *
+ * [lang="ar"] is here for the same reason with the other attribute: the
+ * seal's label and the register's Arabic entries carry lang, not dir.
+ */
+[dir="rtl"],
+[lang="ar"] {
+  font-family: var(--font-arabic), var(--font-sans), sans-serif;
 }
 
 /* Machine values keep the Latin mono face in BOTH languages: a card number
@@ -356,6 +388,27 @@ html[dir="rtl"] .tricolore {
   flex-direction: row;
 }
 
+/* ══ DIALOG CHROME ══════════════════════════════════════════════════
+
+   ⚠️ A CLOSE BUTTON BELONGS AT THE READING EDGE, and shadcn pins it with a
+   physical `right-4` that does not move.
+
+   !important is not decoration here: `right-4` is a Tailwind utility, and
+   Tailwind 4 emits utilities into a cascade layer that wins over plain
+   author rules regardless of where they appear in the file.
+
+   Several slot names, because Base UI, Radix and shadcn's own wrappers do
+   not agree on one — and a rule that matches none of them fails silently.
+   ══════════════════════════════════════════════════════════════════ */
+
+html[dir="rtl"] [data-slot="dialog-close"],
+html[dir="rtl"] [data-slot="alert-dialog-close"],
+html[dir="rtl"] [data-slot="sheet-close"],
+html[dir="rtl"] [data-slot="dialog-content"] > button:last-of-type {
+  left: 1rem !important;
+  right: auto !important;
+}
+
 /* ══ FORM CONTROLS ══════════════════════════════════════════════════ */
 
 /* A search field's icon sits at the reading edge in both directions.
@@ -369,12 +422,22 @@ html[dir="rtl"] .field-pad-start {
   padding-right: 2.5rem;
 }
 
-/* Numeric and machine inputs stay LTR whatever the page: an NNI typed
-   right-to-left is an NNI entered wrong. */
+/*
+ * ⚠️ MACHINE VALUES STAY LTR — but NOT the password.
+ *
+ * An NNI, a telephone number and an e-mail address are Latin strings whose
+ * digits and punctuation reorder if typed in an RTL field: an NNI entered
+ * right-to-left is an NNI entered wrong.
+ *
+ * A PASSWORD IS DIFFERENT, and it is deliberately absent from this list.
+ * It shows dots, not characters, so there is nothing for bidi to reorder
+ * while typing — and pinning it LTR is what put its padding on one side and
+ * its reveal button on the other. It mirrors with the page like any other
+ * field.
+ */
 html[dir="rtl"] input[inputmode="numeric"],
 html[dir="rtl"] input[type="tel"],
 html[dir="rtl"] input[type="email"],
-html[dir="rtl"] input[type="password"],
 html[dir="rtl"] input.font-mono {
   direction: ltr;
   text-align: right;   /* the reading edge, still */
@@ -391,63 +454,60 @@ html[dir="rtl"] input.font-mono {
    ══════════════════════════════════════════════════════════════════ */
 .user-text {
   unicode-bidi: plaintext;
-}
 
-/* ══ PRINT ══════════════════════════════════════════════════════════ */
-@media print {
-  html[dir="rtl"] { direction: rtl; }
+  /*
+   * ⚠️ BOTH FACES, IN ORDER — and this is the only way to get it right.
+   *
+   * dir="auto" resolves at RUNTIME from the first strong character, so no CSS
+   * selector can know which language this text turned out to be. A French
+   * page containing an Arabic justification would render it in Inter.
+   *
+   * Font fallback does per-GLYPH what a selector cannot do per-element: the
+   * browser reaches for Inter first, finds no Arabic glyph, and falls through
+   * to Cairo — so a French justification stays Inter and an Arabic one gets
+   * Cairo, in the same element, with nothing having to decide.
+   */
+  font-family: var(--font-sans), var(--font-arabic), system-ui, sans-serif;
 }
 
 /* ══════════════════════════════════════════════════════════════════
-   À AJOUTER à la fin de src/app/globals.css, APRÈS les règles RTL
-   déjà en place.
-   ══════════════════════════════════════════════════════════════════
+   ⚠️ THE AUTHORITY'S SPACES DO NOT MIRROR — for now.
 
-   ⚠️ LES ESPACES DE L'AUTORITÉ NE SE RETOURNENT PAS — pour l'instant.
+   /ar/admin and /ar/reviewer are valid routes and will one day be Arabic.
+   But their text is French today, and their layouts were built for one
+   direction: tables, the phase rail, the cohort bar, the two-column review
+   screen.
 
-   /ar/admin et /ar/reviewer sont des routes valides et seront un jour en
-   arabe. Mais leur texte est français aujourd'hui, et leurs mises en page
-   ont été construites pour un seul sens : tableaux, rail de phases, barre de
-   cohorte, écran d'examen à deux colonnes.
+   A mirrored French page is worse than either language done properly. The
+   direction is therefore pinned while the text is.
 
-   Une page française retournée est pire que l'une ou l'autre langue faite
-   correctement. La direction est donc figée tant que le texte l'est.
-
-   La garde porte sur <html data-space="staff">, posé par la mise en page
-   racine et maintenu par HtmlLang lors des navigations client. Quand les
-   catalogues de l'administration existeront, ce bloc disparaît d'un seul
-   tenant. */
+   The guard keys off <html data-space="staff">, set by the root layout and
+   maintained by HtmlLang across client navigations. When the admin
+   catalogues exist, this whole block goes at once.
+   ══════════════════════════════════════════════════════════════════ */
 
 html[data-space="staff"] {
   direction: ltr !important;
 }
 
-/* Le sous-arbre entier, pour que rien n'hérite d'un dir résiduel. */
+/* The whole subtree, so nothing inherits a residual dir. */
 html[data-space="staff"] body,
 html[data-space="staff"] body * {
   direction: ltr;
 }
 
-/* La police latine, quel que soit le préfixe de l'URL. */
+/* The Latin face, whatever the URL prefix says. */
 html[data-space="staff"] body {
   font-family: var(--font-sans), system-ui, sans-serif;
 }
 
-/* Et l'interlettrage retrouvé : les petites capitales de l'administration
-   en dépendent, et la règle RTL le neutralise partout ailleurs. */
+/* And tracking restored: the administration's small caps depend on it, and
+   the RTL rule above neutralises it everywhere else. */
 html[data-space="staff"] [class*="tracking-"] {
   letter-spacing: revert !important;
 }
 
-.tabular,
-[class*="font-mono"],
-td [class*="text-["],
-.num {
-  font-variant-numeric: tabular-nums;
-}
-
-/* Inter a une hauteur d'x généreuse : les petites capitales de l'interface
-   respirent un peu plus qu'avec une grotesque condensée. */
-[class*="uppercase"][class*="tracking-"] {
-  font-feature-settings: "cv05" 1;   /* l à empattement, distinct du I */
+/* ══ PRINT ══════════════════════════════════════════════════════════ */
+@media print {
+  html[dir="rtl"] { direction: rtl; }
 }

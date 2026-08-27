@@ -93,3 +93,13 @@ export function resetPassword(body: { token: string; newPassword: string }) {
     body: JSON.stringify(body),
   });
 }
+
+export function changePassword(body: {
+  currentPassword: string;
+  newPassword: string;
+}) {
+  return apiFetch<void>("/api/auth/password", {
+    method: "PUT",
+    body: JSON.stringify(body),
+  });
+}

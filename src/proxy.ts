@@ -4,11 +4,17 @@ import { routing, STAFF_LOCALE } from "./i18n/routing";
 
 const handleI18n = createMiddleware(routing);
 
-/** A staff path carrying a locale prefix — /ar/admin, /fr/reviewer/12. */
-const PREFIXED_STAFF = /^\/([a-z]{2})\/(admin|reviewer)(\/|$)/;
+// /** A staff path carrying a locale prefix — /ar/admin, /fr/reviewer/12. */
+// const PREFIXED_STAFF = /^\/([a-z]{2})\/(admin|reviewer)(\/|$)/;
+
+// /** A staff path with no prefix — an old bookmark, a logout redirect. */
+// const BARE_STAFF = /^\/(admin|reviewer)(\/|$)/;
+
+/** A staff path carrying a locale prefix — /ar/admin, /fr/printer/12. */
+const PREFIXED_STAFF = /^\/([a-z]{2})\/(admin|reviewer|printer)(\/|$)/;
 
 /** A staff path with no prefix — an old bookmark, a logout redirect. */
-const BARE_STAFF = /^\/(admin|reviewer)(\/|$)/;
+const BARE_STAFF = /^\/(admin|reviewer|printer)(\/|$)/;
 
 export default function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;

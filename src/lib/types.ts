@@ -2,7 +2,7 @@
 // The shared vocabulary: TypeScript twins of the backend DTOs and enums.
 
 /* ── Roles (backend: UserRole) ─────────────────────────────── */
-export type Role = "CANDIDATE" | "REVIEWER" | "SUPER_ADMIN";
+export type Role = "CANDIDATE" | "REVIEWER" | "PRINTER" | "SUPER_ADMIN";
 
 /* ── Auth (backend: AuthDtos) ──────────────────────────────── */
 export interface AuthResponse {

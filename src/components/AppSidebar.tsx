@@ -1,15 +1,26 @@
 "use client";
+// src/components/AppSidebar.tsx
+//
+// ⚠️ THE SIDEBAR MOVES SIDES WITH THE LANGUAGE.
+//
+// A sidebar is chrome at the READING EDGE — the side a reader's eye starts
+// from. shadcn positions it with physical CSS and defaults to "left", so
+// dir="rtl" alone leaves it on the wrong side of an Arabic page: the content
+// indents away from the reader rather than towards them.
+//
+// The admin and reviewer spaces need no exception. The proxy redirects
+// /ar/admin to /fr/admin, so useLocale() is always "fr" there and the rail
+// stays left on its own.
 
 import { useLocale, useTranslations } from "next-intl";
-import { LogOut, ChevronsLeft, Lock } from "lucide-react";
+import { ChevronsLeft, Lock } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent,
   SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton,
   SidebarMenuItem, SidebarRail, useSidebar,
 } from "@/components/ui/sidebar";
 import { useRouter } from "@/i18n/navigation";
-import { useAuth } from "@/lib/auth";
-import { routes } from "@/lib/routes";
+import { UserMenu } from "@/components/UserMenu";
 
 export interface NavItem {
   label: string;
@@ -36,40 +47,29 @@ function NationalMark() {
   );
 }
 
-/**
- * ⚠️ Initials only work for scripts that HAVE them.
- *
- * «حامد فال» reduced to «حف» is not how Arabic names are abbreviated — the
- * letters change shape when isolated, and the result reads as nonsense.
- * Arabic names therefore show their first word instead, truncated by CSS.
- */
-function monogram(name: string, arabicScript: boolean) {
-  const trimmed = name.trim();
-  if (!trimmed) return "—";
-  if (arabicScript) return trimmed.split(/\s+/)[0];
-  return trimmed.split(/\s+/).slice(0, 2)
-    .map((w) => w[0]?.toUpperCase() ?? "").join("");
-}
-
-const ARABIC_RANGE = /[\u0600-\u06FF]/;
-
 export function AppSidebar({
   groups,
   user,
+  /**
+   * False in the Authority's spaces.
+   *
+   * ⚠️ The proxy redirects /ar/admin to /fr/admin, so a language choice there
+   * would reload the page in French and the control would look broken. One
+   * line to reverse when the staff catalogues exist.
+   */
+  canSwitchLanguage = true,
 }: {
   groups: NavGroup[];
   user: { fullName: string; role: string };
+  canSwitchLanguage?: boolean;
 }) {
   const t = useTranslations("shell");
-  const tr = useTranslations("roles");
   const locale = useLocale();
   const router = useRouter();
-  const { logout } = useAuth();
   const { state, toggleSidebar, isMobile } = useSidebar();
 
   const collapsed = state === "collapsed" && !isMobile;
   const arabic = locale === "ar";
-  const nameIsArabic = ARABIC_RANGE.test(user.fullName.charAt(0));
 
   return (
     <Sidebar
@@ -97,7 +97,7 @@ export function AppSidebar({
           aria-hidden="true"
         />
 
-        <SidebarHeader className="relative z-10 border-b border-white/10 p-0">
+        <SidebarHeader className="relative z-10 border-b border-[#8a9a92]/20 p-0">
           <div className={`flex items-center gap-2.5 px-4 py-4 ${collapsed ? "justify-center px-0" : ""}`}>
             <NationalMark />
             {!collapsed && (
@@ -172,54 +172,26 @@ export function AppSidebar({
           ))}
         </SidebarContent>
 
-        <SidebarFooter className="relative z-10 border-t border-white/10 p-3">
-          <div className={`flex items-center gap-2.5 rounded-lg bg-white/[0.06] p-2.5 ${collapsed ? "justify-center" : ""}`}>
-            <span
-              dir="auto"
-              className="flex h-8 w-8 flex-none items-center justify-center overflow-hidden rounded-full px-1 text-[11px] font-extrabold text-[var(--green-900)]"
-              style={{ background: "var(--gold-500)" }}
-            >
-              {monogram(user.fullName, nameIsArabic)}
-            </span>
-            {!collapsed && (
-              <div className="min-w-0 flex-1">
-                {/* dir="auto": the name may be in either script whatever the
-                    interface language is. */}
-                <p dir="auto" className="truncate text-[12.5px] font-bold text-white">
-                  {user.fullName}
-                </p>
-                <p className="truncate text-[10px] text-white/50">
-                  {tr.has(user.role) ? tr(user.role) : user.role}
-                </p>
-              </div>
-            )}
-          </div>
+      <SidebarFooter className="relative z-10 border-t border-[#8a9a92]/20 p-2">
+          <div className="flex items-center gap-1.5">
+            {/* min-w-0 so the name truncates rather than pushing the
+                collapse button out of the rail. */}
+            <div className="min-w-0 flex-1">
+              <UserMenu
+                user={user}
+                collapsed={collapsed}
+                canSwitchLanguage={canSwitchLanguage}
+              />
+            </div>
 
-          <div className={`mt-2 flex gap-1.5 ${collapsed ? "flex-col items-center" : ""}`}>
-            <button
-              type="button"
-              onClick={() => { logout(); router.replace(routes.auth.login); }}
-              title={t("signOut")}
-              className={[
-                "flex items-center justify-center gap-2 rounded-lg border border-white/20 py-2",
-                "text-[11px] font-bold uppercase tracking-wider text-white/80",
-                "transition-colors hover:border-white/40 hover:bg-white/10 hover:text-white",
-                collapsed ? "h-8 w-8" : "flex-1",
-              ].join(" ")}
-            >
-              <LogOut className="rtl-flip h-3.5 w-3.5 flex-none" />
-              {!collapsed && t("signOut")}
-            </button>
             {!collapsed && (
               <button
                 type="button"
                 onClick={toggleSidebar}
                 title={t("collapse")}
                 aria-label={t("collapse")}
-                className="flex h-[34px] w-9 flex-none items-center justify-center rounded-lg border border-white/20 text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+                className="flex h-[46px] w-8 flex-none items-center justify-center rounded-lg border-white/15 text-white/50 transition-colors hover:bg-white/10 hover:text-white"
               >
-                {/* It points at the edge the rail folds towards, which
-                    changes side with the language. */}
                 <ChevronsLeft className="rtl-flip h-4 w-4" />
               </button>
             )}

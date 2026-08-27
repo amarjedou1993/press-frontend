@@ -1,17 +1,17 @@
 "use client";
 // src/components/AppShell.tsx
-// Role guard + application chrome. The sidebar is AppSidebar (shadcn Sidebar
-// primitives); this file keeps the guard, the topbar, and the shared
-// Card/StatusBadge exports so existing imports keep working.
+// Role guard + application chrome.
 
 import { useEffect, type ReactNode } from "react";
 import { useLocale, useTranslations } from "next-intl";
+import { useQuery } from "@tanstack/react-query";
 import { PanelLeft } from "lucide-react";
 import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar, type NavGroup } from "@/components/AppSidebar";
 import { Toaster } from "@/components/ui/sonner";
 import { useRouter } from "@/i18n/navigation";
 import { useAuth } from "@/lib/auth";
+import { getMe, accountKeys } from "@/lib/api/account";
 import { routes, homeForRole } from "@/lib/routes";
 import type { Role } from "@/lib/types";
 
@@ -23,6 +23,13 @@ export function AppShell({
   title,
   subtitle,
   actions,
+  /**
+   * False in the Authority's spaces — see UserMenu.
+   *
+   * The proxy redirects /ar/admin to /fr/admin, so a language choice there
+   * would reload the page in French and the control would look broken.
+   */
+  canSwitchLanguage = true,
   children,
 }: {
   requireRole: Role;
@@ -30,6 +37,7 @@ export function AppShell({
   title: string;
   subtitle?: string;
   actions?: ReactNode;
+  canSwitchLanguage?: boolean;
   children: ReactNode;
 }) {
   const t = useTranslations("shell");
@@ -37,6 +45,27 @@ export function AppShell({
   const { user, ready } = useAuth();
   const router = useRouter();
   const arabic = locale === "ar";
+
+  /**
+   * ⚠️ THE STORE'S USER IS A LOGIN SNAPSHOT.
+   *
+   * It is written when the token is issued and never again — so a name
+   * changed on the profile page stayed stale in the sidebar until the next
+   * sign-in. The same would go for emailVerified and preferredLocale.
+   *
+   * This query is the one the profile page already invalidates, so a save
+   * there now reaches the rail immediately.
+   *
+   * ⚠️ AND THE GUARD BELOW STILL USES THE STORE, deliberately. The role
+   * decides which space a person may enter; it comes from the token and must
+   * not wait on a fetch, or a slow connection would flash the wrong space
+   * before correcting itself.
+   */
+  const me = useQuery({
+    queryKey: accountKeys.me,
+    queryFn: getMe,
+    enabled: ready && !!user,
+  });
 
   useEffect(() => {
     if (!ready) return;
@@ -61,9 +90,25 @@ export function AppShell({
 
   if (!user || user.role !== requireRole) return null;
 
+  /**
+   * What the rail DISPLAYS: the fetched record when it has arrived, the token's
+   * snapshot until then.
+   *
+   * ⚠️ The role comes from the STORE either way — the query's copy could
+   * disagree with the token, and the token is what the server will honour.
+   */
+  const displayUser = {
+    fullName: me.data?.fullName ?? user.fullName,
+    role: user.role,
+  };
+
   return (
     <SidebarProvider>
-      <AppSidebar groups={groups} user={user} />
+      <AppSidebar
+        groups={groups}
+        user={displayUser}
+        canSwitchLanguage={canSwitchLanguage}
+      />
       <SidebarInset className="bg-[var(--paper)]">
         <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-[var(--line)] bg-white/85 px-5 backdrop-blur">
           <SidebarTrigger
