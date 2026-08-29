@@ -84,24 +84,6 @@ export async function PublicHeader() {
   return (
     <header className="sticky top-0 z-40 shadow-[0_10px_30px_-24px_rgba(11,46,31,.5)]">
       {/* ── 1. state strip ──
-          Both languages, always. This is the coat of arms, not a sentence. */}
-      {/* <div className="relative bg-[#071f16]">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-[7px]">
-          <p className="text-[9px] font-bold uppercase tracking-[0.24em] text-white/45">
-            République Islamique de Mauritanie
-          </p>
-          <p
-            dir="rtl"
-            lang="ar"
-            className="hidden text-[11px] font-semibold text-white/40 sm:block"
-          >
-            الجمهورية الإسلامية الموريتانية
-          </p>
-        </div>
-        <span className="foil-rule absolute inset-x-0 bottom-0 h-px opacity-50" aria-hidden="true" />
-      </div> */}
-
-      {/* ── 1. state strip ──
           Both languages, always — this is the coat of arms, not a sentence.
           But the READER'S OWN leads: it sits at the reading edge, the other
           at the far edge. Under dir="rtl" the container mirrors, so the order
@@ -227,7 +209,11 @@ export async function PublicHeader() {
             : "#f4f6f5",
         }}
       >
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-4 gap-y-1 px-6 py-2">
+      {/* ⚠️ No justify-between: with the link conditional, it would push the
+            sentence to the far edge whenever no session is open. The link
+            takes ms-auto instead — logical, so it sits at the trailing edge in
+            both languages. */}
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-4 gap-y-1 px-6 py-2">
           <p className="flex items-center gap-2.5 text-[12px] font-semibold text-[var(--green-900)]">
             <span
               className={`h-1.5 w-1.5 rounded-full ${open ? "bg-[var(--green-500)] shadow-[0_0_0_3px_rgba(0,169,92,.2)] motion-safe:animate-pulse" : "bg-[var(--muted-fg)]"}`}
@@ -246,16 +232,23 @@ export async function PublicHeader() {
               <span className="text-[var(--slate)]">{th("sessionClosed")}</span>
             )}
           </p>
-          <Link
-            href={routes.publicSessions}
-            className="group inline-flex items-center gap-1 text-[11.5px] font-bold uppercase tracking-wider text-[var(--green-700)] transition-colors hover:text-[var(--green-900)]"
-          >
-            {th("consult")}
-            <ArrowRight className="rtl-flip h-3 w-3" />
-          </Link>
+
+          {/* ⚠️ Only when a session is open.
+              The sessions page shows an empty list otherwise — so the link
+              would invite someone to a page that repeats what the ribbon just
+              said. A link that leads nowhere useful teaches people to stop
+              following them. */}
+          {open && (
+            <Link
+              href={routes.publicSessions}
+              className="group ms-auto inline-flex items-center gap-1 text-[11.5px] font-bold uppercase tracking-wider text-[var(--green-700)] transition-colors hover:text-[var(--green-900)]"
+            >
+              {th("consult")}
+              <ArrowRight className="rtl-flip h-3 w-3" />
+            </Link>
+          )}
         </div>
       </div>
-
       {/* ── 4. seam ── */}
       <MicroprintRule
         className="bg-white py-[3px] text-center text-[var(--green-700)] opacity-20"
