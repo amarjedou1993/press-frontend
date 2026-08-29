@@ -114,6 +114,7 @@ export const routes = {
     reviewers: "/admin/users",
     /** Producer accounts — a contractor's access, not a commission's roll. */
     printers: "/admin/printers",
+    honour: "/admin/honour",
     cards: "/admin/cards",
     revocations: "/admin/cards/revocations",
     sessionResults: (id: number | string) => `/admin/sessions/${id}/resultats`,

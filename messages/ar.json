@@ -347,7 +347,11 @@
     "passwordMismatch": "كلمتا السر غير متطابقتين.",
     "currentPasswordWrong": "كلمة السر الحالية غير صحيحة.",
     "passwordUnchanged": "هذه كلمة سرك الحالية بالفعل.",
-    "noLocalPassword": "يستعمل حسابك هوية خدماتي: لا توجد كلمة سر لتغييرها."
+    "noLocalPassword": "يستعمل حسابك هوية خدماتي: لا توجد كلمة سر لتغييرها.",
+    "expiryMustBeFuture": "يجب أن يكون تاريخ الانتهاء لاحقًا لليوم.",
+    "grantReasonRequired": "حدد سبب المنح.",
+    "identityRequired": "الرقم الوطني أو رقم جواز السفر إلزامي.",
+    "statusReasonRequired": "حدد سبب هذا القرار."
   },
   "candidateShell": {
     "title": "فضاء المترشح",
@@ -571,7 +575,8 @@
   "roles": {
     "CANDIDATE": "مترشح",
     "REVIEWER": "لجنة الفحص",
-    "SUPER_ADMIN": "مدير"
+    "SUPER_ADMIN": "مدير",
+    "PRINTER": "طباعه"
   },
   "checklist": {
     "allProvided": "جميع الوثائق مقدَّمة",

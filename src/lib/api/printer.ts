@@ -39,6 +39,18 @@ export interface PrintableCard {
   producedCount: number;
 }
 
+export interface PrintableHonourCard {
+  cardId: number;
+  cardNumber: string;
+  holderFullName: string;
+  categoryLabelFr: string;
+  institution?: string | null;
+  issuedAt: string;
+  expiresAt: string;
+  /** Shown before selection — nothing blocks a reprint. */
+  producedCount: number;
+}
+
 export interface RunSummary {
   id: number;
   printedAt: string;
@@ -55,9 +67,16 @@ export interface ArchiveResult {
   skipped: number;
 }
 
+// export const printerKeys = {
+//   sessions: ["printer", "sessions"] as const,
+//   cards: (sessionId: number) => ["printer", "cards", sessionId] as const,
+//   history: ["printer", "history"] as const,
+// };
+
 export const printerKeys = {
   sessions: ["printer", "sessions"] as const,
   cards: (sessionId: number) => ["printer", "cards", sessionId] as const,
+  honour: ["printer", "honour"] as const,
   history: ["printer", "history"] as const,
 };
 
@@ -67,6 +86,10 @@ export function getPrintableSessions() {
 
 export function getPrintableCards(sessionId: number) {
   return apiFetch<PrintableCard[]>(`/api/printer/cards?sessionId=${sessionId}`);
+}
+
+export function getPrintableHonourCards() {
+  return apiFetch<PrintableHonourCard[]>("/api/printer/honour-cards");
 }
 
 export function getPrintHistory(limit = 50) {
@@ -126,6 +149,55 @@ export async function downloadPrinterArchive(
   // ⚠️ Headers-only: the body is the file. These arrive as 0 unless the
   // backend sends Access-Control-Expose-Headers — which SecurityConfig now
   // does.
+  return {
+    included: Number(res.headers.get("X-Archive-Included") ?? 0),
+    skipped: Number(res.headers.get("X-Archive-Skipped") ?? 0),
+  };
+}
+
+/**
+ * The honour cards' production assets.
+ *
+ * ⚠️ NO SESSION, because an honour card belongs to no cohort — it is granted
+ * one at a time, on its own occasion.
+ *
+ * ⚠️ AND NO REFERENCE PDF in the archive: CardPdfService lays out a card from
+ * a dossier, and these have none. What arrives is the photograph and the QR.
+ */
+export async function downloadHonourArchive(
+  cardIds: number[],
+  token: string | null
+): Promise<ArchiveResult> {
+  const res = await fetch(`${BASE}/api/printer/honour-archive`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify({ cardIds }),
+  });
+
+  if (!res.ok) {
+    let message = "errors.downloadFailed";
+    try {
+      const body = await res.json();
+      message = body.detail ?? body.message ?? message;
+    } catch { /* keep the key */ }
+    throw new Error(message);
+  }
+
+  const disposition = res.headers.get("content-disposition") ?? "";
+  const match = disposition.match(/filename="?([^"]+)"?/);
+  const filename = match?.[1] ?? "cartes-honneur.zip";
+
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.click();
+  setTimeout(() => URL.revokeObjectURL(url), 30_000);
+
   return {
     included: Number(res.headers.get("X-Archive-Included") ?? 0),
     skipped: Number(res.headers.get("X-Archive-Skipped") ?? 0),

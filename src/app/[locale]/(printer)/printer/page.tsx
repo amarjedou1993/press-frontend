@@ -1,14 +1,14 @@
 "use client";
 // src/app/[locale]/(printer)/printer/page.tsx
 //
-// The production queue: one session at a time, one archive per run.
+// The production queue: ordinary cards by session, honour cards on their own.
 
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   Printer, FolderArchive, Loader2, Search, CalendarRange, Building2,
-  Briefcase, RotateCcw, Inbox,
+  Briefcase, RotateCcw, Inbox, Award,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -16,10 +16,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PaginationBar } from "@/components/ui/pagination-bar";
 import { Guilloche } from "@/components/public/patterns";
 import {
-  getPrintableSessions, getPrintableCards, downloadPrinterArchive,
-  printerKeys, type PrintableCard,
+  getPrintableSessions, getPrintableCards, getPrintableHonourCards,
+  downloadPrinterArchive, downloadHonourArchive, printerKeys,
+  type PrintableCard, type PrintableHonourCard,
 } from "@/lib/api/printer";
 import { useAuthStore } from "@/lib/auth";
+
+type Tab = "session" | "honour";
 
 function longFr(iso?: string | null) {
   if (!iso) return "—";
@@ -33,6 +36,7 @@ export default function PrinterPage() {
   const qc = useQueryClient();
   const token = useAuthStore((s) => s.token);
 
+  const [tab, setTab] = useState<Tab>("session");
   const [sessionId, setSessionId] = useState<number | null>(null);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [search, setSearch] = useState("");
@@ -48,7 +52,7 @@ export default function PrinterPage() {
    * The newest session, chosen for them.
    *
    * ⚠️ A producer opening this screen has one job, and it is almost always
-   * the current cohort. An empty select with "choose a session" is a click
+   * the current cohort. An empty select saying "choose a session" is a click
    * that adds nothing — they would choose the same one every time.
    */
   useEffect(() => {
@@ -60,18 +64,42 @@ export default function PrinterPage() {
   const cards = useQuery({
     queryKey: printerKeys.cards(sessionId ?? 0),
     queryFn: () => getPrintableCards(sessionId!),
-    enabled: sessionId !== null,
+    enabled: tab === "session" && sessionId !== null,
   });
+
+  const honour = useQuery({
+    queryKey: printerKeys.honour,
+    queryFn: getPrintableHonourCards,
+    enabled: tab === "honour",
+  });
+
+  /**
+   * ⚠️ ONE SELECTION SET, CLEARED ON EVERY TAB CHANGE.
+   *
+   * The two lists hold different ids in different tables — id 7 is one card
+   * here and another there. Carrying a selection across would produce an
+   * archive of cards nobody chose.
+   */
+  useEffect(() => {
+    setSelected(new Set());
+    setSearch("");
+    setPage(1);
+  }, [tab]);
+
+  const rows: Array<PrintableCard | PrintableHonourCard> =
+    tab === "session" ? (cards.data ?? []) : (honour.data ?? []);
+
+  const loading = tab === "session" ? cards.isLoading : honour.isLoading;
 
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
-    return (cards.data ?? []).filter((c) => {
+    return rows.filter((c) => {
       if (!term) return true;
       return c.holderFullName.toLowerCase().includes(term)
           || c.cardNumber.toLowerCase().includes(term)
           || (c.institution ?? "").toLowerCase().includes(term);
     });
-  }, [cards.data, search]);
+  }, [rows, search]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
   const safePage = Math.min(page, pageCount);
@@ -80,18 +108,18 @@ export default function PrinterPage() {
   const allSelected = filtered.length > 0
     && filtered.every((c) => selected.has(c.cardId));
 
-  /** Cards that have already been out at least once. */
   const reprints = useMemo(
-    () => [...selected].filter((id) =>
-      (cards.data ?? []).find((c) => c.cardId === id)?.producedCount ?? 0),
-    [selected, cards.data]
+    () => filtered.filter((c) => selected.has(c.cardId) && c.producedCount > 0).length,
+    [filtered, selected]
   );
 
   const archive = useMutation({
-    mutationFn: () => downloadPrinterArchive([...selected], sessionId, token),
+    mutationFn: () => tab === "session"
+      ? downloadPrinterArchive([...selected], sessionId, token)
+      : downloadHonourArchive([...selected], token),
     onSuccess: ({ included, skipped }) => {
-      // The counts move: a produced card now shows "produite 1×".
       qc.invalidateQueries({ queryKey: printerKeys.cards(sessionId ?? 0) });
+      qc.invalidateQueries({ queryKey: printerKeys.honour });
       qc.invalidateQueries({ queryKey: printerKeys.history });
       setSelected(new Set());
 
@@ -99,11 +127,13 @@ export default function PrinterPage() {
         // ⚠️ Omissions are NAMED. A producer who receives 37 folders instead
         // of 40 must learn it here rather than by counting.
         toast.warning(`${included} carte(s) exportée(s), ${skipped} sans pièces`, {
-          description: "Les cartes omises n'ont ni photographie ni aperçu.",
+          description: "Les cartes omises n'ont ni photographie ni code.",
         });
       } else {
         toast.success(`${included} carte(s) exportée(s)`, {
-          description: "L'archive contient un dossier par carte.",
+          description: tab === "honour"
+            ? "Photographie et code de vérification, un dossier par carte."
+            : "L'archive contient un dossier par carte.",
         });
       }
     },
@@ -112,13 +142,15 @@ export default function PrinterPage() {
     }),
   });
 
-  const currentSession = sessions.data?.find((s) => s.sessionId === sessionId);
-
   const toggle = (cardId: number) => {
     const next = new Set(selected);
     next.has(cardId) ? next.delete(cardId) : next.add(cardId);
     setSelected(next);
   };
+
+  const nothingAtAll = !sessions.isLoading
+    && (sessions.data?.length ?? 0) === 0
+    && (honour.data?.length ?? 0) === 0;
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
@@ -147,18 +179,18 @@ export default function PrinterPage() {
               Cartes à produire
             </h2>
             <p className="mt-2 max-w-lg text-[14px] leading-relaxed text-white/65">
-              Chaque carte est fournie avec sa photographie, son code de
-              vérification et un aperçu de référence.
+              Chaque carte est fournie avec sa photographie et son code de
+              vérification.
             </p>
           </div>
 
           <div className="flex gap-3">
             <div className="rounded-xl border border-white/15 bg-black/20 px-5 py-3.5 text-center">
               <p className="font-mono text-[26px] font-extrabold leading-none">
-                {cards.isLoading ? "—" : filtered.length}
+                {loading ? "—" : filtered.length}
               </p>
               <p className="mt-1.5 text-[9.5px] font-bold uppercase tracking-[0.14em] text-white/50">
-                dans la session
+                {tab === "session" ? "dans la session" : "cartes d'honneur"}
               </p>
             </div>
             {selected.size > 0 && (
@@ -181,8 +213,37 @@ export default function PrinterPage() {
         </div>
       </section>
 
-      {/* ══ nothing to produce ══ */}
-      {!sessions.isLoading && (sessions.data?.length ?? 0) === 0 ? (
+      {/* ══ the two kinds ══
+          ⚠️ TABS, not one list with a column. They are different objects with
+          different numbers, produced for different reasons — and a producer
+          working a session should not have honour cards scattered through
+          their batch. */}
+      <div className="inline-flex rounded-xl bg-[#f2f5f3] p-1">
+        {([
+          { key: "session" as const, label: "Par session", Icon: CalendarRange },
+          { key: "honour" as const, label: "Cartes d'honneur", Icon: Award },
+        ]).map((t) => {
+          const on = tab === t.key;
+          return (
+            <button
+              key={t.key}
+              type="button"
+              onClick={() => setTab(t.key)}
+              aria-pressed={on}
+              className="flex items-center gap-2 rounded-lg px-4 py-1.5 text-[12.5px] font-bold transition-all"
+              style={on
+                ? { background: "#fff", color: "var(--green-900)",
+                    boxShadow: "0 1px 3px rgba(11,46,31,.14)" }
+                : { color: "var(--slate)" }}
+            >
+              <t.Icon className="h-3.5 w-3.5" />
+              {t.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {nothingAtAll ? (
         <div className="rounded-2xl border border-dashed border-[var(--line)] bg-white p-14 text-center">
           <Inbox className="mx-auto h-9 w-9 text-[var(--muted-fg)] opacity-45" />
           <p className="mt-4 text-[15px] font-extrabold text-[var(--green-900)]">
@@ -194,30 +255,31 @@ export default function PrinterPage() {
         </div>
       ) : (
         <div className="overflow-hidden rounded-2xl border border-[var(--line)] bg-white">
-          {/* ── the session, then everything else ── */}
           <div className="flex flex-wrap items-center gap-2.5 border-b border-[var(--line)] px-5 py-3.5">
-            <div className="relative">
-              <CalendarRange className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--muted-fg)]" />
-              <select
-                value={sessionId ?? ""}
-                onChange={(e) => {
-                  setSessionId(Number(e.target.value));
-                  setPage(1);
-                  // ⚠️ CLEARED on a session change. Keeping the selection
-                  // would leave cards ticked that are no longer on screen,
-                  // and "Produire (40)" would export a set nobody can see.
-                  setSelected(new Set());
-                }}
-                aria-label="Session"
-                className="h-9 rounded-lg border border-[var(--green-500)] bg-white pl-9 pr-3 text-[13px] font-semibold outline-none focus-visible:ring-2 focus-visible:ring-[var(--green-500)]/25"
-              >
-                {sessions.data?.map((s) => (
-                  <option key={s.sessionId} value={s.sessionId}>
-                    {s.label ?? `Session ${s.sessionId}`} — {s.cardCount}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {/* ⚠️ The session select belongs to ONE tab. An honour card
+                belongs to no cohort, so the control has nothing to offer
+                there — hidden rather than disabled. */}
+            {tab === "session" && (sessions.data?.length ?? 0) > 0 && (
+              <div className="relative">
+                <CalendarRange className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--muted-fg)]" />
+                <select
+                  value={sessionId ?? ""}
+                  onChange={(e) => {
+                    setSessionId(Number(e.target.value));
+                    setPage(1);
+                    setSelected(new Set());
+                  }}
+                  aria-label="Session"
+                  className="h-9 rounded-lg border border-[var(--green-500)] bg-white pl-9 pr-3 text-[13px] font-semibold outline-none focus-visible:ring-2 focus-visible:ring-[var(--green-500)]/25"
+                >
+                  {sessions.data?.map((s) => (
+                    <option key={s.sessionId} value={s.sessionId}>
+                      {s.label ?? `Session ${s.sessionId}`} — {s.cardCount}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--muted-fg)]" />
@@ -244,13 +306,15 @@ export default function PrinterPage() {
             </Button>
           </div>
 
-          {cards.isLoading ? (
+          {loading ? (
             <Skeleton className="m-5 h-32" />
           ) : filtered.length === 0 ? (
             <p className="px-5 py-12 text-center text-[13.5px] text-[var(--slate)]">
               {search
                 ? "Aucune carte ne correspond à cette recherche."
-                : "Aucune carte valable dans cette session."}
+                : tab === "session"
+                  ? "Aucune carte valable dans cette session."
+                  : "Aucune carte d'honneur à produire."}
             </p>
           ) : (
             <>
@@ -268,14 +332,13 @@ export default function PrinterPage() {
                   {search && " correspondant à la recherche"}
                 </span>
 
-                {/* ⚠️ SAID, NOT BLOCKED.
-                    A reprint is normal — a jam, a spent ribbon. Nothing here
-                    prevents it; this line only makes sure it is not
+                {/* ⚠️ SAID, NOT BLOCKED. A reprint is normal — a jam, a spent
+                    ribbon. Nothing prevents it; this only makes sure it is not
                     accidental. */}
-                {reprints.length > 0 && (
+                {reprints > 0 && (
                   <span className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-[var(--gold-tint)] px-3 py-1 text-[11.5px] font-bold text-[var(--gold-700)]">
                     <RotateCcw className="h-3 w-3" />
-                    {reprints.length} déjà produite{reprints.length > 1 ? "s" : ""}
+                    {reprints} déjà produite{reprints > 1 ? "s" : ""}
                   </span>
                 )}
               </div>
@@ -285,6 +348,7 @@ export default function PrinterPage() {
                   <CardRow
                     key={card.cardId}
                     card={card}
+                    honour={tab === "honour"}
                     selected={selected.has(card.cardId)}
                     onToggle={() => toggle(card.cardId)}
                   />
@@ -311,13 +375,15 @@ export default function PrinterPage() {
 /* ══ one card to produce ══ */
 
 function CardRow({
-  card, selected, onToggle,
+  card, honour, selected, onToggle,
 }: {
-  card: PrintableCard;
+  card: PrintableCard | PrintableHonourCard;
+  honour: boolean;
   selected: boolean;
   onToggle: () => void;
 }) {
   const produced = card.producedCount > 0;
+  const specialisation = "specialisationFr" in card ? card.specialisationFr : null;
 
   return (
     <li className="flex flex-wrap items-center gap-4 px-5 py-3.5"
@@ -330,8 +396,11 @@ function CardRow({
 
       <span className="flex h-9 w-9 flex-none items-center justify-center rounded-xl"
         style={{ background: produced ? "var(--gold-tint)" : "var(--green-tint)" }}>
-        <Printer className="h-4 w-4"
-          style={{ color: produced ? "var(--gold-700)" : "var(--green-700)" }} />
+        {/* The icon says which kind: the B in the number does too, but a
+            producer scanning a list reads shapes before digits. */}
+        {honour
+          ? <Award className="h-4 w-4" style={{ color: produced ? "var(--gold-700)" : "var(--green-700)" }} />
+          : <Printer className="h-4 w-4" style={{ color: produced ? "var(--gold-700)" : "var(--green-700)" }} />}
       </span>
 
       <div className="min-w-0 flex-1">
@@ -343,10 +412,10 @@ function CardRow({
         </p>
         <p className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[12px] text-[var(--slate)]">
           <span>{card.categoryLabelFr}</span>
-          {card.specialisationFr && (
+          {specialisation && (
             <span className="flex items-center gap-1">
               <Briefcase className="h-3 w-3 opacity-60" />
-              {card.specialisationFr}
+              {specialisation}
             </span>
           )}
           {card.institution && (
@@ -359,10 +428,8 @@ function CardRow({
         </p>
       </div>
 
-      {/* ⚠️ THE COUNT, BEFORE THE CHOICE.
-          Not a warning and not a block. A producer selecting forty cards
-          should see which have been out before at the moment they choose —
-          which is the control that needs no permission gate behind it. */}
+      {/* ⚠️ THE COUNT, BEFORE THE CHOICE — the control that needs no
+          permission gate behind it. */}
       {produced && (
         <span className="flex-none rounded-full bg-[var(--gold-tint)] px-2.5 py-1 text-[10.5px] font-bold text-[var(--gold-700)]">
           produite {card.producedCount}×

@@ -350,7 +350,11 @@
     "passwordMismatch": "Les deux mots de passe ne correspondent pas.",
     "currentPasswordWrong": "Mot de passe actuel incorrect.",
     "passwordUnchanged": "Ce mot de passe est déjà le vôtre.",
-     "noLocalPassword": "Votre compte utilise l'identification Khidmaty : il n'a pas de mot de passe à changer."
+    "noLocalPassword": "Votre compte utilise l'identification Khidmaty : il n'a pas de mot de passe à changer.",
+    "expiryMustBeFuture": "La date d'expiration doit être postérieure à aujourd'hui.",
+    "grantReasonRequired": "Indiquez le motif de l'octroi.",
+    "identityRequired": "Le NNI ou le numéro de passeport est obligatoire.",
+    "statusReasonRequired": "Indiquez le motif de cette décision."
   },
   "candidateShell": {
     "title": "Espace candidat",
@@ -510,7 +514,8 @@
   "roles": {
     "CANDIDATE": "Candidat",
     "REVIEWER": "Commission d'examen",
-    "SUPER_ADMIN": "Administrateur"
+    "SUPER_ADMIN": "Administrateur",
+    "PRINTER": "Impression"
   },
   "application": {
     "eyebrow": "Dossier de candidature",

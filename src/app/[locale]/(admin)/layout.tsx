@@ -92,6 +92,7 @@
 import { usePathname } from "@/i18n/navigation";
 import {
   LayoutDashboard, CalendarDays, Users, IdCard, Gavel, Printer,
+  Award,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { navMatcher } from "@/lib/nav";
@@ -117,6 +118,7 @@ const NAV_HREFS = [
   routes.admin.reviewers,
   routes.admin.printers,
   routes.admin.cards,
+  routes.admin.honour,
   routes.admin.revocations,
 ] as const;
 
@@ -169,6 +171,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               href: routes.admin.cards,
               icon: <IdCard className="h-[17px] w-[17px]" />,
               active: isActive(routes.admin.cards),
+            },
+             {
+              label: "Cartes d'honneur",
+              href: routes.admin.honour,
+              icon: <Award className="h-[17px] w-[17px]" />,
+              active: isActive(routes.admin.honour),
             },
             {
               label: "Retraits de cartes",
