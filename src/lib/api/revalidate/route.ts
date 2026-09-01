@@ -2,7 +2,23 @@ import { revalidatePath } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 
 /** Paths whose content depends on session state. */
-const PUBLIC_PATHS = ["/", "/sessions"];
+// const PUBLIC_PATHS = ["/", "/sessions"];
+/**
+ * Paths whose content depends on session state.
+ *
+ * ⚠️ ONE PER LOCALE, and that is why this list is not two entries.
+ *
+ * Every route lives under /[locale]. There is no page at "/" — purging it
+ * clears a route that does not exist, and the Arabic and French versions are
+ * separately cached documents. Missing one leaves half the public site stale
+ * while the other half updates, which is harder to notice than both being
+ * stale.
+ */
+const PUBLIC_PATHS = [
+  "/fr", "/ar",
+  "/fr/sessions", "/ar/sessions",
+  "/fr/journalistes", "/ar/journalistes",
+];
 
 export async function POST(request: NextRequest) {
   const expected = process.env.REVALIDATE_TOKEN;

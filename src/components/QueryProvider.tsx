@@ -11,7 +11,8 @@ export function QueryProvider({ children }: { children: ReactNode }) {
         defaultOptions: {
           queries: {
             staleTime: 30_000, // fresh for 30s — spares the backend
-            refetchOnWindowFocus: false,
+            // refetchOnWindowFocus: false,
+            refetchOnWindowFocus: true,
             retry: (failureCount, error) => {
               if (error instanceof ApiError && error.problem.status < 500) {
                 return false; // 4xx: never retry
