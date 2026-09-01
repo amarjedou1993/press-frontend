@@ -8,7 +8,7 @@
 // serve different moments in the same afternoon.
 
 import { forwardRef } from "react";
-import { Clock, Hand, PenLine, Lock, ArrowRight } from "lucide-react";
+import { Clock, PenLine, Lock, ArrowRight } from "lucide-react";
 import type { PoolItem } from "@/lib/api/review";
 import { waitingTone } from "./DossierCard";
 import { OutcomeBadge } from "./OutcomeBadge";
@@ -18,10 +18,21 @@ export const DossierRow = forwardRef<HTMLDivElement, {
   mine: boolean;
   focused?: boolean;
   claiming?: boolean;
+  /**
+   * The session column.
+   *
+   * ⚠️ DECIDED BY THE PAGE, not here. A row does not know which scope it is
+   * being shown in, and a component that infers its own context is wrong the
+   * day it is reused somewhere else.
+   *
+   * True only in "Mes décisions" — the one scope that crosses sessions. In
+   * the working queue every row would carry the same label.
+   */
+  showSession?: boolean;
   onOpen: () => void;
   onClaim?: () => void;
 }>(function DossierRow(
-  { item, mine, focused = false, claiming = false, onOpen, onClaim },
+  { item, mine, focused = false, claiming = false, showSession = false, onOpen, onClaim },
   ref
 ) {
   const tone = waitingTone(item.waitingDays);
@@ -35,6 +46,9 @@ export const DossierRow = forwardRef<HTMLDivElement, {
       role="button"
       tabIndex={0}
       onClick={onOpen}
+      // Enter and Space open it, like any button — handled HERE on the
+      // focused element rather than in the page's key handler, so it works
+      // whether focus arrived by keyboard, by Tab, or by the arrow keys.
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen(); }
       }}
@@ -53,7 +67,7 @@ export const DossierRow = forwardRef<HTMLDivElement, {
       />
 
       <span className="min-w-0 flex-[2]">
-        <span className="block truncate text-[13.5px] font-bold text-[var(--green-900)]">
+        <span dir="auto" className="block truncate text-[13.5px] font-bold text-[var(--green-900)]">
           {item.candidateFullName}
         </span>
         <span className="font-mono text-[10.5px] text-[var(--muted-fg)]">
@@ -68,6 +82,15 @@ export const DossierRow = forwardRef<HTMLDivElement, {
       <span className="hidden min-w-0 flex-1 truncate text-[12.5px] text-[var(--slate)] lg:block">
         {item.roundLabelFr}
       </span>
+
+      {/* ⚠️ xl:block — one breakpoint later than the round. The row already
+          carries five columns; the session is the least urgent of them and
+          gives way first. */}
+      {showSession && (
+        <span className="hidden min-w-0 flex-1 truncate text-[12px] text-[var(--muted-fg)] xl:block">
+          {item.sessionLabel ?? "—"}
+        </span>
+      )}
 
       <span className="flex flex-none items-center gap-1.5">
         {item.correctionCount > 0 && (
@@ -103,7 +126,7 @@ export const DossierRow = forwardRef<HTMLDivElement, {
           {claiming ? "…" : "Prendre"}
         </button>
       ) : (
-        <ArrowRight className="h-3.5 w-3.5 flex-none text-[var(--muted-fg)] transition-transform group-hover:translate-x-0.5" />
+        <ArrowRight className="rtl-flip h-3.5 w-3.5 flex-none text-[var(--muted-fg)] transition-transform group-hover:translate-x-0.5" />
       )}
     </div>
   );

@@ -77,8 +77,18 @@ export default function SessionsPage() {
   return (
     <div className="mx-auto max-w-5xl space-y-7 pb-4">
 
-      {/* ══════════════════════════════════════════════════════════
+           {/* ══════════════════════════════════════════════════════════
           THE HERO — the page announces itself like the others.
+
+          ⚠️ RESPONSIVE NOTES, because this shape is repeated on six screens
+          and each one had the same three faults:
+
+          · the right-hand block was flex-none, so the counter and the button
+            pushed past the panel's edge rather than wrapping
+          · items-end pinned the title's baseline to the bottom of an empty
+            row once the two halves wrapped
+          · the seal took a fifth of a 375px screen from the heading, for
+            decoration
           ══════════════════════════════════════════════════════════ */}
       <section
         className="relative overflow-hidden rounded-[20px] text-white shadow-[0_24px_60px_-36px_rgba(11,46,31,.9)]"
@@ -90,15 +100,23 @@ export default function SessionsPage() {
         <div className="pointer-events-none absolute inset-0 opacity-[0.045]"
           style={{ backgroundImage: "repeating-linear-gradient(112deg,#fff 0 1px,transparent 1px 13px)" }}
           aria-hidden="true" />
+        {/* Smaller and further out on a phone: at 300px it sat behind the
+            heading rather than behind the corner. */}
         <Guilloche
-          className="pointer-events-none absolute -right-20 -top-24 h-[300px] w-[300px] text-white"
+          className="pointer-events-none absolute -right-24 -top-28 h-[220px] w-[220px] text-white sm:-right-20 sm:-top-24 sm:h-[300px] sm:w-[300px]"
           rings={34}
           opacity={0.1}
         />
 
-        <div className="relative z-10 flex flex-wrap items-end justify-between gap-6 px-7 pb-7 pt-7">
-          <div className="flex min-w-0 flex-1 items-start gap-5">
-            <span className="relative mt-1 flex h-[54px] w-[54px] flex-none items-center justify-center">
+        {/* items-start below sm, items-end above: once the two halves wrap
+            onto separate rows, items-end has nothing to align against. */}
+        <div className="relative z-10 flex flex-wrap items-start justify-between gap-5 px-5 pb-6 pt-6 sm:items-end sm:gap-6 sm:px-7 sm:pb-7 sm:pt-7">
+
+          <div className="flex min-w-0 flex-1 items-start gap-4 sm:gap-5">
+            {/* ⚠️ Hidden below sm. Fifty-four pixels of decoration is a fifth
+                of a 375px screen, taken from the one element that has to be
+                readable. */}
+            <span className="relative mt-1 hidden h-[54px] w-[54px] flex-none items-center justify-center sm:flex">
               <span className="absolute inset-0 rounded-full"
                 style={{ background: "radial-gradient(circle, rgba(255,215,0,.20), transparent 70%)" }}
                 aria-hidden="true" />
@@ -110,18 +128,21 @@ export default function SessionsPage() {
               <p className="text-[9.5px] font-bold uppercase tracking-[0.24em] text-[var(--gold-500)]">
                 Cycles d&apos;accréditation
               </p>
-              <h2 className="engraved-dark mt-2 text-[27px] font-extrabold leading-none tracking-tight">
+              <h2 className="engraved-dark mt-2 text-[22px] font-extrabold leading-tight tracking-tight sm:text-[27px] sm:leading-none">
                 Sessions de candidature
               </h2>
-              <p className="mt-2.5 max-w-md text-[13.5px] leading-relaxed text-white/50">
+              <p className="mt-2.5 max-w-md text-[13px] leading-relaxed text-white/50 sm:text-[13.5px]">
                 Une session à la fois. Elle court sur quatre phases, et toutes
                 les cartes qu&apos;elle produit portent la même échéance.
               </p>
             </div>
           </div>
 
-          <div className="flex flex-none items-end gap-3">
-            <div className="rounded-xl border border-white/15 bg-black/25 px-5 py-3.5 text-center">
+          {/* ⚠️ NOT flex-none. It has to be allowed to shrink and wrap, or the
+              counter and the button run past the panel's edge on a phone.
+              Full width below sm, so they take their own line. */}
+          <div className="flex w-full flex-wrap items-stretch gap-3 sm:w-auto sm:flex-none sm:items-end">
+            <div className="flex flex-none flex-col justify-center rounded-xl border border-white/15 bg-black/25 px-5 py-3.5 text-center">
               <p className="font-mono text-[28px] font-extrabold leading-none">
                 {isLoading ? "—" : (sessions?.length ?? 0)}
               </p>
@@ -130,24 +151,23 @@ export default function SessionsPage() {
               </p>
             </div>
 
+            {/* flex-1 below sm: the button fills what is left beside the
+                counter rather than sitting stranded at its content width. */}
             <button
               type="button"
               onClick={() => router.push(routes.admin.newSession)}
-              className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--gold-500)] px-5 text-[13px] font-extrabold text-[var(--green-900)]
+              className="inline-flex h-11 flex-1 items-center justify-center gap-2 self-end rounded-xl bg-[var(--gold-500)] px-5 text-[13px] font-extrabold text-[var(--green-900)]
                          shadow-[0_8px_24px_-10px_rgba(255,215,0,.7)] transition-all
                          hover:bg-[#ffe14d] hover:shadow-[0_10px_28px_-10px_rgba(255,215,0,.85)]
-                         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--green-900)]"
+                         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--green-900)]
+                         sm:flex-none"
             >
-              <Plus className="h-4 w-4" />
+              <Plus className="h-4 w-4 flex-none" />
               Nouvelle session
             </button>
           </div>
         </div>
 
-        {/* <MicroprintRule
-          className="relative z-10 pb-1 text-center text-white opacity-[0.12]"
-          repeat={16}
-        /> */}
         <div className="flex h-1.5" aria-hidden="true">
           <i className="flex-1 bg-[var(--green-500)]" />
           <i className="flex-1 bg-[var(--gold-500)]" />

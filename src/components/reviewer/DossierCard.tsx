@@ -22,7 +22,7 @@
 
 import { forwardRef } from "react";
 import {
-  Clock, Hand, ArrowRight, PenLine, Lock, Layers, Scale,
+  Clock, Hand, ArrowRight, PenLine, Lock, Layers, Scale, CalendarRange,
 } from "lucide-react";
 import type { PoolItem } from "@/lib/api/review";
 import { OutcomeBadge } from "./OutcomeBadge";
@@ -46,10 +46,21 @@ export const DossierCard = forwardRef<HTMLDivElement, {
   mine: boolean;
   focused?: boolean;
   claiming?: boolean;
+  /**
+   * The session line.
+   *
+   * ⚠️ DECIDED BY THE PAGE, not here. A card does not know which scope it is
+   * being shown in, and a component that infers its own context is wrong the
+   * day it is reused somewhere else.
+   *
+   * True only in "Mes décisions" — the one scope that crosses sessions. In
+   * the working queue every card would carry the same label.
+   */
+  showSession?: boolean;
   onOpen: () => void;
   onClaim?: () => void;
 }>(function DossierCard(
-  { item, mine, focused = false, claiming = false, onOpen, onClaim },
+  { item, mine, focused = false, claiming = false, showSession = false, onOpen, onClaim },
   ref
 ) {
   const tone = waitingTone(item.waitingDays);
@@ -65,6 +76,9 @@ export const DossierCard = forwardRef<HTMLDivElement, {
       role="button"
       tabIndex={0}
       onClick={onOpen}
+      // Enter and Space open it, like any button — handled HERE on the
+      // focused element rather than in the page's key handler, so it works
+      // whether focus arrived by keyboard, by Tab, or by the arrow keys.
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
@@ -109,7 +123,7 @@ export const DossierCard = forwardRef<HTMLDivElement, {
           </span>
 
           <div className="min-w-0 flex-1">
-            <p className="truncate text-[14.5px] font-extrabold leading-tight text-[var(--green-900)]">
+            <p dir="auto" className="truncate text-[14.5px] font-extrabold leading-tight text-[var(--green-900)]">
               {item.candidateFullName}
             </p>
             <p className="mt-0.5 font-mono text-[11px] text-[var(--muted-fg)]">
@@ -155,6 +169,19 @@ export const DossierCard = forwardRef<HTMLDivElement, {
               {item.roundLabelFr}
             </dd>
           </div>
+
+          {/* The session, only where it varies from one card to the next. */}
+          {showSession && item.sessionLabel && (
+            <div className="flex items-baseline gap-2">
+              <dt className="flex-none">
+                <CalendarRange className="h-3 w-3 text-[var(--green-600)]" aria-hidden="true" />
+                <span className="sr-only">Session</span>
+              </dt>
+              <dd className="truncate text-[12px] text-[var(--muted-fg)]">
+                {item.sessionLabel}
+              </dd>
+            </div>
+          )}
         </dl>
 
         {/* ── badges ── */}
@@ -177,7 +204,9 @@ export const DossierCard = forwardRef<HTMLDivElement, {
                 title={`Pris en charge par ${item.claimedByName ?? "un autre membre"}`}
               >
                 <Lock className="h-2.5 w-2.5 flex-none" />
-                <span className="truncate">{item.claimedByName ?? "pris en charge"}</span>
+                <span dir="auto" className="truncate">
+                  {item.claimedByName ?? "pris en charge"}
+                </span>
               </span>
             )}
           </div>
@@ -188,11 +217,11 @@ export const DossierCard = forwardRef<HTMLDivElement, {
       <div className="relative mt-auto flex items-center gap-2 border-t border-[var(--line)] px-5 py-3 pl-6">
         <span className="inline-flex items-center gap-1 text-[12.5px] font-bold text-[var(--green-700)]">
           {settled ? "Consulter" : mine ? "Reprendre" : claimedByOther ? "Consulter" : "Examiner"}
-          <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
+          <ArrowRight className="rtl-flip h-3 w-3 transition-transform group-hover:translate-x-0.5" />
         </span>
 
         {settled && item.myDecidedAt && (
-          <span className="ml-auto font-mono text-[10.5px] text-[var(--muted-fg)]">
+          <span className="ms-auto font-mono text-[10.5px] text-[var(--muted-fg)]">
             {new Date(item.myDecidedAt).toLocaleDateString("fr-FR")}
           </span>
         )}
@@ -202,7 +231,7 @@ export const DossierCard = forwardRef<HTMLDivElement, {
             type="button"
             onClick={(e) => { e.stopPropagation(); onClaim!(); }}
             disabled={claiming}
-            className="ml-auto inline-flex items-center gap-1.5 rounded-lg bg-[var(--green-700)] px-2.5 py-1.5 text-[11.5px] font-bold text-white transition-colors hover:bg-[var(--green-600)] disabled:opacity-60"
+            className="ms-auto inline-flex items-center gap-1.5 rounded-lg bg-[var(--green-700)] px-2.5 py-1.5 text-[11.5px] font-bold text-white transition-colors hover:bg-[var(--green-600)] disabled:opacity-60"
           >
             <Hand className="h-3 w-3" />
             {claiming ? "…" : "Prendre"}

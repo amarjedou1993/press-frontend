@@ -1,12 +1,3 @@
-// src/lib/api/review.ts
-// Mirrors ReviewController + ReviewDtos.
-//
-// Note `AvailableActions`: the SERVER decides what the reviewer may do, and
-// the UI renders that decision. In particular `canRejectAsIncomplete`
-// encodes a legal duty — no rejection for incompleteness without a prior
-// correction request — and re-implementing that in TypeScript would create a
-// second copy of the rule, free to drift from the one that actually binds.
-
 import { apiFetch } from "./client";
 import type { ReadinessResponse } from "./applications";
 
@@ -33,10 +24,20 @@ export interface PoolItem {
   claimedByName: string | null;
   claimedAt: string | null;
   correctionCount: number;
-   /** What THIS reviewer decided, if anything. */
+
+  /** What THIS reviewer decided, if anything. */
   myDecision?: DecisionType | null;
   myDecisionLabelFr?: string | null;
   myDecidedAt?: string | null;
+
+  /**
+   * « Session du 12 mars 2026 ».
+   *
+   * ⚠️ Affichée uniquement dans « Mes décisions » — la seule portée qui
+   * traverse les sessions. Dans la file de travail, chaque ligne porterait la
+   * même étiquette : du bruit qui répète le contexte au lieu de l'apporter.
+   */
+  sessionLabel?: string | null;
 }
 
 export interface CandidateIdentity {
@@ -120,7 +121,7 @@ export interface Examination {
   documents: ReviewDocument[];
   completeness: ReadinessResponse;
   history: DecisionHistoryEntry[];
-   /** Present only on a RECLAMATION round. */
+  /** Present only on a RECLAMATION round. */
   objection?: ObjectionSummary | null;
   actions: AvailableActions;
 }
@@ -138,8 +139,8 @@ export interface RejectionGroundOption {
 export const reviewKeys = {
   pool: ["review", "pool"] as const,
   myFiles: ["review", "my-files"] as const,
-  myDecided: ["review", "my-decided"] as const,     
-  all: ["review", "all"] as const,                    
+  myDecided: ["review", "my-decided"] as const,
+  all: ["review", "all"] as const,
   examination: (id: number) => ["review", "examination", id] as const,
   grounds: (id: number) => ["review", "grounds", id] as const,
 };
@@ -186,7 +187,6 @@ export function approveApplication(id: number, note?: string) {
     body: JSON.stringify({ note: note ?? null }),
   });
 }
-
 
 export function rejectApplication(
   id: number,

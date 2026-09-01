@@ -1,11 +1,12 @@
 "use client";
+// src/app/[locale]/(reviewer)/reviewer/cartes/page.tsx
 
 import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   IdCard, Gavel, Search, ShieldAlert, ShieldX, ShieldCheck, Clock,
-  Building2, Briefcase, Inbox, Undo2, Check, X,
+  Building2, Briefcase, Inbox, Undo2, Check, X, CalendarRange,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -63,6 +64,14 @@ export default function ReviewerCardsPage() {
   const [tab, setTab] = useState<Tab>("register");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  /**
+   * ⚠️ THE SESSION FILTER — the unit the commission actually reads in.
+   *
+   * Cards are issued in COHORTS: everyone accredited in one session shares an
+   * expiry, and the decisions behind them were taken in one sitting. Reading
+   * back over a session is a real task; reading over "all cards ever" is not.
+   */
+  const [sessionFilter, setSessionFilter] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(24);
 
@@ -84,9 +93,42 @@ export default function ReviewerCardsPage() {
     [mine.data]
   );
 
+  /**
+   * ⚠️ WHAT THE HEADING CLAIMS.
+   *
+   * "En circulation" excludes a revoked card, a suspended one and a lapsed
+   * one — none of those is in anyone's pocket as a working credential. The
+   * total of every card ever issued is a different number, and putting it
+   * under that sentence makes the sentence untrue.
+   */
+  const inCirculation = useMemo(
+    () => (cards.data ?? []).filter((c) => c.status === "VALID" && !c.expired).length,
+    [cards.data]
+  );
+
+  /**
+   * The sessions present in the register.
+   *
+   * Derived from the cards themselves rather than fetched: a session that
+   * produced no card has nothing to read back over, and offering it would be
+   * an empty promise. Newest first — that is the one being worked on.
+   */
+  const sessions = useMemo(() => {
+    const seen = new Map<number, string>();
+    for (const card of cards.data ?? []) {
+      if (card.sessionId != null && !seen.has(card.sessionId)) {
+        seen.set(card.sessionId, card.sessionLabel ?? `Session ${card.sessionId}`);
+      }
+    }
+    return [...seen.entries()]
+      .map(([id, label]) => ({ id, label }))
+      .sort((a, b) => b.id - a.id);
+  }, [cards.data]);
+
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
     return (cards.data ?? []).filter((c) => {
+      if (sessionFilter && String(c.sessionId) !== sessionFilter) return false;
       if (statusFilter && c.status !== statusFilter) return false;
       if (!term) return true;
       return c.holderFullName.toLowerCase().includes(term)
@@ -94,11 +136,14 @@ export default function ReviewerCardsPage() {
           || (c.institution ?? "").toLowerCase().includes(term)
           || (c.categoryLabelFr ?? "").toLowerCase().includes(term);
     });
-  }, [cards.data, search, statusFilter]);
+  }, [cards.data, search, statusFilter, sessionFilter]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
   const safePage = Math.min(page, pageCount);
   const visible = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
+
+  const activeFilters = !!(search || statusFilter || sessionFilter);
+  const currentSession = sessions.find((s) => String(s.id) === sessionFilter);
 
   const withdraw = useMutation({
     mutationFn: (proposalId: number) => withdrawProposal(proposalId),
@@ -131,38 +176,39 @@ export default function ReviewerCardsPage() {
         <div className="pointer-events-none absolute inset-0 opacity-[0.05]"
           style={{ backgroundImage: "repeating-linear-gradient(115deg,#fff 0 1px,transparent 1px 12px)" }}
           aria-hidden="true" />
-
-           <Guilloche
-          className="pointer-events-none absolute -right-20 -top-24 h-[300px] w-[300px] text-white opacity-[0.06]"
+        <Guilloche
+          className="pointer-events-none absolute -right-24 -top-28 h-[220px] w-[220px] text-white opacity-[0.06] sm:-right-20 sm:-top-24 sm:h-[300px] sm:w-[300px]"
           rings={34}
         />
 
-        <div className="relative z-10 flex flex-wrap items-end justify-between gap-6 p-7">
-          <div>
+        <div className="relative z-10 flex flex-wrap items-start justify-between gap-5 px-5 pb-6 pt-6 sm:items-end sm:gap-6 sm:p-7">
+          <div className="min-w-0 flex-1">
             <p className="text-[10.5px] font-bold uppercase tracking-[0.2em] text-[var(--gold-500)]">
               Registre des cartes
             </p>
-            <h2 className="mt-2.5 text-[26px] font-extrabold leading-tight">
+            <h2 className="mt-2.5 text-[22px] font-extrabold leading-tight sm:text-[26px]">
               Cartes de presse en circulation
             </h2>
-            <p className="mt-2 max-w-lg text-[14px] leading-relaxed text-white/65">
+            <p className="mt-2 max-w-lg text-[13px] leading-relaxed text-white/65 sm:text-[14px]">
               La commission peut proposer le retrait d&apos;une carte. Le
               retrait est prononcé par la Haute Autorité.
             </p>
           </div>
 
-          <div className="flex gap-3">
-            <div className="rounded-xl border border-white/15 bg-black/20 px-5 py-3.5 text-center">
-              <p className="text-[26px] font-extrabold leading-none">
-                {cards.isLoading ? "—" : (cards.data?.length ?? 0)}
+          <div className="flex w-full flex-wrap gap-3 sm:w-auto sm:flex-none">
+            <div className="flex-none rounded-xl border border-white/15 bg-black/20 px-5 py-3.5 text-center">
+              {/* ⚠️ NOT cards.data.length. See inCirculation above: a revoked
+                  card is not in circulation, and the heading says so. */}
+              <p className="font-mono text-[26px] font-extrabold leading-none">
+                {cards.isLoading ? "—" : inCirculation}
               </p>
               <p className="mt-1.5 text-[9.5px] font-bold uppercase tracking-[0.14em] text-white/50">
-                cartes
+                en circulation
               </p>
             </div>
             {pendingMine > 0 && (
-              <div className="rounded-xl border border-[var(--gold-500)]/40 bg-black/20 px-5 py-3.5 text-center">
-                <p className="text-[26px] font-extrabold leading-none text-[var(--gold-500)]">
+              <div className="flex-none rounded-xl border border-[var(--gold-500)]/40 bg-black/20 px-5 py-3.5 text-center">
+                <p className="font-mono text-[26px] font-extrabold leading-none text-[var(--gold-500)]">
                   {pendingMine}
                 </p>
                 <p className="mt-1.5 text-[9.5px] font-bold uppercase tracking-[0.14em] text-white/50">
@@ -200,6 +246,8 @@ export default function ReviewerCardsPage() {
                 : { color: "var(--slate)" }}
             >
               {t.label}
+              {/* ⚠️ The TOTAL here, deliberately — this tab holds every card,
+                  including the withdrawn ones a member may need to look up. */}
               <span className="ml-1.5 font-mono text-[10.5px] opacity-60">{t.count}</span>
             </button>
           );
@@ -210,7 +258,7 @@ export default function ReviewerCardsPage() {
       {tab === "register" && (
         <div className="overflow-hidden rounded-2xl border border-[var(--line)] bg-white">
           <div className="flex flex-wrap items-center gap-2.5 border-b border-[var(--line)] px-5 py-3.5">
-            <span className="flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-[var(--green-tint)]">
+            <span className="hidden h-9 w-9 flex-none items-center justify-center rounded-xl bg-[var(--green-tint)] sm:flex">
               <IdCard className="h-4 w-4 text-[var(--green-700)]" />
             </span>
 
@@ -222,9 +270,29 @@ export default function ReviewerCardsPage() {
                 onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                 placeholder="Nom, n° de carte, organe de presse…"
                 aria-label="Rechercher une carte"
-                className="h-9 w-72 rounded-lg border border-[var(--line)] bg-white pl-9 pr-3 text-[13px] outline-none focus-visible:border-[var(--green-500)] focus-visible:ring-2 focus-visible:ring-[var(--green-500)]/25"
+                className="h-9 w-full rounded-lg border border-[var(--line)] bg-white pl-9 pr-3 text-[13px] outline-none focus-visible:border-[var(--green-500)] focus-visible:ring-2 focus-visible:ring-[var(--green-500)]/25 sm:w-64"
               />
             </div>
+
+            {/* ⚠️ Hidden when there is only one session: a select with a single
+                option is furniture. */}
+            {sessions.length > 1 && (
+              <div className="relative">
+                <CalendarRange className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--muted-fg)]" />
+                <select
+                  value={sessionFilter}
+                  onChange={(e) => { setSessionFilter(e.target.value); setPage(1); }}
+                  aria-label="Filtrer par session"
+                  className="h-9 rounded-lg border bg-white pl-9 pr-3 text-[13px] font-semibold outline-none focus-visible:ring-2 focus-visible:ring-[var(--green-500)]/25"
+                  style={{ borderColor: sessionFilter ? "var(--green-500)" : "var(--line)" }}
+                >
+                  <option value="">Toutes les sessions</option>
+                  {sessions.map((s) => (
+                    <option key={s.id} value={String(s.id)}>{s.label}</option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             <select
               value={statusFilter}
@@ -238,16 +306,23 @@ export default function ReviewerCardsPage() {
               ))}
             </select>
 
-            {(search || statusFilter) && (
+            {activeFilters && (
               <button type="button"
-                onClick={() => { setSearch(""); setStatusFilter(""); setPage(1); }}
+                onClick={() => {
+                  setSearch(""); setStatusFilter(""); setSessionFilter(""); setPage(1);
+                }}
                 className="text-[12px] font-semibold text-[var(--muted-fg)] underline underline-offset-2 hover:text-[var(--ink)]">
                 effacer
               </button>
             )}
 
-            <p className="ml-auto text-[12px] text-[var(--slate)]">
+            <p className="ms-auto text-[12px] text-[var(--slate)]">
               {filtered.length} carte{filtered.length > 1 ? "s" : ""}
+              {currentSession && (
+                <span className="hidden sm:inline">
+                  {" "}· {currentSession.label.toLowerCase()}
+                </span>
+              )}
             </p>
           </div>
 
@@ -255,7 +330,7 @@ export default function ReviewerCardsPage() {
             <Skeleton className="m-5 h-32" />
           ) : filtered.length === 0 ? (
             <p className="px-5 py-12 text-center text-[13.5px] text-[var(--slate)]">
-              {search || statusFilter
+              {activeFilters
                 ? "Aucune carte ne correspond à ces critères."
                 : "Aucune carte n'a encore été éditée."}
             </p>
@@ -266,6 +341,7 @@ export default function ReviewerCardsPage() {
                   <CardRow
                     key={card.cardId}
                     card={card}
+                    showSession={!sessionFilter}
                     onPropose={() => setProposingFor(card)}
                   />
                 ))}
@@ -350,14 +426,18 @@ export default function ReviewerCardsPage() {
             <AlertDialogDescription>
               Votre proposition concernant la carte{" "}
               {withdrawing?.cardNumber} ne sera plus examinée.
-              {withdrawing?.warrantsImmediateSuspension && (
-                <span className="mt-2 block font-medium text-[var(--green-700)]">
-                  La suspension conservatoire sera levée et la carte
-                  redeviendra valide.
-                </span>
-              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
+
+          {/* OUTSIDE the description: AlertDialogDescription renders a <p>,
+              and this is a consequence rather than a description of the act. */}
+          {withdrawing?.warrantsImmediateSuspension && (
+            <p className="text-[13px] font-medium leading-relaxed text-[var(--green-700)]">
+              La suspension conservatoire sera levée et la carte redeviendra
+              valide.
+            </p>
+          )}
+
           <AlertDialogFooter>
             <AlertDialogCancel>Conserver</AlertDialogCancel>
             <AlertDialogAction
@@ -376,9 +456,11 @@ export default function ReviewerCardsPage() {
 /* ══ one card in the register ══ */
 
 function CardRow({
-  card, onPropose,
+  card, showSession, onPropose,
 }: {
   card: ReviewerCard;
+  /** Hidden when a session filter is active — every row would repeat it. */
+  showSession: boolean;
   onPropose: () => void;
 }) {
   const tone = STATUS_TONE[card.status] ?? STATUS_TONE.VALID;
@@ -412,6 +494,12 @@ function CardRow({
               {card.institution}
             </span>
           )}
+          {showSession && card.sessionLabel && (
+            <span className="flex items-center gap-1">
+              <CalendarRange className="h-3 w-3 opacity-60" />
+              {card.sessionLabel}
+            </span>
+          )}
           <span className="opacity-60">
             jusqu&apos;au {longFr(card.expiresAt)}
           </span>
@@ -430,7 +518,7 @@ function CardRow({
       {blocked ? (
         <span
           title={card.cannotProposeReasonFr ?? undefined}
-          className="flex-none max-w-[220px] truncate rounded-lg bg-[#f2f5f3] px-2.5 py-1.5 text-[11.5px] text-[var(--muted-fg)]"
+          className="max-w-[220px] flex-none truncate rounded-lg bg-[#f2f5f3] px-2.5 py-1.5 text-[11.5px] text-[var(--muted-fg)]"
         >
           {card.proposedByMe ? "Votre proposition est en cours" : card.cannotProposeReasonFr}
         </span>
@@ -500,7 +588,7 @@ function ProposalRow({
                 ? "Retrait prononcé" : "Réponse de la Haute Autorité"}
               {proposal.decidedByName && <> — {proposal.decidedByName}</>}
             </p>
-            <p className="mt-1 whitespace-pre-wrap text-[13px] leading-relaxed text-[var(--ink)]">
+            <p dir="auto" className="mt-1 whitespace-pre-wrap text-[13px] leading-relaxed text-[var(--ink)]">
               {proposal.decidedNote}
             </p>
           </div>

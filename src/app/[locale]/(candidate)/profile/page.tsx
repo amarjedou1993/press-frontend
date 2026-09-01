@@ -95,14 +95,26 @@ export default function ProfilePage() {
     resolve(e instanceof ApiError ? (e.problem.detail ?? e.message) : undefined)
       ?? tCommon("retry");
 
-  const saveAccount = useMutation({
+    const saveAccount = useMutation({
     mutationFn: (v: AccountValues) =>
       updateAccount({ fullName: v.fullName, phone: v.phone.replace(/\s/g, "") }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: accountKeys.me });
       toast.success(t("contact.savedTitle"));
     },
-    onError: (e) => toast.error(t("saveFailed"), { description: errText(e) }),
+    onError: (e) => {
+      // ⚠️ accountForm, not profileForm. This handler covers the name and the
+      // telephone; an NNI cannot reach it.
+      if (e instanceof ApiError && e.problem.errors) {
+        Object.entries(e.problem.errors).forEach(([field, message]) => {
+          accountForm.setError(field as keyof AccountValues, {
+            type: "server", message,
+          });
+        });
+        return;
+      }
+      toast.error(t("saveFailed"), { description: errText(e) });
+    },
   });
 
   const saveProfile = useMutation({
@@ -129,6 +141,20 @@ export default function ProfilePage() {
         });
         return;
       }
+
+      // ⚠️ THIS IS THE BRANCH THAT WAS MISSING. A failed checksum arrives as
+      // a 400 carrying errors.nni — and without this it became "Validation
+      // failed" in a toast, a sentence naming neither the field nor the
+      // problem.
+      if (e instanceof ApiError && e.problem.errors) {
+        Object.entries(e.problem.errors).forEach(([field, message]) => {
+          profileForm.setError(field as keyof ProfileValues, {
+            type: "server", message,
+          });
+        });
+        return;
+      }
+
       toast.error(t("saveFailed"), { description: errText(e) });
     },
   });
