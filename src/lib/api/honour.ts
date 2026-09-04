@@ -118,3 +118,13 @@ export async function uploadHonourPhoto(
   }
   return res.json();
 }
+
+/**
+ * The holder's photograph, fetched WITH the token.
+ *
+ * ⚠️ Not a URL for <img src>: the endpoint is authenticated, and a browser
+ * does not attach the Authorization header to an image request. The component
+ * fetches it and holds an object URL — see HonourPhoto.
+ */
+export const honourPhotoPath = (id: number) =>
+  `/api/admin/honour-cards/${id}/photo`;

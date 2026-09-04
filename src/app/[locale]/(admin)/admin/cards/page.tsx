@@ -26,6 +26,7 @@ import { useAuthStore } from "@/lib/auth";
 import { ApiError } from "@/lib/api/client";
 import { CardHistoryDialog } from "@/components/card/CardHistoryDialog";
 import { CardStatusActions } from "@/components/card/CardStatusActions";
+import { Guilloche, OfficialSeal } from "@/components/public/patterns";
 
 const STATUS_TONE: Record<string, { bg: string; fg: string }> = {
   VALID:     { bg: "var(--green-tint)", fg: "var(--green-700)" },
@@ -235,7 +236,7 @@ export default function AdminCardsPage() {
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       {/* ══ hero ══ */}
-      <section
+      {/* <section
         className="relative overflow-hidden rounded-2xl text-white shadow-[0_20px_50px_-30px_rgba(11,46,31,.8)]"
         style={{
           background:
@@ -285,7 +286,90 @@ export default function AdminCardsPage() {
           <i className="flex-1 bg-[var(--gold-500)]" />
           <i className="flex-1 bg-[var(--red-500)]" />
         </div>
+      </section> */}
+
+            {/* ══ hero ══════════════════════════════════════════════ */}
+      <section
+        className="relative overflow-hidden rounded-[20px] text-white shadow-[0_24px_60px_-36px_rgba(11,46,31,.9)]"
+        style={{
+          background:
+            "radial-gradient(760px 380px at 84% -30%, rgba(255,215,0,.13), transparent 62%), linear-gradient(155deg, #0b2e1f 0%, #0e3d29 58%, #0a2b1d 100%)",
+        }}
+      >
+        <div className="pointer-events-none absolute inset-0 opacity-[0.045]"
+          style={{ backgroundImage: "repeating-linear-gradient(112deg,#fff 0 1px,transparent 1px 13px)" }}
+          aria-hidden="true" />
+        {/* Smaller and further out on a phone: at 300px it sat behind the
+            heading rather than behind the corner. */}
+        <Guilloche
+          className="pointer-events-none absolute -right-24 -top-28 h-[220px] w-[220px] text-white sm:-right-20 sm:-top-24 sm:h-[300px] sm:w-[300px]"
+          rings={34}
+          opacity={0.1}
+        />
+
+        {/* items-start below sm, items-end above: once the two halves wrap
+            onto separate rows, items-end has nothing to align against. */}
+        <div className="relative z-10 flex flex-wrap items-start justify-between gap-5 px-5 pb-6 pt-6 sm:items-end sm:gap-6 sm:px-7 sm:pb-7 sm:pt-7">
+
+          <div className="flex min-w-0 flex-1 items-start gap-4 sm:gap-5">
+            {/* ⚠️ Hidden below sm. Fifty-four pixels of decoration is a fifth
+                of a 375px screen, taken from the one element that has to be
+                readable.
+
+                ⚠️ AND THE id IS UNIQUE PER PAGE. OfficialSeal renders an SVG
+                <defs> keyed by it; two seals sharing an id on one document
+                make the second inherit the first's gradient. */}
+            <span className="relative mt-1 hidden h-[54px] w-[54px] flex-none items-center justify-center sm:flex">
+              <span className="absolute inset-0 rounded-full"
+                style={{ background: "radial-gradient(circle, rgba(255,215,0,.20), transparent 70%)" }}
+                aria-hidden="true" />
+              <OfficialSeal className="relative h-full w-full"
+                color="var(--gold-500)" id="admin-cards-seal" />
+            </span>
+
+            <div className="min-w-0">
+              <p className="text-[9.5px] font-bold uppercase tracking-[0.24em] text-[var(--gold-500)]">
+                Édition des cartes
+              </p>
+              <h2 className="engraved-dark mt-2 text-[22px] font-extrabold leading-tight tracking-tight sm:text-[27px] sm:leading-none">
+                Cartes de presse
+              </h2>
+              <p className="mt-2.5 max-w-md text-[13px] leading-relaxed text-white/50 sm:text-[13.5px]">
+                Les candidatures acceptées par la commission donnent lieu à une
+                carte éditée par le Ministère.
+              </p>
+            </div>
+          </div>
+
+          {/* ⚠️ NOT flex-none. It has to be allowed to shrink and wrap, or the
+              two counters run past the panel's edge on a phone. */}
+          <div className="flex w-full flex-wrap items-stretch gap-3 sm:w-auto sm:flex-none sm:items-end">
+            <div className="flex flex-1 flex-col justify-center rounded-xl border border-white/15 bg-black/25 px-5 py-3.5 text-center sm:flex-none">
+              <p className="font-mono text-[28px] font-extrabold leading-none">
+                {issuable.isLoading ? "—" : ready.length}
+              </p>
+              <p className="mt-1.5 text-[9px] font-bold uppercase tracking-[0.14em] text-white/45">
+                à éditer
+              </p>
+            </div>
+            <div className="flex flex-1 flex-col justify-center rounded-xl border border-white/15 bg-black/25 px-5 py-3.5 text-center sm:flex-none">
+              <p className="font-mono text-[28px] font-extrabold leading-none">
+                {registry.isLoading ? "—" : (registry.data?.length ?? 0)}
+              </p>
+              <p className="mt-1.5 text-[9px] font-bold uppercase tracking-[0.14em] text-white/45">
+                éditées
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex h-1.5" aria-hidden="true">
+          <i className="flex-1 bg-[var(--green-500)]" />
+          <i className="flex-1 bg-[var(--gold-500)]" />
+          <i className="flex-1 bg-[var(--red-500)]" />
+        </div>
       </section>
+
 
       {/* ══ the batch report ══ */}
       {result && (

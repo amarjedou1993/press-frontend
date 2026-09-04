@@ -10,6 +10,7 @@ import { PaginationBar } from "@/components/ui/pagination-bar";
 import { PoolStats } from "@/components/reviewer/PoolStats";
 import { DossierCard } from "@/components/reviewer/DossierCard";
 import { DossierRow } from "@/components/reviewer/DossierRow";
+import { Guilloche, OfficialSeal } from "@/components/public/patterns";
 import {
   PoolFilters, DEFAULT_FILTERS,
   type PoolFilterState, type Density, type UrgencyBand,
@@ -193,7 +194,7 @@ export default function ReviewerHomePage() {
   return (
     <div className="mx-auto max-w-6xl space-y-5">
       {/* ── hero ── */}
-      <section
+      {/* <section
         className="relative overflow-hidden rounded-2xl text-white shadow-[0_20px_50px_-30px_rgba(11,46,31,.8)]"
         style={{
           background:
@@ -241,6 +242,76 @@ export default function ReviewerHomePage() {
                 {loading ? "—" : poolItems.length}
               </p>
               <p className="mt-1.5 text-[9.5px] font-bold uppercase tracking-[0.14em] text-white/50">
+                en attente
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex h-1.5" aria-hidden="true">
+          <i className="flex-1 bg-[var(--green-500)]" />
+          <i className="flex-1 bg-[var(--gold-500)]" />
+          <i className="flex-1 bg-[var(--red-500)]" />
+        </div>
+      </section> */}
+
+            <section
+        className="relative overflow-hidden rounded-[20px] text-white shadow-[0_24px_60px_-36px_rgba(11,46,31,.9)]"
+        style={{
+          background:
+            "radial-gradient(760px 380px at 84% -30%, rgba(255,215,0,.13), transparent 62%), linear-gradient(155deg, #0b2e1f 0%, #0e3d29 58%, #0a2b1d 100%)",
+        }}
+      >
+        <div className="pointer-events-none absolute inset-0 opacity-[0.045]"
+          style={{ backgroundImage: "repeating-linear-gradient(112deg,#fff 0 1px,transparent 1px 13px)" }}
+          aria-hidden="true" />
+        {/* ⚠️ L'ellipse inline est remplacée par Guilloche — c'était la même
+            figure écrite deux fois, et seule celle du composant a reçu les
+            corrections responsives. */}
+        <Guilloche
+          className="pointer-events-none absolute -right-24 -top-28 h-[220px] w-[220px] text-white sm:-right-20 sm:-top-24 sm:h-[300px] sm:w-[300px]"
+          rings={34}
+          opacity={0.1}
+        />
+
+        <div className="relative z-10 flex flex-wrap items-start justify-between gap-5 px-5 pb-6 pt-6 sm:items-end sm:gap-6 sm:px-7 sm:pb-7 sm:pt-7">
+          <div className="flex min-w-0 flex-1 items-start gap-4 sm:gap-5">
+            <span className="relative mt-1 hidden h-[54px] w-[54px] flex-none items-center justify-center sm:flex">
+              <span className="absolute inset-0 rounded-full"
+                style={{ background: "radial-gradient(circle, rgba(255,215,0,.20), transparent 70%)" }}
+                aria-hidden="true" />
+              <OfficialSeal className="relative h-full w-full"
+                color="var(--gold-500)" id="reviewer-pool-seal" />
+            </span>
+
+            <div className="min-w-0">
+              <p className="text-[9.5px] font-bold uppercase tracking-[0.24em] text-[var(--gold-500)]">
+                Commission d&apos;examen
+              </p>
+              <h2 className="engraved-dark mt-2 text-[22px] font-extrabold leading-tight tracking-tight sm:text-[27px] sm:leading-none">
+                Examen des candidatures
+              </h2>
+              <p className="mt-2.5 max-w-md text-[13px] leading-relaxed text-white/50 sm:text-[13.5px]">
+                Prenez un dossier en charge pour l&apos;examiner. Vous en serez
+                seul responsable jusqu&apos;à votre décision.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex w-full flex-wrap items-stretch gap-3 sm:w-auto sm:flex-none sm:items-end">
+            <div className="flex flex-1 flex-col justify-center rounded-xl border border-white/15 bg-black/25 px-5 py-3.5 text-center sm:flex-none">
+              <p className="font-mono text-[28px] font-extrabold leading-none">
+                {loading ? "—" : myItems.length}
+              </p>
+              <p className="mt-1.5 text-[9px] font-bold uppercase tracking-[0.14em] text-white/45">
+                mes dossiers
+              </p>
+            </div>
+            <div className="flex flex-1 flex-col justify-center rounded-xl border border-white/15 bg-black/25 px-5 py-3.5 text-center sm:flex-none">
+              <p className="font-mono text-[28px] font-extrabold leading-none">
+                {loading ? "—" : poolItems.length}
+              </p>
+              <p className="mt-1.5 text-[9px] font-bold uppercase tracking-[0.14em] text-white/45">
                 en attente
               </p>
             </div>
