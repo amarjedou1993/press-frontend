@@ -168,7 +168,7 @@ export default function DashboardPage() {
             aria-hidden="true"
           />
 
-          <div className="relative z-10 p-7">
+          <div className="relative z-10 p-5 sm:p-7">
             <div className="flex flex-wrap items-start justify-between gap-5">
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2.5">
@@ -185,7 +185,7 @@ export default function DashboardPage() {
                 {current ? (
                   <>
                     <div className="mt-3 flex flex-wrap items-center gap-3">
-                      <h2 className="engraved-dark text-[27px] font-extrabold leading-tight tracking-tight">
+                      <h2 className="engraved-dark text-[22px] font-extrabold leading-tight tracking-tight sm:text-[27px]">
                         {th(`${heroKey}.headline`)}
                       </h2>
                       <span dir="ltr" className="font-mono text-[11.5px] text-white/35">
@@ -198,7 +198,7 @@ export default function DashboardPage() {
                   </>
                 ) : openSession ? (
                   <>
-                    <h2 className="engraved-dark mt-3 text-[27px] font-extrabold leading-tight tracking-tight">
+                    <h2 className="engraved-dark mt-3 text-[22px] font-extrabold leading-tight tracking-tight sm:text-[27px]">
                       {t("sessionOpenTitle")}
                     </h2>
                     <p className="mt-2.5 max-w-lg text-[14px] leading-relaxed text-white/60">
@@ -210,7 +210,7 @@ export default function DashboardPage() {
                   </>
                 ) : (
                   <>
-                    <h2 className="engraved-dark mt-3 text-[27px] font-extrabold leading-tight tracking-tight">
+                    <h2 className="engraved-dark mt-3 text-[22px] font-extrabold leading-tight tracking-tight sm:text-[27px]">
                       {t("noSessionTitle")}
                     </h2>
                     <p className="mt-2.5 max-w-lg text-[14px] leading-relaxed text-white/60">
@@ -222,22 +222,27 @@ export default function DashboardPage() {
 
               {/* THE DEADLINE — shown to whoever can still act on it. */}
               {showCountdown && (
+                /* ⚠️ A FULL-WIDTH BAND ON A PHONE.
+                   As flex-none beside the heading it held about 95px and left
+                   the headline — which is the whole message of this page — in
+                   a column three words wide. Below sm it takes its own row
+                   and reads horizontally. */
                 <div
-                  className="flex-none rounded-xl px-5 py-4 text-center"
+                  className="flex w-full items-center gap-3 rounded-xl px-4 py-3 sm:w-auto sm:flex-none sm:flex-col sm:gap-0 sm:px-5 sm:py-4 sm:text-center"
                   style={{
                     background: urgent ? "rgba(208,28,31,.20)" : "rgba(0,0,0,.22)",
                     boxShadow: `inset 0 0 0 1px ${urgent ? "rgba(208,28,31,.5)" : "rgba(255,255,255,.14)"}`,
                   }}
                 >
-                  <p className="font-mono text-[32px] font-extrabold leading-none"
+                  <p className="font-mono text-[26px] font-extrabold leading-none sm:text-[32px]"
                     style={{ color: urgent ? "#ff9b9d" : "#fff" }}>
                     {left}
                   </p>
-                  <p className="mt-1.5 text-[9px] font-bold uppercase tracking-[0.14em] text-white/50">
+                  <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-white/50 sm:mt-1.5">
                     {t("daysRemaining", { count: left! })}
                   </p>
                   {isDraft && (
-                    <p className="mt-2 border-t border-white/15 pt-2 text-[9px] font-semibold uppercase tracking-wide text-white/40">
+                    <p className="ms-auto border-s border-white/15 ps-3 text-[9px] font-semibold uppercase tracking-wide text-white/40 sm:ms-0 sm:mt-2 sm:border-s-0 sm:border-t sm:ps-0 sm:pt-2">
                       {t("toSubmit")}
                     </p>
                   )}
@@ -250,14 +255,16 @@ export default function DashboardPage() {
                 journey, in green, beneath a withdrawal notice. The dossier did
                 complete; saying so here would only contradict the headline. */}
             {current && !cardOverride && (
-              <div className="mt-7 rounded-xl bg-black/25 px-5 py-5">
+              /* px-3 below sm: DossierProgress needs every pixel it can get,
+                 and 40px of container padding is 40px off four columns. */
+              <div className="mt-6 rounded-xl bg-black/25 px-3 py-4 sm:mt-7 sm:px-5 sm:py-5">
                 <DossierProgress status={current.status} />
               </div>
             )}
 
             {/* WHAT IS BLOCKING SUBMISSION — a quantity, not an exhortation. */}
             {isDraft && !readiness.isLoading && (
-              <div className="mt-5 flex flex-wrap items-center gap-3 rounded-xl border border-white/12 bg-black/25 px-5 py-3.5">
+              <div className="mt-5 flex flex-wrap items-center gap-3 rounded-xl border border-white/12 bg-black/25 px-4 py-3 sm:px-5 sm:py-3.5">
                 {blockers.length === 0 ? (
                   <>
                     <Check className="h-4 w-4 flex-none text-[var(--green-500)]" />
@@ -283,7 +290,10 @@ export default function DashboardPage() {
               {current ? (
                 <Link
                   href={routes.candidate.application}
-                  className="group inline-flex items-center gap-2 rounded-xl px-6 py-3 text-[14px] font-extrabold transition-all hover:-translate-y-0.5"
+                  /* ⚠️ Full width and centred below sm. This is the page's
+                     single call to action, and an inline-flex pill sat at the
+                     reading edge with the rest of the row empty. */
+                  className="group inline-flex w-full items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-[14px] font-extrabold transition-all hover:-translate-y-0.5 sm:w-auto sm:py-3"
                   style={{
                     background: cardOverride
                       ? (CARD_CTA_SOLID[cardOverride] ?? "#fff")
@@ -299,7 +309,7 @@ export default function DashboardPage() {
               ) : openSession ? (
                 <Link
                   href={routes.candidate.newApplication}
-                  className="group inline-flex items-center gap-2 rounded-xl bg-[var(--gold-500)] px-6 py-3 text-[14px] font-extrabold text-[var(--green-900)] shadow-[0_12px_28px_-14px_rgba(255,215,0,.8)] transition-all hover:-translate-y-0.5 hover:bg-[#ffe14d]"
+                  className="group inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--gold-500)] px-6 py-3.5 text-[14px] font-extrabold text-[var(--green-900)] shadow-[0_12px_28px_-14px_rgba(255,215,0,.8)] transition-all hover:-translate-y-0.5 hover:bg-[#ffe14d] sm:w-auto sm:py-3"
                 >
                   {t("apply")}
                   <ArrowRight className="rtl-flip h-4 w-4" />
@@ -308,8 +318,9 @@ export default function DashboardPage() {
             </div>
           </div>
 
+          {/* Hidden below sm: fourteen repetitions at 375px are a grey smear. */}
           <MicroprintRule
-            className="relative z-10 pb-1 text-center text-white opacity-[0.12]"
+            className="relative z-10 hidden pb-1 text-center text-white opacity-[0.12] sm:block"
             repeat={14}
           />
           <div className="flex h-1.5" aria-hidden="true">
@@ -325,7 +336,7 @@ export default function DashboardPage() {
           ══════════════════════════════════════════════════════════ */}
       {accepted && me.data && (
         <section className="overflow-hidden rounded-[20px] border border-[var(--line)] bg-white">
-          <div className="flex items-center gap-2.5 border-b border-[var(--line)] px-6 py-4">
+          <div className="flex items-center gap-2.5 border-b border-[var(--line)] px-5 py-4 sm:px-6">
             <OfficialSeal
               className="h-5 w-5 flex-none"
               color={cardWithheld ? "var(--red-700)" : "var(--green-700)"}
@@ -345,7 +356,7 @@ export default function DashboardPage() {
           </div>
 
           {/* THE CARD BESIDE ITS DETAILS, not filling the page. */}
-          <div className="grid gap-6 p-6 md:grid-cols-[minmax(0,340px)_1fr] md:items-start">
+          <div className="grid gap-5 p-5 sm:gap-6 sm:p-6 md:grid-cols-[minmax(0,340px)_1fr] md:items-start">
             <IssuedCardPreview
               fullName={me.data.fullName}
               nni={me.data.profile?.nni ?? me.data.profile?.passportNo}
@@ -447,10 +458,10 @@ export default function DashboardPage() {
       {/* ══════════════════════════════════════════════════════════
           PREPARATION — two real destinations, not one and a notice.
           ══════════════════════════════════════════════════════════ */}
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-3.5 sm:grid-cols-2 sm:gap-4">
         <Link
           href={routes.candidate.profile}
-          className="group relative min-w-0 overflow-hidden rounded-2xl border border-[var(--line)] bg-white p-6 transition-all hover:-translate-y-0.5 hover:border-[var(--green-500)]/40 hover:shadow-[0_16px_36px_-24px_rgba(11,46,31,.5)]"
+          className="group relative min-w-0 overflow-hidden rounded-2xl border border-[var(--line)] bg-white p-5 transition-all hover:-translate-y-0.5 hover:border-[var(--green-500)]/40 hover:shadow-[0_16px_36px_-24px_rgba(11,46,31,.5)] sm:p-6"
         >
           <Guilloche
             className="rtl-mirror pointer-events-none absolute -right-16 -top-16 h-44 w-44 text-[var(--green-900)] opacity-[0.03]"
@@ -486,7 +497,7 @@ export default function DashboardPage() {
 
         <Link
           href={current ? routes.candidate.application : routes.candidate.newApplication}
-          className="group relative min-w-0 overflow-hidden rounded-2xl border border-[var(--line)] bg-white p-6 transition-all hover:-translate-y-0.5 hover:border-[var(--green-500)]/40 hover:shadow-[0_16px_36px_-24px_rgba(11,46,31,.5)]"
+          className="group relative min-w-0 overflow-hidden rounded-2xl border border-[var(--line)] bg-white p-5 transition-all hover:-translate-y-0.5 hover:border-[var(--green-500)]/40 hover:shadow-[0_16px_36px_-24px_rgba(11,46,31,.5)] sm:p-6"
         >
           <Guilloche
             className="rtl-mirror pointer-events-none absolute -right-16 -top-16 h-44 w-44 text-[var(--green-900)] opacity-[0.03]"
@@ -520,7 +531,7 @@ export default function DashboardPage() {
 
       {/* ══ previous applications ══ */}
       {applications.data && applications.data.length > 1 && (
-        <div className="rounded-2xl border border-[var(--line)] bg-white p-6">
+        <div className="rounded-2xl border border-[var(--line)] bg-white p-5 sm:p-6">
           <div className="flex items-center gap-3">
             <CalendarClock className="h-3.5 w-3.5 flex-none text-[var(--green-700)]" />
             <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--green-700)]">
@@ -530,7 +541,9 @@ export default function DashboardPage() {
           </div>
           <ul className="mt-3 divide-y divide-[var(--line)]">
             {applications.data.slice(1).map((a) => (
-              <li key={a.id} className="flex items-center justify-between gap-4 py-3">
+              /* gap-3 and wrapping: a status pill beside a truncated title
+                 left about 120px for the dossier's own name. */
+              <li key={a.id} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 py-3 sm:gap-x-4">
                 <div className="min-w-0">
                   <p className="text-[13.5px] font-semibold text-[var(--ink)]">
                     {t("dossierNo", { id: a.id })}
@@ -572,7 +585,7 @@ function Detail({ label, value, mono = false, auto = false }: {
   label: string; value?: string | null; mono?: boolean; auto?: boolean;
 }) {
   return (
-    <div className="flex items-baseline justify-between gap-4 px-4 py-2.5">
+    <div className="flex items-baseline justify-between gap-3 px-4 py-2.5 sm:gap-4">
       <dt className="flex-none text-[11.5px] font-semibold text-[var(--slate)]">
         {label}
       </dt>

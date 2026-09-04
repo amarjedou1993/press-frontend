@@ -207,11 +207,11 @@ export default function ProfilePage() {
           aria-hidden="true"
         />
         <Guilloche
-          className="rtl-mirror pointer-events-none absolute -right-24 -top-28 h-[330px] w-[330px] text-white opacity-[0.06]"
+          className="rtl-mirror pointer-events-none absolute -right-28 -top-32 h-[240px] w-[240px] text-white opacity-[0.06] sm:-right-24 sm:-top-28 sm:h-[330px] sm:w-[330px]"
           rings={34}
         />
 
-        <div className="relative z-10 p-7">
+        <div className="relative z-10 p-5 sm:p-7">
           <div className="flex flex-wrap items-start justify-between gap-5">
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2.5">
@@ -225,10 +225,10 @@ export default function ProfilePage() {
                 </p>
               </div>
 
-              <h2 className="engraved-dark mt-3 text-[27px] font-extrabold leading-tight tracking-tight">
+              <h2 className="engraved-dark mt-3 text-[22px] font-extrabold leading-tight tracking-tight sm:text-[27px]">
                 {t("title")}
               </h2>
-              <p className="mt-2.5 max-w-lg text-[14px] leading-relaxed text-white/60">
+              <p className="mt-2.5 max-w-lg text-[13px] leading-relaxed text-white/60 sm:text-[14px]">
                 {t("lede")}
               </p>
             </div>
@@ -274,8 +274,11 @@ export default function ProfilePage() {
           </div>
         </div>
 
+        {/* ⚠️ Hidden below sm: at 375px fourteen repetitions of the microprint
+            legend compress into a grey smear, which is decoration failing at
+            being decoration. */}
         <MicroprintRule
-          className="relative z-10 pb-1 text-center text-white opacity-[0.12]"
+          className="relative z-10 hidden pb-1 text-center text-white opacity-[0.12] sm:block"
           repeat={14}
         />
         <div className="flex h-1.5" aria-hidden="true">
@@ -294,7 +297,7 @@ export default function ProfilePage() {
             onSubmit={accountForm.handleSubmit((v) => saveAccount.mutate(v))}
             className="overflow-hidden rounded-2xl border border-[var(--line)] bg-white"
           >
-            <div className="flex items-center gap-3 border-b border-[var(--line)] px-6 py-4">
+            <div className="flex items-center gap-3 border-b border-[var(--line)] px-5 py-4 sm:px-6">
               <span className="flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-[var(--green-tint)]">
                 <Phone className="h-4 w-4 text-[var(--green-700)]" />
               </span>
@@ -309,7 +312,7 @@ export default function ProfilePage() {
               <span className="foil-rule hidden h-px flex-1 opacity-35 sm:block" aria-hidden="true" />
             </div>
 
-            <div className="grid gap-4 p-6 sm:grid-cols-2">
+            <div className="grid gap-4 p-5 sm:grid-cols-2 sm:p-6">
               <Controller
                 name="fullName"
                 control={accountForm.control}
@@ -345,8 +348,12 @@ export default function ProfilePage() {
               />
             </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--line)] bg-[#fbfcfb] px-6 py-3.5">
-              <p className="flex min-w-0 items-center gap-2 text-[12.5px] text-[var(--slate)]">
+            {/* ⚠️ The address takes the full width below sm and the button its
+                own line. Side by side, a long address was truncated to about
+                twelve characters — and this line exists so a candidate can
+                CHECK the address they will receive their decision at. */}
+            <div className="flex flex-wrap items-center gap-3 border-t border-[var(--line)] bg-[#fbfcfb] px-5 py-3.5 sm:justify-between sm:px-6">
+              <p className="flex w-full min-w-0 items-center gap-2 text-[12.5px] text-[var(--slate)] sm:w-auto">
                 <Mail className="h-3.5 w-3.5 flex-none text-[var(--muted-fg)]" />
                 {/* dir="ltr": an address reorders around its @ and its dot. */}
                 <span dir="ltr" className="truncate">{me.data?.email}</span>
@@ -356,7 +363,8 @@ export default function ProfilePage() {
                   </span>
                 )}
               </p>
-              <Button type="submit" size="sm" disabled={saveAccount.isPending}>
+              <Button type="submit" size="sm" className="w-full sm:w-auto"
+                disabled={saveAccount.isPending}>
                 {saveAccount.isPending ? tCommon("saving") : tCommon("save")}
               </Button>
             </div>
@@ -367,7 +375,7 @@ export default function ProfilePage() {
             onSubmit={profileForm.handleSubmit((v) => saveProfile.mutate(v))}
             className="overflow-hidden rounded-2xl border border-[var(--line)] bg-white"
           >
-            <div className="flex items-center gap-3 border-b border-[var(--line)] px-6 py-4">
+            <div className="flex items-center gap-3 border-b border-[var(--line)] px-5 py-4 sm:px-6">
               <span className="flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-[var(--green-tint)]">
                 <IdCard className="h-4 w-4 text-[var(--green-700)]" />
               </span>
@@ -382,7 +390,7 @@ export default function ProfilePage() {
               <span className="foil-rule hidden h-px flex-1 opacity-35 sm:block" aria-hidden="true" />
             </div>
 
-            <div className="p-6">
+            <div className="p-5 sm:p-6">
               <p className="flex items-start gap-2 rounded-xl bg-[var(--green-tint)] px-4 py-3 text-[12.5px] leading-relaxed text-[var(--green-700)]">
                 <ShieldCheck className="mt-0.5 h-3.5 w-3.5 flex-none" />
                 <span>
@@ -478,8 +486,8 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            <div className="flex justify-end border-t border-[var(--line)] bg-[#fbfcfb] px-6 py-3.5">
-              <Button type="submit" disabled={saveProfile.isPending}>
+            <div className="flex border-t border-[var(--line)] bg-[#fbfcfb] px-5 py-3.5 sm:justify-end sm:px-6">
+              <Button type="submit" className="w-full sm:w-auto" disabled={saveProfile.isPending}>
                 {saveProfile.isPending ? tCommon("saving") : t("identity.save")}
               </Button>
             </div>
@@ -502,7 +510,7 @@ export default function ProfilePage() {
               PhotoUpload locks itself until then and says so, rather than
               failing with a server error. */}
           <div className="overflow-hidden rounded-2xl border border-[var(--line)] bg-white">
-            <div className="flex items-center gap-2.5 border-b border-[var(--line)] px-5 py-3.5">
+            <div className="flex items-center gap-2.5 border-b border-[var(--line)] px-4 py-3.5 sm:px-5">
               <Camera className="h-4 w-4 flex-none text-[var(--green-700)]" />
               <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--green-700)]">
                 {t("photoTitle")}
@@ -513,14 +521,17 @@ export default function ProfilePage() {
               )}
             </div>
 
-            <div className="p-5">
+            {/* ⚠️ No padding below sm. PhotoUpload draws its own card with its
+                own p-5; nesting them left the photograph frame inside 40px of
+                combined padding on a 327px screen. */}
+            <div className="p-0 sm:p-5">
               <PhotoUpload profileExists={!!me.data?.profile} />
             </div>
           </div>
 
           {/* ── the card ── */}
           <div className="overflow-hidden rounded-2xl border border-[var(--line)] bg-white">
-            <div className="flex items-center gap-2.5 border-b border-[var(--line)] px-5 py-3.5">
+            <div className="flex items-center gap-2.5 border-b border-[var(--line)] px-4 py-3.5 sm:px-5">
               <OfficialSeal
                 className="h-4 w-4 flex-none"
                 color="var(--green-700)"
@@ -532,7 +543,7 @@ export default function ProfilePage() {
               <span className="foil-rule h-px flex-1 opacity-35" aria-hidden="true" />
             </div>
 
-            <div className="p-5">
+            <div className="p-4 sm:p-5">
               {/* THE SHARED SPECIMEN — the same component the dashboard and
                   the dossier render, so all three show the card that will
                   actually be printed.

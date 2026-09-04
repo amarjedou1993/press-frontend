@@ -208,16 +208,16 @@ export function PhotoUpload({
   const RULES = ["ratio", "resolution", "background", "face", "recent"] as const;
 
   return (
-    <div className="rounded-2xl border border-[var(--line)] bg-white p-6">
+    <div className="rounded-2xl border border-[var(--line)] bg-white p-5 sm:p-6">
       <div className="flex items-center gap-3">
         <span className="flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-[var(--green-tint)]">
           <Camera className="h-4 w-4 text-[var(--green-700)]" />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-[14px] font-extrabold text-[var(--green-900)]">
+          <p className="text-[13.5px] font-extrabold leading-snug text-[var(--green-900)] sm:text-[14px]">
             {t("title")}
           </p>
-          <p className="text-[12px] text-[var(--slate)]">{t("subtitle")}</p>
+          <p className="text-[12px] leading-snug text-[var(--slate)]">{t("subtitle")}</p>
         </div>
         {has && (
           <span className="inline-flex flex-none items-center gap-1 rounded-full bg-[var(--green-tint)] px-2.5 py-1 text-[10.5px] font-bold text-[var(--green-700)]">
@@ -234,11 +234,26 @@ export function PhotoUpload({
         </p>
       )}
 
-      <div className="mt-5 flex flex-wrap gap-6">
-        {/* ── frame + actions ── */}
-        <div className="flex-none">
+      <div className="mt-5 flex flex-wrap gap-5 sm:gap-6">
+        {/*
+          ── frame + actions ──
+
+          ⚠️ SIDE BY SIDE ON A PHONE, STACKED ABOVE IT.
+
+          The frame is 132px and the requirements column needs 240, so at
+          375px the column wraps to its own line — leaving 170px of empty
+          space beside the portrait, with two icon-only buttons squeezed
+          underneath it.
+
+          Putting the actions in that space costs nothing and buys room for
+          their LABELS, which matters more than it sounds: `title` never
+          appears on a touch screen, so on a phone those two buttons were an
+          up-arrow and a bin, unexplained, on the control a candidate uses
+          once and must get right.
+        */}
+        <div className="flex w-full items-start gap-3 sm:block sm:w-auto sm:flex-none">
           <div
-            className="relative aspect-[3/4] w-[132px] overflow-hidden rounded-xl border-2"
+            className="relative aspect-[3/4] w-[124px] flex-none overflow-hidden rounded-xl border-2 sm:w-[132px]"
             style={{
               borderColor: has ? "var(--green-500)" : "var(--line)",
               background: "var(--green-tint)",
@@ -263,17 +278,21 @@ export function PhotoUpload({
             )}
           </div>
 
-          {/* icon actions */}
-          <div className="mt-3 flex w-[132px] items-center justify-center gap-2">
+          {/* Stacked and labelled beside the frame on a phone; a compact
+              icon row underneath it from sm. */}
+          <div className="flex min-w-0 flex-1 flex-col gap-2 sm:mt-3 sm:w-[132px] sm:flex-row sm:items-center sm:justify-center">
             <button
               type="button"
               onClick={() => input.current?.click()}
               disabled={busy || !profileExists}
               title={has ? t("replace") : t("add")}
               aria-label={has ? t("replace") : t("add")}
-              className="inline-flex h-9 flex-1 items-center justify-center rounded-lg border border-[var(--line)] bg-white text-[var(--green-700)] transition-colors hover:border-[var(--green-500)] hover:bg-[var(--green-tint)] disabled:cursor-not-allowed disabled:opacity-45"
+              className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-[var(--line)] bg-white px-3 text-[13px] font-semibold text-[var(--green-700)] transition-colors hover:border-[var(--green-500)] hover:bg-[var(--green-tint)] disabled:cursor-not-allowed disabled:opacity-45 sm:h-9 sm:flex-1 sm:px-0"
             >
-              {has ? <RefreshCw className="h-4 w-4" /> : <Upload className="h-4 w-4" />}
+              {has ? <RefreshCw className="h-4 w-4 flex-none" /> : <Upload className="h-4 w-4 flex-none" />}
+              {/* The label exists only where there is room for it — and that
+                  is the narrow screen, which is the one that needed it. */}
+              <span className="truncate sm:hidden">{has ? t("replace") : t("add")}</span>
             </button>
 
             {has && (
@@ -283,9 +302,10 @@ export function PhotoUpload({
                 disabled={busy}
                 title={t("delete")}
                 aria-label={t("delete")}
-                className="inline-flex h-9 w-9 flex-none items-center justify-center rounded-lg border border-[var(--line)] bg-white text-[var(--muted-fg)] transition-colors hover:border-[var(--red-500)] hover:bg-[var(--red-tint)] hover:text-[var(--red-500)] disabled:opacity-45"
+                className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-[var(--line)] bg-white px-3 text-[13px] font-semibold text-[var(--muted-fg)] transition-colors hover:border-[var(--red-500)] hover:bg-[var(--red-tint)] hover:text-[var(--red-500)] disabled:opacity-45 sm:h-9 sm:w-9 sm:flex-none sm:px-0"
               >
-                <Trash2 className="h-4 w-4" />
+                <Trash2 className="h-4 w-4 flex-none" />
+                <span className="truncate sm:hidden">{t("delete")}</span>
               </button>
             )}
           </div>
@@ -295,7 +315,10 @@ export function PhotoUpload({
         </div>
 
         {/* ── requirements ── */}
-        <div className="min-w-[240px] flex-1">
+        {/* ⚠️ min-w only from sm. Below it the column is already on its own
+            line, and a 240px floor inside a 303px card is a needless
+            constraint waiting to overflow on a narrower phone. */}
+        <div className="w-full flex-1 sm:min-w-[240px]">
           <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--green-700)]">
             {t("requirements")}
           </p>
@@ -309,16 +332,18 @@ export function PhotoUpload({
           </ul>
 
           {error && (
-            <p dir="auto" className="mt-3 flex items-start gap-2 rounded-lg bg-[var(--red-tint)] px-3 py-2 text-[12.5px] font-medium text-[var(--red-700)]">
+            <p dir="auto" className="mt-3 flex items-start gap-2 rounded-lg bg-[var(--red-tint)] px-3 py-2 text-[12.5px] font-medium leading-relaxed text-[var(--red-700)]">
               <AlertCircle className="mt-0.5 h-3.5 w-3.5 flex-none" />
-              {error}
+              {/* min-w-0 so a long sentence wraps inside the flex row rather
+                  than pushing the icon out of the panel. */}
+              <span className="min-w-0 break-words">{error}</span>
             </p>
           )}
 
           {status.data?.ageing && !error && (
-            <p className="mt-3 flex items-start gap-2 rounded-lg bg-[var(--gold-tint)] px-3 py-2 text-[12.5px] text-[var(--gold-700)]">
+            <p className="mt-3 flex items-start gap-2 rounded-lg bg-[var(--gold-tint)] px-3 py-2 text-[12.5px] leading-relaxed text-[var(--gold-700)]">
               <AlertCircle className="mt-0.5 h-3.5 w-3.5 flex-none" />
-              {t("ageing")}
+              <span className="min-w-0">{t("ageing")}</span>
             </p>
           )}
         </div>
@@ -333,9 +358,9 @@ export function PhotoUpload({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+            <AlertDialogCancel className="w-full sm:w-auto">{t("cancel")}</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-[var(--red-500)] text-white hover:bg-[var(--red-700)]"
+              className="w-full bg-[var(--red-500)] text-white hover:bg-[var(--red-700)] sm:w-auto"
               onClick={() => remove.mutate()}
               disabled={remove.isPending}
             >

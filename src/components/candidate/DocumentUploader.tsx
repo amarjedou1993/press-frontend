@@ -224,14 +224,30 @@ export function DocumentUploader({
 
   return (
     <Dialog open={open} onOpenChange={(o) => (o ? onOpenChange(true) : close())}>
-      <DialogContent className="sm:max-w-[520px]">
-        <DialogHeader>
+      {/*
+        ───────────────────────────────────────────────────────────────────
+        ⚠️ A SCROLLING BODY, WHICH THIS DIALOG DID NOT HAVE.
+
+        It can hold up to ten link fields, and it had no height limit at all.
+        Three fields plus a keyboard already exceeds a phone's visual
+        viewport — and what falls off the bottom is the footer, so the
+        candidate fills in their links and finds no way to submit them.
+
+        The header and the footer are pinned; only the middle scrolls. Same
+        shape as ReplaceDocumentDialog, deliberately: two dialogs doing the
+        same job should behave the same way.
+        ───────────────────────────────────────────────────────────────────
+      */}
+      <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-[520px]">
+        <DialogHeader className="flex-none border-b border-[var(--line)] px-6 pb-4 pr-12 pt-6">
           <DialogTitle>{typeLabel}</DialogTitle>
           <DialogDescription>
             {docType && th(docType)}
             {!isFile && remaining > 1 && <> {t("severalAtOnce", { count: remaining })}</>}
           </DialogDescription>
         </DialogHeader>
+
+        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
 
         {isFile ? (
           /* ══ file ══ */
@@ -251,9 +267,11 @@ export function DocumentUploader({
                     {t("megabytes", { size: (file.size / 1024 / 1024).toFixed(2) })}
                   </p>
                 </div>
+                {/* ⚠️ p-2, not p-1.5: a 32px target beside a 40px one, on a
+                    screen operated by a thumb. */}
                 <button type="button" onClick={() => setFile(null)}
                   aria-label={t("removeFile")}
-                  className="flex-none rounded-lg p-1.5 text-[var(--muted-fg)] hover:bg-white hover:text-[var(--red-500)]">
+                  className="flex-none rounded-lg p-2 text-[var(--muted-fg)] hover:bg-white hover:text-[var(--red-500)]">
                   <X className="h-4 w-4" />
                 </button>
               </div>
@@ -262,13 +280,13 @@ export function DocumentUploader({
                 type="button"
                 onClick={() => fileInput.current?.click()}
                 disabled={checking}
-                className="flex w-full flex-col items-center gap-2 rounded-xl border-2 border-dashed border-[var(--line)] p-8 transition-colors hover:border-[var(--green-500)] hover:bg-[var(--green-tint)]/40 disabled:opacity-60"
+                className="flex w-full flex-col items-center gap-2 rounded-xl border-2 border-dashed border-[var(--line)] p-6 transition-colors hover:border-[var(--green-500)] hover:bg-[var(--green-tint)]/40 disabled:opacity-60 sm:p-8"
               >
                 <Upload className="h-6 w-6 text-[var(--muted-fg)]" />
                 <span className="text-[13px] font-semibold text-[var(--green-700)]">
                   {checking ? t("checking") : t("chooseFile")}
                 </span>
-                <span className="text-[11.5px] text-[var(--muted-fg)]">
+                <span className="text-center text-[11.5px] leading-relaxed text-[var(--muted-fg)]">
                   {t("formats", { max: MAX_SIZE_MB })}
                 </span>
               </button>
@@ -301,6 +319,13 @@ export function DocumentUploader({
                       id={`doc-url-${i}`}
                       type="url"
                       inputMode="url"
+                      /* ⚠️ iOS capitalises the first letter of a text field
+                         by default, so a typed address becomes "Https://" and
+                         fails validation with a message that does not explain
+                         why. */
+                      autoCapitalize="none"
+                      autoCorrect="off"
+                      spellCheck={false}
                       dir="ltr"
                       className="ps-9 text-start"
                       placeholder="https://exemple.mr/mon-article"
@@ -326,7 +351,9 @@ export function DocumentUploader({
                         setUrlErrors({});
                       }}
                       aria-label={t("removeLink", { n: i + 1 })}
-                      className="flex-none rounded-lg p-2 text-[var(--muted-fg)] transition-colors hover:bg-[var(--red-tint)] hover:text-[var(--red-500)]"
+                      /* h-10 w-10 so it lines up with the field beside it and
+                         clears the 40px a thumb needs. */
+                      className="flex h-10 w-10 flex-none items-center justify-center rounded-lg text-[var(--muted-fg)] transition-colors hover:bg-[var(--red-tint)] hover:text-[var(--red-500)]"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -340,7 +367,10 @@ export function DocumentUploader({
               <button
                 type="button"
                 onClick={() => setUrls([...urls, ""])}
-                className="inline-flex items-center gap-1.5 text-[12.5px] font-bold text-[var(--green-700)] hover:text-[var(--green-600)]"
+                /* ⚠️ -mx-2 px-2 py-2: the padding makes it tappable without
+                   shifting it out of alignment with the fields above. A bare
+                   text link is a 16px-tall target. */
+                className="-mx-2 inline-flex items-center gap-1.5 rounded-lg px-2 py-2 text-[12.5px] font-bold text-[var(--green-700)] hover:bg-[var(--green-tint)] hover:text-[var(--green-600)]"
               >
                 <Plus className="h-3.5 w-3.5 flex-none" /> {t("addAnotherLink")}
               </button>
@@ -351,13 +381,18 @@ export function DocumentUploader({
             {error && <FieldError errors={[{ message: error }]} />}
           </div>
         )}
+        </div>
 
-        <DialogFooter>
-          <Button type="button" variant="outline" onClick={close}>
+        {/* ⚠️ Full width and stacked below sm. Two buttons on a row sit at the
+            far corner of a phone; this way the action is where a thumb
+            already is. */}
+        <DialogFooter className="flex-none flex-col gap-2 border-t border-[var(--line)] bg-[#fbfcfb] px-6 py-4 sm:flex-row sm:gap-3">
+          <Button type="button" variant="outline" className="w-full sm:w-auto" onClick={close}>
             {t("cancel")}
           </Button>
           <Button
             type="button"
+            className="w-full sm:w-auto"
             onClick={() => (isFile ? upload.mutate() : submitLinks())}
             disabled={pending || (isFile ? !file : filledCount === 0)}
           >

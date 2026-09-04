@@ -35,11 +35,10 @@ function ProgressRing({ satisfied, total }: { satisfied: number; total: number }
   const complete = satisfied === total && total > 0;
 
   return (
-    <div className="relative h-[68px] w-[68px] flex-none">
+    <div className="relative h-[60px] w-[60px] flex-none sm:h-[68px] sm:w-[68px]">
       {/* ⚠️ NOT mirrored under RTL. A progress ring is a gauge, not a
           sentence: it fills clockwise in both directions, the way a clock
           face or a fuel gauge does. */}
-      {/* <svg viewBox="0 0 68 68" className="h-full w-full -rotate-90" dir="ltr"> */}
       <svg viewBox="0 0 68 68" className="h-full w-full -rotate-90">
         <circle cx="34" cy="34" r={R} fill="none" stroke="var(--line)" strokeWidth="6" />
         <circle
@@ -52,10 +51,10 @@ function ProgressRing({ satisfied, total }: { satisfied: number; total: number }
       </svg>
       <span className="absolute inset-0 flex flex-col items-center justify-center">
         {complete ? (
-          <Check className="h-6 w-6 text-[var(--green-600)]" />
+          <Check className="h-5 w-5 text-[var(--green-600)] sm:h-6 sm:w-6" />
         ) : (
           <>
-            <span className="font-mono text-[15px] font-extrabold leading-none text-[var(--green-900)]">
+            <span className="font-mono text-[14px] font-extrabold leading-none text-[var(--green-900)] sm:text-[15px]">
               {satisfied}
             </span>
             <span className="font-mono text-[10px] font-semibold text-[var(--muted-fg)]">
@@ -83,7 +82,7 @@ function RequirementRow({
 
   return (
     <div
-      className="group flex items-center gap-3 rounded-xl px-3 py-3 transition-colors"
+      className="group flex items-center gap-2.5 rounded-xl px-2.5 py-2.5 transition-colors sm:gap-3 sm:px-3 sm:py-3"
       style={{ background: satisfied ? "var(--green-tint)" : "transparent" }}
     >
       <span
@@ -98,7 +97,7 @@ function RequirementRow({
       </span>
 
       <div className="min-w-0 flex-1">
-        <p className={`text-[13.5px] font-bold ${satisfied ? "text-[var(--green-900)]" : "text-[var(--ink)]"}`}>
+        <p className={`text-[13px] font-bold leading-snug sm:text-[13.5px] ${satisfied ? "text-[var(--green-900)]" : "text-[var(--ink)]"}`}>
           {label}
           {required > 1 && (
             // dir="ltr" on the ratio: "1/3" reads the same way in both
@@ -118,10 +117,30 @@ function RequirementRow({
       </div>
 
       {!satisfied && onAdd && (
+        /*
+         * ───────────────────────────────────────────────────────────────
+         * ⚠️ ALWAYS VISIBLE. IT WAS INVISIBLE ON EVERY PHONE.
+         *
+         * The previous rule was:
+         *
+         *     opacity-0 … group-hover:opacity-100 sm:opacity-100
+         *
+         * which reads as "hidden until hovered, always shown from 640px up".
+         * A touch screen has no hover — so below 640px this button existed,
+         * occupied space, and was completely transparent.
+         *
+         * This is THE action of the candidate space: it is how a document
+         * gets added to a dossier. A candidate on a phone saw a list of
+         * things they were missing and no way to supply them.
+         *
+         * A hover-reveal is a desktop affordance. On a control this
+         * important it should not have been one anywhere.
+         * ───────────────────────────────────────────────────────────────
+         */
         <button
           type="button"
           onClick={() => onAdd(docType)}
-          className="flex-none rounded-lg bg-[var(--green-700)] px-3 py-1.5 text-[12px] font-bold text-white opacity-0 transition-opacity hover:bg-[var(--green-600)] focus-visible:opacity-100 group-hover:opacity-100 sm:opacity-100"
+          className="min-h-9 flex-none rounded-lg bg-[var(--green-700)] px-3 py-2 text-[12px] font-bold text-white transition-colors hover:bg-[var(--green-600)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--green-500)]/40"
         >
           {t("add")}
         </button>
@@ -168,15 +187,15 @@ export function RequirementChecklist({
   return (
     <div className="space-y-5">
       {/* ── progress header ── */}
-      <div className="flex items-center gap-4 rounded-2xl border border-[var(--line)] bg-white p-4">
+      <div className="flex items-center gap-3.5 rounded-2xl border border-[var(--line)] bg-white p-4 sm:gap-4">
         <ProgressRing satisfied={satisfied} total={total} />
         <div className="min-w-0">
-          <p className="text-[14px] font-extrabold text-[var(--green-900)]">
+          <p className="text-[13.5px] font-extrabold leading-snug text-[var(--green-900)] sm:text-[14px]">
             {documentsComplete
               ? t("allProvided")
               : t("remaining", { count: total - satisfied })}
           </p>
-          <p className="mt-0.5 text-[12.5px] leading-relaxed text-[var(--slate)]">
+          <p className="mt-0.5 text-[12px] leading-relaxed text-[var(--slate)] sm:text-[12.5px]">
             {documentsComplete ? t("allProvidedBody") : t("remainingBody")}
           </p>
         </div>
@@ -202,12 +221,12 @@ export function RequirementChecklist({
       {/* ── alternative groups ── */}
       {groups.map((group) => (
         <div key={group.groupNumber}>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
             <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--gold-700)]">
               <Sparkles className="h-3 w-3 flex-none" />
               {t("anyOne")}
             </p>
-            <span className="h-px flex-1 bg-[var(--line)]" aria-hidden="true" />
+            <span className="h-px min-w-4 flex-1 bg-[var(--line)]" aria-hidden="true" />
             {group.satisfied && (
               <span className="inline-flex flex-none items-center gap-1 rounded-full bg-[var(--green-500)] px-2 py-0.5 text-[10px] font-bold text-white">
                 <Check className="h-2.5 w-2.5" /> {t("satisfied")}
@@ -248,9 +267,9 @@ export function RequirementChecklist({
           <ul className="divide-y divide-[var(--gold-500)]/20">
             {blockers.map((b) => (
               <li key={b.reason}
-                className="flex items-start gap-2.5 px-4 py-2.5 text-[13px] leading-relaxed text-[var(--gold-700)]">
+                className="flex items-start gap-2.5 px-4 py-2.5 text-[12.5px] leading-relaxed text-[var(--gold-700)] sm:text-[13px]">
                 <span className="mt-1.5 h-1.5 w-1.5 flex-none rounded-full bg-[var(--gold-500)]" />
-                <span>
+                <span className="min-w-0">
                   {tb(b.reason, {
                     // Only DEADLINE_PASSED reads it; the other six ignore the
                     // parameter. Formatted HERE, so an Arabic page shows an
@@ -277,7 +296,7 @@ export function RequirementChecklist({
           <span className="flex h-8 w-8 flex-none items-center justify-center rounded-lg bg-[var(--green-500)]">
             <Check className="h-4 w-4 text-white" />
           </span>
-          <p className="text-[13.5px] font-bold text-[var(--green-700)]">
+          <p className="text-[13px] font-bold leading-snug text-[var(--green-700)] sm:text-[13.5px]">
             {t("readyToSubmit")}
           </p>
         </div>

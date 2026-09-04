@@ -163,8 +163,14 @@ export function ReplaceDocumentDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => (o ? onOpenChange(true) : close())}>
-      <DialogContent className="flex max-h-[85vh] flex-col sm:max-w-[520px]">
-        <DialogHeader className="flex-none">
+      {/*
+        ⚠️ 90vh, not 85. With the keyboard open on a phone the visual viewport
+        shrinks to roughly half the screen, and every percentage point of the
+        remaining height is a line of the observation the candidate is trying
+        to read while they type.
+      */}
+      <DialogContent className="flex max-h-[90vh] flex-col sm:max-w-[520px]">
+        <DialogHeader className="flex-none pr-8">
           <DialogTitle>{tr("title", { type: typeLabel })}</DialogTitle>
           <DialogDescription>{tr("previousKept")}</DialogDescription>
         </DialogHeader>
@@ -172,15 +178,27 @@ export function ReplaceDocumentDialog({
         <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-1 py-1">
           {/* ── the reason, in front of them while they choose ── */}
           {item?.observation && (
-            <div className="rounded-xl border border-[var(--gold-500)]/45 bg-[var(--gold-tint)] p-4">
+            <div className="rounded-xl border border-[var(--gold-500)]/45 bg-[var(--gold-tint)] p-3.5 sm:p-4">
               <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--gold-700)]">
                 <AlertTriangle className="h-3 w-3 flex-none" />
                 {tr("observation")}
               </p>
-              {/* ⚠️ dir="auto" — written by a commission member, in whichever
-                  language they use, and never translated. */}
+              {/*
+                ⚠️ dir="auto" — written by a commission member, in whichever
+                language they use, and never translated.
+
+                ⚠️ AND break-words. whitespace-pre-wrap keeps the line breaks
+                the reviewer typed but does nothing for a single long token —
+                and an observation is exactly where someone writes "voir
+                https://…/le-document-en-question". Without this that address
+                runs off a 375px screen, taking the rest of the instruction
+                with it.
+
+                This is the sentence the correction is made against. It cannot
+                be the one that gets cut.
+              */}
               <p dir="auto"
-                className="user-text mt-1.5 whitespace-pre-wrap text-[13.5px] leading-relaxed text-[var(--gold-700)]">
+                className="user-text mt-1.5 whitespace-pre-wrap break-words text-[13px] leading-relaxed text-[var(--gold-700)] sm:text-[13.5px]">
                 {item.observation}
               </p>
             </div>
@@ -195,6 +213,7 @@ export function ReplaceDocumentDialog({
                     field, and someone typing a link in an Arabic page would
                     watch it scramble as they went. */}
                 <Input id="replace-url" type="url" inputMode="url"
+                  autoCapitalize="none" autoCorrect="off" spellCheck={false}
                   dir="ltr" className="ps-9 text-start"
                   placeholder="https://exemple.mr/mon-article"
                   value={url}
@@ -219,26 +238,32 @@ export function ReplaceDocumentDialog({
                       {t("megabytes", { size: (file.size / 1024 / 1024).toFixed(2) })}
                     </p>
                   </div>
+                  {/* ⚠️ p-2, not p-1.5: this is a 32px target next to a
+                      40px one, on a screen operated by a thumb. */}
                   <button type="button" onClick={() => setFile(null)}
                     aria-label={t("removeFile")}
-                    className="flex-none rounded-lg p-1.5 text-[var(--muted-fg)] hover:bg-white hover:text-[var(--red-500)]">
+                    className="flex-none rounded-lg p-2 text-[var(--muted-fg)] hover:bg-white hover:text-[var(--red-500)]">
                     <X className="h-4 w-4" />
                   </button>
                 </div>
               ) : (
                 <button type="button" onClick={() => fileInput.current?.click()}
                   disabled={checking}
-                  className="flex w-full flex-col items-center gap-2 rounded-xl border-2 border-dashed border-[var(--line)] p-8 transition-colors hover:border-[var(--green-500)] hover:bg-[var(--green-tint)]/40 disabled:opacity-60">
+                  className="flex w-full flex-col items-center gap-2 rounded-xl border-2 border-dashed border-[var(--line)] p-6 transition-colors hover:border-[var(--green-500)] hover:bg-[var(--green-tint)]/40 disabled:opacity-60 sm:p-8">
                   <Upload className="h-6 w-6 text-[var(--muted-fg)]" />
                   <span className="text-[13px] font-semibold text-[var(--green-700)]">
                     {checking ? t("checking") : t("chooseFile")}
                   </span>
-                  <span className="text-[11.5px] text-[var(--muted-fg)]">
+                  <span className="text-center text-[11.5px] leading-relaxed text-[var(--muted-fg)]">
                     {t("formats", { max: MAX_SIZE_MB })}
                   </span>
                 </button>
               )}
 
+              {/* ⚠️ accept includes the image types, which is what makes a
+                  phone offer "Take Photo" alongside the file browser. A
+                  candidate photographing their contract is the normal case
+                  here, not the exception. */}
               <input ref={fileInput} id="replace-file" type="file"
                 accept={ACCEPTED.join(",")} className="hidden"
                 onChange={(e) => pick(e.target.files?.[0])} />
@@ -248,9 +273,14 @@ export function ReplaceDocumentDialog({
           )}
         </div>
 
-        <DialogFooter className="flex-none border-t border-[var(--line)] pt-4">
-          <Button variant="outline" onClick={close}>{t("cancel")}</Button>
-          <Button onClick={submit} disabled={pending}>
+        {/* ⚠️ Full width below sm. Two buttons on a row sit at the far corner
+            of a phone; stacked and full width, the action is where a thumb
+            already is. */}
+        <DialogFooter className="flex-none flex-col gap-2 border-t border-[var(--line)] pt-4 sm:flex-row sm:gap-3">
+          <Button variant="outline" className="w-full sm:w-auto" onClick={close}>
+            {t("cancel")}
+          </Button>
+          <Button className="w-full sm:w-auto" onClick={submit} disabled={pending}>
             {pending ? t("sending") : tr("replaceAction")}
           </Button>
         </DialogFooter>

@@ -1,4 +1,5 @@
 "use client";
+// src/app/[locale]/(candidate)/candidat/nouvelle-candidature/page.tsx
 
 import { useState } from "react";
 import { useFormatter, useLocale, useTranslations } from "next-intl";
@@ -54,15 +55,15 @@ export default function NewApplicationPage() {
   if (!session) {
     return (
       <div className="mx-auto max-w-3xl">
-        <div className="rounded-2xl border border-dashed border-[var(--line)] bg-white p-12 text-center">
+        <div className="rounded-2xl border border-dashed border-[var(--line)] bg-white p-8 text-center sm:p-12">
           <CalendarClock className="mx-auto h-9 w-9 text-[var(--muted-fg)]" />
           <p className="mt-4 text-[15px] font-extrabold text-[var(--green-900)]">
             {t("noSessionTitle")}
           </p>
-          <p className="mt-2 text-[13.5px] text-[var(--slate)]">
+          <p className="mt-2 text-[13.5px] leading-relaxed text-[var(--slate)]">
             {t("noSessionBody")}
           </p>
-          <Button className="mt-5" variant="outline"
+          <Button className="mt-5 w-full sm:w-auto" variant="outline"
             onClick={() => router.push(routes.candidate.dashboard)}>
             {t("backToDashboard")}
           </Button>
@@ -75,31 +76,33 @@ export default function NewApplicationPage() {
     <div className="mx-auto max-w-3xl space-y-6">
       <VerificationBanner />
 
-      <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" aria-label={t("back")}
+      <div className="flex items-start gap-2 sm:items-center sm:gap-3">
+        <Button variant="ghost" size="icon" className="flex-none" aria-label={t("back")}
           onClick={() => router.push(routes.candidate.dashboard)}>
           {/* rtl-flip: "back" is the direction the reader came from, which
               is the right in an Arabic page. */}
           <ArrowLeft className="rtl-flip h-4 w-4" />
         </Button>
         <div className="min-w-0">
-          <h2 className="text-xl font-extrabold text-[var(--green-900)]">
+          <h2 className="text-[18px] font-extrabold leading-tight text-[var(--green-900)] sm:text-xl">
             {t("title")}
           </h2>
-          <p className="text-[13.5px] text-[var(--slate)]">
+          {/* The deadline, and it is the one fact worth the space: it decides
+              whether the candidate has this evening or a fortnight. */}
+          <p className="mt-0.5 text-[13px] leading-snug text-[var(--slate)] sm:text-[13.5px]">
             {t("openUntil", { date: fmtDate(session.receivingEnd) })}
           </p>
         </div>
       </div>
 
-      <div className="rounded-2xl border border-[var(--line)] bg-white p-7">
+      <div className="rounded-2xl border border-[var(--line)] bg-white p-5 sm:p-7">
         <p className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-[var(--green-700)]">
           {t("step")}
         </p>
-        <h3 className="mt-2 text-[17px] font-extrabold text-[var(--green-900)]">
+        <h3 className="mt-2 text-[16px] font-extrabold leading-snug text-[var(--green-900)] sm:text-[17px]">
           {t("question")}
         </h3>
-        <p className="mt-1.5 text-[13.5px] leading-relaxed text-[var(--slate)]">
+        <p className="mt-1.5 text-[13px] leading-relaxed text-[var(--slate)] sm:text-[13.5px]">
           {t("questionHint")}
         </p>
 
@@ -112,7 +115,18 @@ export default function NewApplicationPage() {
                 type="button"
                 onClick={() => setCategoryId(c.id)}
                 aria-pressed={selected}
-                className="flex w-full items-start gap-4 rounded-xl border-2 p-5 text-start transition-all"
+                /*
+                 * ⚠️ p-4 below sm, and the nesting is why.
+                 *
+                 * p-5 inside the panel's p-7 left about 250px for a category
+                 * name on a 375px screen — and "Journaliste professionnel de
+                 * l'audiovisuel" then wrapped to three lines inside a button
+                 * that is already a large tap target.
+                 *
+                 * The button stays comfortably tappable either way: 44px is
+                 * the floor, and a padded row of text clears it easily.
+                 */
+                className="flex w-full items-start gap-3.5 rounded-xl border-2 p-4 text-start transition-all sm:gap-4 sm:p-5"
                 style={{
                   borderColor: selected ? "var(--green-500)" : "var(--line)",
                   background: selected ? "var(--green-tint)" : "white",
@@ -130,7 +144,7 @@ export default function NewApplicationPage() {
                 {/* ONE label — the reader's. The stacked pair was ornament
                     for a French reader; an Arabic one now sees Arabic. */}
                 <span className="min-w-0">
-                  <span className="block text-[14.5px] font-bold text-[var(--green-900)]">
+                  <span className="block text-[14px] font-bold leading-snug text-[var(--green-900)] sm:text-[14.5px]">
                     {arabic ? (c.labelAr ?? c.labelFr) : c.labelFr}
                   </span>
                 </span>
@@ -139,12 +153,25 @@ export default function NewApplicationPage() {
           })}
         </div>
 
-        <div className="mt-7 flex justify-end gap-3">
-          <Button variant="outline"
+        {/*
+         * ⚠️ STACKED BELOW sm, WITH THE PRIMARY ACTION LAST.
+         *
+         * Two buttons on a row at 375px sat at the far edge — the corner
+         * hardest to reach one-handed, on the screen most of these candidates
+         * will use. Full width and stacked puts "Continuer" at the bottom,
+         * where a thumb already rests.
+         *
+         * flex-col rather than flex-col-reverse: the reading order and the
+         * tab order stay Annuler then Continuer, which is what a screen
+         * reader will announce.
+         */}
+        <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:justify-end">
+          <Button variant="outline" className="w-full sm:w-auto"
             onClick={() => router.push(routes.candidate.dashboard)}>
             {t("cancel")}
           </Button>
           <Button
+            className="w-full sm:w-auto"
             disabled={!categoryId || start.isPending}
             onClick={() => start.mutate()}
           >

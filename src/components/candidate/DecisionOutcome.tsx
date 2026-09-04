@@ -252,16 +252,28 @@ export function DecisionOutcome({
         <div className="pointer-events-none absolute inset-0 opacity-[0.06]"
           style={{ backgroundImage: "repeating-linear-gradient(115deg,#fff 0 1px,transparent 1px 11px)" }}
           aria-hidden="true" />
-        <Rosette className="rtl-mirror pointer-events-none absolute -left-24 -top-20 h-72 w-72 opacity-[0.07]"
+        <Rosette className="rtl-mirror pointer-events-none absolute -left-28 -top-24 h-56 w-56 opacity-[0.07] sm:-left-24 sm:-top-20 sm:h-72 sm:w-72"
           stroke="#fff" />
+        {/*
+          ⚠️ SMALLER AND FURTHER OUT ON A PHONE.
+
+          At 176px positioned 24px off the edge, the seal covered from x=175
+          to the corner — and on a 327px panel the headline starts at 92. The
+          impression sat behind the sentence telling someone their card had
+          been withdrawn.
+
+          On a desktop it is a corner ornament; the smaller size restores that
+          relationship rather than removing the seal, which is part of what
+          makes this read as a formal notice.
+        */}
         <Seal
-          className="rtl-mirror pointer-events-none absolute -right-6 top-1/2 h-44 w-44 -translate-y-1/2 opacity-[0.13]"
+          className="rtl-mirror pointer-events-none absolute -right-14 top-1/2 h-32 w-32 -translate-y-1/2 opacity-[0.13] sm:-right-6 sm:h-44 sm:w-44"
           stroke={p.accent}
           label={t(`${key}.seal`)}
           arabic={arabic}
         />
 
-        <div className="relative px-7 py-7 sm:px-8 sm:py-8">
+        <div className="relative px-5 py-6 sm:px-8 sm:py-8">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <span className="text-[10px] font-extrabold uppercase tracking-[0.24em]"
               style={{ color: p.accent }}>
@@ -273,36 +285,39 @@ export function DecisionOutcome({
             </span>
           </div>
 
-          <div className="mt-5 flex items-start gap-4">
+          <div className="mt-5 flex items-start gap-3.5 sm:gap-4">
             <span
-              className="flex h-12 w-12 flex-none items-center justify-center rounded-xl"
+              className="flex h-11 w-11 flex-none items-center justify-center rounded-xl sm:h-12 sm:w-12"
               style={{
                 background: `${p.accent}22`,
                 boxShadow: `inset 0 0 0 1.5px ${p.accent}`,
               }}
             >
-              <Icon className="h-6 w-6" style={{ color: p.accent }} />
+              <Icon className="h-5 w-5 sm:h-6 sm:w-6" style={{ color: p.accent }} />
             </span>
 
             <div className="min-w-0 flex-1">
-              <h3 className="text-[22px] font-extrabold leading-tight text-white sm:text-[25px]">
+              <h3 className="text-[19px] font-extrabold leading-tight text-white sm:text-[25px]">
                 {t(`${key}.title`)}
               </h3>
-              <p className="mt-2.5 max-w-2xl text-[14px] leading-relaxed text-white/70">
+              <p className="mt-2.5 max-w-2xl text-[13.5px] leading-relaxed text-white/70 sm:text-[14px]">
                 {t(`${key}.lede`)}
               </p>
             </div>
           </div>
 
           {(reference || decidedOn) && (
-            <dl className="mt-6 flex flex-wrap gap-x-8 gap-y-3 border-t pt-4"
+            <dl className="mt-5 flex flex-wrap gap-x-6 gap-y-3 border-t pt-4 sm:mt-6 sm:gap-x-8"
               style={{ borderColor: "rgba(255,255,255,.14)" }}>
               {reference && (
                 <div>
                   <dt className="text-[9px] font-bold uppercase tracking-[0.16em] text-white/40">
                     {t("reference")}
                   </dt>
-                  <dd dir="ltr" className="mt-0.5 font-mono text-[12.5px] text-white/85">
+                  {/* ⚠️ break-all: a reference is one unbreakable token
+                      ("MCACRP/2026/00042") and it must wrap rather than push
+                      the date column off the panel. */}
+                  <dd dir="ltr" className="mt-0.5 break-all font-mono text-[12px] text-white/85 sm:text-[12.5px]">
                     {reference}
                   </dd>
                 </div>
@@ -312,8 +327,8 @@ export function DecisionOutcome({
                   <dt className="text-[9px] font-bold uppercase tracking-[0.16em] text-white/40">
                     {cardOverride ? t("changedOn") : t("decidedOn")}
                   </dt>
-                  <dd className="mt-0.5 flex items-center gap-1.5 text-[12.5px] text-white/85">
-                    <Clock className="h-3 w-3 flex-none" /> {decidedOn}
+                  <dd className="mt-0.5 flex items-start gap-1.5 text-[12px] leading-snug text-white/85 sm:text-[12.5px]">
+                    <Clock className="mt-0.5 h-3 w-3 flex-none" /> {decidedOn}
                   </dd>
                 </div>
               )}
@@ -324,7 +339,7 @@ export function DecisionOutcome({
 
       {/* ══ the reason, set apart as a considérant ══ */}
       {reasonText && outcome.hasReason && (
-        <div className="px-7 py-6 sm:px-8">
+        <div className="px-5 py-5 sm:px-8 sm:py-6">
           <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em]"
             style={{ color: p.softInk }}>
             <FileText className="h-3 w-3 flex-none" />
@@ -332,16 +347,23 @@ export function DecisionOutcome({
           </p>
 
           <blockquote
-            className="mt-3 rounded-e-xl border-s-[3px] px-5 py-4"
+            className="mt-3 rounded-e-xl border-s-[3px] px-4 py-3.5 sm:px-5 sm:py-4"
             style={{ borderColor: p.softInk, background: p.softBg }}
           >
             {/* ⚠️ dir="auto" — written by a member or by the Authority, in
                 whichever language they use, and never translated.
                 pre-wrap: the text carries its own line breaks, and rewrapping
                 a legal reason changes how it reads. */}
+            {/* ⚠️ break-words. pre-wrap keeps the line breaks the author
+                typed but does nothing for one long token, and a refusal is
+                exactly where an article or a document is cited by URL.
+
+                This is the most consequential paragraph in the candidate
+                space: it is what a rejection is argued against. It cannot be
+                the text that runs off the edge of a phone. */}
             <p
               dir="auto"
-              className="user-text whitespace-pre-wrap text-[14px] leading-[1.75] text-[var(--ink)]"
+              className="user-text whitespace-pre-wrap break-words text-[13.5px] leading-[1.75] text-[var(--ink)] sm:text-[14px]"
             >
               {reasonText}
             </p>
@@ -351,7 +373,7 @@ export function DecisionOutcome({
 
       {/* ══ what happens next ══ */}
       <div
-        className="flex items-start gap-4 border-t px-7 py-5 sm:px-8"
+        className="flex items-start gap-3.5 border-t px-5 py-5 sm:gap-4 sm:px-8"
         style={{
           borderColor: "var(--line)",
           background: outcome.grave ? p.softBg : "#fbfcfb",
@@ -369,11 +391,11 @@ export function DecisionOutcome({
         </span>
 
         <div className="min-w-0">
-          <p className="text-[12.5px] font-extrabold uppercase tracking-[0.1em]"
+          <p className="text-[12px] font-extrabold uppercase leading-snug tracking-[0.1em] sm:text-[12.5px]"
             style={{ color: outcome.grave ? p.softInk : "var(--green-700)" }}>
             {t(`${key}.nextHeading`)}
           </p>
-          <p className="mt-1.5 max-w-3xl text-[13.5px] leading-relaxed"
+          <p className="mt-1.5 max-w-3xl text-[13px] leading-relaxed sm:text-[13.5px]"
             style={{ color: outcome.grave ? p.softInk : "var(--slate)" }}>
             {t.rich(`${key}.nextBody`, { b: (c) => <b className="font-bold">{c}</b> })}
           </p>

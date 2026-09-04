@@ -56,10 +56,19 @@ export function DossierProgress({ status }: { status: ApplicationStatus }) {
 
         return (
           <li key={stage.key} className="flex flex-1 items-start">
-            <div className="flex min-w-0 flex-1 flex-col items-center text-center">
+            <div className="flex min-w-0 flex-1 flex-col items-center px-0.5 text-center">
+              {/*
+                ⚠️ 32px BELOW sm, AND THE OLD 40 DID NOT FIT.
+
+                Four stages share the width; each stage's label column and the
+                connector beside it each took half of a quarter. At 375px that
+                is about 35px per column — and a 40px circle marked flex-none
+                simply overflowed it, so the four markers overlapped their
+                neighbours' labels.
+              */}
               <span
                 className={[
-                  "flex h-10 w-10 flex-none items-center justify-center rounded-full border-2 transition-colors",
+                  "flex h-8 w-8 flex-none items-center justify-center rounded-full border-2 transition-colors sm:h-10 sm:w-10",
                   done
                     ? "border-[var(--green-500)] bg-[var(--green-500)] text-white"
                     : isBadEnding
@@ -71,7 +80,8 @@ export function DossierProgress({ status }: { status: ApplicationStatus }) {
                 // The current stage is the one a screen reader should announce.
                 aria-current={active ? "step" : undefined}
               >
-                {done ? <Check className="h-4 w-4" /> : <stage.Icon className="h-4 w-4" />}
+                {done ? <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                      : <stage.Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
               </span>
 
               {/* ONE label. The Arabic beneath the French was ornament for a
@@ -79,7 +89,7 @@ export function DossierProgress({ status }: { status: ApplicationStatus }) {
                   and at 10px, unreadable noise. */}
               <span
                 className={[
-                  "mt-2.5 text-[11.5px] font-bold leading-tight",
+                  "mt-2 text-[10px] font-bold leading-tight sm:mt-2.5 sm:text-[11.5px]",
                   active
                     ? isBadEnding ? "text-[var(--red-500)]" : "text-[var(--gold-500)]"
                     : done ? "text-white" : "text-white/40",
@@ -92,11 +102,23 @@ export function DossierProgress({ status }: { status: ApplicationStatus }) {
             </div>
 
             {i < STAGES.length - 1 && (
-              // No physical direction here: the connector is a flex sibling,
-              // so it sits between the same two stages whichever way the
-              // container flows.
+              /*
+                No physical direction here: the connector is a flex sibling,
+                so it sits between the same two stages whichever way the
+                container flows.
+
+                ⚠️ BUT IT NO LONGER TAKES HALF THE ROOM ON A PHONE.
+
+                As flex-1 it claimed as much width as the label beside it —
+                twenty-eight pixels of rule at the cost of twenty-eight
+                pixels of "Préparation". A connector says "and then"; it does
+                not need to be long to say it, and the label does need to be
+                readable.
+
+                mt-4 to meet the smaller circle's centre; mt-5 for the larger.
+              */
               <span
-                className={`mt-5 h-0.5 flex-1 ${i < current ? "bg-[var(--green-500)]" : "bg-white/15"}`}
+                className={`mt-4 h-0.5 w-2 flex-none sm:mt-5 sm:w-auto sm:flex-1 ${i < current ? "bg-[var(--green-500)]" : "bg-white/15"}`}
                 aria-hidden="true"
               />
             )}

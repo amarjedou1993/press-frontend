@@ -110,9 +110,19 @@ export function CorrectionPanel({ applicationId }: { applicationId: number }) {
         style={{ borderColor: tone.edge }}>
 
         {/* ── the deadline, stated with its consequence ── */}
-        <div className="flex flex-wrap items-center gap-4 px-6 py-4"
+        {/*
+          ⚠️ THE ICON AND THE TEXT ARE ONE GROUP.
+
+          As three siblings the counter held its width and the message shrank
+          to about 118px at 375px — a deadline and its consequence in a column
+          three words wide. Grouped, the counter has nothing to sit beside
+          below sm and takes its own full-width band.
+        */}
+        <div className="flex flex-wrap items-center gap-3.5 px-5 py-4 sm:gap-4 sm:px-6"
           style={{ background: tone.bg }}>
-          <span className="flex h-11 w-11 flex-none items-center justify-center rounded-xl"
+
+          <div className="flex w-full min-w-0 items-start gap-3.5 sm:w-auto sm:flex-1 sm:items-center sm:gap-4">
+          <span className="flex h-10 w-10 flex-none items-center justify-center rounded-xl sm:h-11 sm:w-11"
             style={{ background: tone.edge }}>
             <Clock className="h-5 w-5 text-white" />
           </span>
@@ -124,11 +134,13 @@ export function CorrectionPanel({ applicationId }: { applicationId: number }) {
             </p>
 
             {s.deadlinePassed ? (
-              <p className="mt-0.5 text-[15px] font-extrabold" style={{ color: tone.fg }}>
+              <p className="mt-0.5 text-[14.5px] font-extrabold leading-snug sm:text-[15px]"
+                style={{ color: tone.fg }}>
                 {t("expired")}
               </p>
             ) : (
-              <p className="mt-0.5 text-[15px] font-extrabold" style={{ color: tone.fg }}>
+              <p className="mt-0.5 text-[14.5px] font-extrabold leading-snug sm:text-[15px]"
+                style={{ color: tone.fg }}>
                 {s.daysRemaining === 0
                   ? t("lastDay")
                   : t("daysToAnswer", { count: s.daysRemaining })}
@@ -145,20 +157,22 @@ export function CorrectionPanel({ applicationId }: { applicationId: number }) {
 
             {/* ⚠️ THE CONSEQUENCE, NAMED. A deadline without its effect is a
                 date; with it, it is a warning. */}
-            <p className="mt-1 text-[12.5px] leading-relaxed" style={{ color: tone.fg }}>
+            <p className="mt-1 text-[12px] leading-relaxed sm:text-[12.5px]"
+              style={{ color: tone.fg }}>
               {s.deadlinePassed ? t("expiredBody") : t("consequence")}
             </p>
           </div>
+          </div>
 
           {total > 0 && (
-            <div className="flex-none rounded-xl bg-white/70 px-4 py-2.5 text-center">
+            <div className="flex w-full items-center justify-center gap-2 rounded-xl bg-white/70 px-4 py-2 sm:w-auto sm:flex-none sm:flex-col sm:gap-0 sm:py-2.5 sm:text-center">
               {/* dir="ltr" on the ratio: "2/3" reads the same in both
                   languages, and mirroring it would say 3/2. */}
               <p dir="ltr" className="font-mono text-[20px] font-extrabold leading-none"
                 style={{ color: tone.fg }}>
                 {answered}<span className="text-[13px] opacity-60">/{total}</span>
               </p>
-              <p className="mt-1 text-[9.5px] font-bold uppercase tracking-[0.12em]"
+              <p className="text-[9.5px] font-bold uppercase tracking-[0.12em] sm:mt-1"
                 style={{ color: tone.fg, opacity: 0.7 }}>
                 {t("corrected")}
               </p>
@@ -171,7 +185,11 @@ export function CorrectionPanel({ applicationId }: { applicationId: number }) {
           {s.documents.map((item) => {
             const isLink = LINK_TYPES.has(item.docType);
             return (
-              <div key={item.documentId} className="flex items-start gap-4 px-6 py-4">
+              /* ⚠️ flex-wrap, and the button takes its own line below sm.
+                 Beside a 100px button the observation column was 115px — and
+                 the observation is the reason the piece was flagged, which is
+                 the one thing this row exists to say. */
+              <div key={item.documentId} className="flex flex-wrap items-start gap-x-3.5 gap-y-3 px-5 py-4 sm:gap-x-4 sm:px-6">
                 <span className="mt-0.5 flex h-8 w-8 flex-none items-center justify-center rounded-lg"
                   style={{
                     background: item.answered ? "var(--green-500)" : "var(--gold-tint)",
@@ -182,14 +200,16 @@ export function CorrectionPanel({ applicationId }: { applicationId: number }) {
                 </span>
 
                 <div className="min-w-0 flex-1">
-                  <p className="text-[13.5px] font-bold text-[var(--green-900)]">
+                  <p className="text-[13px] font-bold leading-snug text-[var(--green-900)] sm:text-[13.5px]">
                     {td(item.docType)}
                   </p>
                   {item.observation && (
                     /* ⚠️ dir="auto": the member wrote this in French or in
-                       Arabic, and it is never translated. */
+                       Arabic, and it is never translated.
+                       ⚠️ break-words: an observation is where a link gets
+                       cited, and this is the instruction being followed. */
                     <p dir="auto"
-                      className="user-text mt-1 rounded-lg bg-[var(--gold-tint)] px-3 py-1.5 text-[12.5px] leading-relaxed text-[var(--gold-700)]">
+                      className="user-text mt-1 break-words rounded-lg bg-[var(--gold-tint)] px-3 py-1.5 text-[12px] leading-relaxed text-[var(--gold-700)] sm:text-[12.5px]">
                       {item.observation}
                     </p>
                   )}
@@ -204,7 +224,7 @@ export function CorrectionPanel({ applicationId }: { applicationId: number }) {
                   <Button
                     variant={item.answered ? "outline" : "default"}
                     size="sm"
-                    className="flex-none"
+                    className="w-full sm:w-auto sm:flex-none"
                     onClick={() => setReplacing(item)}
                   >
                     {item.answered ? t("replaceAgain") : t("replace")}
@@ -216,7 +236,7 @@ export function CorrectionPanel({ applicationId }: { applicationId: number }) {
 
           {/* ── the photograph lives on the profile, so it links there ── */}
           {s.photoNeedsCorrection && (
-            <div className="flex items-start gap-4 px-6 py-4">
+            <div className="flex flex-wrap items-start gap-x-3.5 gap-y-3 px-5 py-4 sm:gap-x-4 sm:px-6">
               <span className="mt-0.5 flex h-8 w-8 flex-none items-center justify-center rounded-lg"
                 style={{
                   background: s.photoAnswered ? "var(--green-500)" : "var(--gold-tint)",
@@ -231,7 +251,7 @@ export function CorrectionPanel({ applicationId }: { applicationId: number }) {
                 </p>
                 {s.photoObservation && (
                   <p dir="auto"
-                    className="user-text mt-1 rounded-lg bg-[var(--gold-tint)] px-3 py-1.5 text-[12.5px] leading-relaxed text-[var(--gold-700)]">
+                    className="user-text mt-1 break-words rounded-lg bg-[var(--gold-tint)] px-3 py-1.5 text-[12px] leading-relaxed text-[var(--gold-700)] sm:text-[12.5px]">
                     {s.photoObservation}
                   </p>
                 )}
@@ -241,8 +261,9 @@ export function CorrectionPanel({ applicationId }: { applicationId: number }) {
               </div>
 
               {!s.deadlinePassed && (
-                <Link href={routes.candidate.profile} className="flex-none">
-                  <Button variant={s.photoAnswered ? "outline" : "default"} size="sm">
+                <Link href={routes.candidate.profile} className="w-full sm:w-auto sm:flex-none">
+                  <Button className="w-full sm:w-auto"
+                    variant={s.photoAnswered ? "outline" : "default"} size="sm">
                     {s.photoAnswered ? t("photoEdit") : t("photoGo")}
                     <ArrowRight className="rtl-flip h-3 w-3" />
                   </Button>
@@ -254,14 +275,15 @@ export function CorrectionPanel({ applicationId }: { applicationId: number }) {
 
         {/* ── resubmission ── */}
         {!s.deadlinePassed && (
-          <div className="border-t border-[var(--line)] bg-[#fbfcfb] px-6 py-4">
+          <div className="border-t border-[var(--line)] bg-[#fbfcfb] px-5 py-4 sm:px-6">
             {s.readyToResubmit ? (
-              <div className="flex flex-wrap items-center gap-4">
-                <p className="flex min-w-0 flex-1 items-center gap-2 text-[13.5px] font-semibold text-[var(--green-700)]">
+              <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+                <p className="flex w-full min-w-0 items-center gap-2 text-[13px] font-semibold text-[var(--green-700)] sm:w-auto sm:flex-1 sm:text-[13.5px]">
                   <Check className="h-4 w-4 flex-none" />
                   {t("allCorrected")}
                 </p>
-                <Button size="sm" className="flex-none" onClick={() => setConfirmResubmit(true)}>
+                <Button size="sm" className="w-full sm:w-auto sm:flex-none"
+                  onClick={() => setConfirmResubmit(true)}>
                   <Send className="h-4 w-4" />
                   {t("resubmit")}
                 </Button>
@@ -270,10 +292,10 @@ export function CorrectionPanel({ applicationId }: { applicationId: number }) {
               <div className="flex items-start gap-2.5">
                 <AlertTriangle className="mt-0.5 h-4 w-4 flex-none text-[var(--gold-700)]" />
                 <div className="min-w-0">
-                  <p className="text-[13px] font-semibold text-[var(--gold-700)]">
+                  <p className="text-[12.5px] font-semibold leading-relaxed text-[var(--gold-700)] sm:text-[13px]">
                     {t("stillToCorrect", { list: remaining.join(t("listSeparator")) })}
                   </p>
-                  <p className="mt-0.5 text-[12.5px] text-[var(--slate)]">
+                  <p className="mt-0.5 text-[12px] leading-relaxed text-[var(--slate)] sm:text-[12.5px]">
                     {t("allBeforeResubmit")}
                   </p>
                 </div>
@@ -310,8 +332,9 @@ export function CorrectionPanel({ applicationId }: { applicationId: number }) {
           </p>
 
           <AlertDialogFooter>
-            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
-            <AlertDialogAction onClick={() => resubmit.mutate()}
+            <AlertDialogCancel className="w-full sm:w-auto">{t("cancel")}</AlertDialogCancel>
+            <AlertDialogAction className="w-full sm:w-auto"
+              onClick={() => resubmit.mutate()}
               disabled={resubmit.isPending}>
               {resubmit.isPending ? t("sending") : t("confirmSend")}
             </AlertDialogAction>

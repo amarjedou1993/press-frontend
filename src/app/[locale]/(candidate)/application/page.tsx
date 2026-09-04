@@ -212,11 +212,11 @@ export default function ApplicationPage() {
             aria-hidden="true"
           />
           <Guilloche
-            className="rtl-mirror pointer-events-none absolute -right-24 -top-28 h-[340px] w-[340px] text-white opacity-[0.06]"
+            className="rtl-mirror pointer-events-none absolute -right-28 -top-32 h-[240px] w-[240px] text-white opacity-[0.06] sm:-right-24 sm:-top-28 sm:h-[340px] sm:w-[340px]"
             rings={34}
           />
 
-          <div className="relative z-10 p-7">
+          <div className="relative z-10 p-5 sm:p-7">
             <div className="flex flex-wrap items-start justify-between gap-5">
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2.5">
@@ -233,11 +233,11 @@ export default function ApplicationPage() {
                 {/* The heading names the DOSSIER; the pill carries the status.
                     They used to print the same string twice. */}
                 <div className="mt-3 flex flex-wrap items-baseline gap-3">
-                  <h2 className="engraved-dark text-[27px] font-extrabold leading-tight tracking-tight">
+                  <h2 className="engraved-dark text-[22px] font-extrabold leading-tight tracking-tight sm:text-[27px]">
                     {t("dossierNo", { id: application.id })}
                   </h2>
                   <span
-                    className="rounded-full px-3.5 py-1 text-[11.5px] font-extrabold"
+                    className="rounded-full px-3 py-1 text-[11px] font-extrabold sm:px-3.5 sm:text-[11.5px]"
                     style={{
                       background: `var(--st-${kind}-bg)`,
                       color: `var(--st-${kind}-fg)`,
@@ -256,34 +256,43 @@ export default function ApplicationPage() {
 
               {/* THE DEADLINE, on the page where the work happens. */}
               {left !== null && left >= 0 && (
+                /* ⚠️ A FULL-WIDTH BAND ON A PHONE.
+                   As flex-none beside the title it held about 90px and left
+                   the heading and its status pill fighting over the rest —
+                   and this is the page's most important number. Below sm it
+                   takes its own row and lays out horizontally, which also
+                   makes the three lines readable rather than stacked into a
+                   narrow column. */
                 <div
-                  className="flex-none rounded-xl px-5 py-4 text-center"
+                  className="flex w-full items-center gap-3 rounded-xl px-4 py-3 sm:w-auto sm:flex-none sm:flex-col sm:gap-0 sm:px-5 sm:py-4 sm:text-center"
                   style={{
                     background: urgent ? "rgba(208,28,31,.20)" : "rgba(0,0,0,.22)",
                     boxShadow: `inset 0 0 0 1px ${urgent ? "rgba(208,28,31,.5)" : "rgba(255,255,255,.14)"}`,
                   }}
                 >
-                  <p className="font-mono text-[30px] font-extrabold leading-none"
+                  <p className="font-mono text-[26px] font-extrabold leading-none sm:text-[30px]"
                     style={{ color: urgent ? "#ff9b9d" : "#fff" }}>
                     {left}
                   </p>
-                  <p className="mt-1.5 text-[9px] font-bold uppercase tracking-[0.14em] text-white/50">
+                  <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-white/50 sm:mt-1.5">
                     {t("daysRemaining", { count: left })}
                   </p>
-                  <p className="mt-2 border-t border-white/15 pt-2 text-[9px] font-semibold uppercase tracking-wide text-white/40">
+                  <p className="ms-auto border-s border-white/15 ps-3 text-[9px] font-semibold uppercase tracking-wide text-white/40 sm:ms-0 sm:mt-2 sm:border-s-0 sm:border-t sm:ps-0 sm:pt-2">
                     {t("toSubmit")}
                   </p>
                 </div>
               )}
             </div>
 
-            <div className="mt-7 rounded-xl bg-black/25 px-5 py-5">
+            <div className="mt-6 rounded-xl bg-black/25 px-3 py-4 sm:mt-7 sm:px-5 sm:py-5">
               <DossierProgress status={application.status} />
             </div>
           </div>
 
+          {/* ⚠️ Hidden below sm: fourteen repetitions at 375px are a grey
+              smear, which is decoration failing at being decoration. */}
           <MicroprintRule
-            className="relative z-10 pb-1 text-center text-white opacity-[0.12]"
+            className="relative z-10 hidden pb-1 text-center text-white opacity-[0.12] sm:block"
             repeat={14}
           />
           <div className="flex h-1.5" aria-hidden="true">
@@ -345,7 +354,7 @@ export default function ApplicationPage() {
               {/* ── pieces ── */}
               {!correcting && (
                 <div className="overflow-hidden rounded-2xl border border-[var(--line)] bg-white">
-                  <div className="flex items-center gap-3 border-b border-[var(--line)] px-6 py-4">
+                  <div className="flex items-center gap-3 border-b border-[var(--line)] px-5 py-4 sm:px-6">
                     <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--green-700)]">
                       {t("attachments")}
                     </p>
@@ -358,13 +367,13 @@ export default function ApplicationPage() {
                   </div>
 
                   {documents.length === 0 ? (
-                    <p className="px-6 py-8 text-center text-[13.5px] leading-relaxed text-[var(--slate)]">
+                    <p className="px-5 py-8 text-center text-[13.5px] leading-relaxed text-[var(--slate)] sm:px-6">
                       {t("noPieces")}
                     </p>
                   ) : (
                     <ul className="divide-y divide-[var(--line)]">
                       {documents.map((d) => (
-                        <li key={d.id} className="flex items-start gap-3 px-6 py-3.5">
+                        <li key={d.id} className="flex items-start gap-3 px-5 py-3.5 sm:px-6">
                           <span
                             className="mt-0.5 flex h-8 w-8 flex-none items-center justify-center rounded-lg"
                             style={{
@@ -377,10 +386,10 @@ export default function ApplicationPage() {
                           </span>
 
                           <div className="min-w-0 flex-1">
-                            <p className="text-[13.5px] font-semibold text-[var(--ink)]">
+                            <p className="flex flex-wrap items-baseline gap-x-1.5 text-[13px] font-semibold text-[var(--ink)] sm:text-[13.5px]">
                               {td(d.docType)}
                               {d.version > 1 && (
-                                <span dir="ltr" className="ms-1.5 inline-block font-mono text-[11px] text-[var(--muted-fg)]">
+                                <span dir="ltr" className="inline-block font-mono text-[11px] font-normal text-[var(--muted-fg)]">
                                   v{d.version}
                                 </span>
                               )}
@@ -416,8 +425,11 @@ export default function ApplicationPage() {
                             {d.needsCorrection && d.observation && (
                               /* ⚠️ dir="auto" — written by a commission
                                  member, in whichever language they use. */
+                              /* ⚠️ break-words: pre-wrap keeps the member's
+                                 line breaks but not a long token, and an
+                                 observation is where a link gets cited. */
                               <p dir="auto"
-                                className="user-text mt-1.5 whitespace-pre-wrap rounded-lg bg-[var(--gold-tint)] px-2.5 py-1.5 text-[12.5px] text-[var(--gold-700)]">
+                                className="user-text mt-1.5 whitespace-pre-wrap break-words rounded-lg bg-[var(--gold-tint)] px-2.5 py-1.5 text-[12px] leading-relaxed text-[var(--gold-700)] sm:text-[12.5px]">
                                 <b>{t("observation")}</b> {d.observation}
                               </p>
                             )}
@@ -429,7 +441,9 @@ export default function ApplicationPage() {
                               onClick={() => setDeleting(d.id)}
                               aria-label={t("removeAria", { type: td(d.docType) })}
                               title={t("remove")}
-                              className="flex-none rounded-lg p-1.5 text-[var(--muted-fg)] transition-colors hover:bg-[var(--red-tint)] hover:text-[var(--red-500)]"
+                              /* p-2: a 32px target on a screen operated by a
+                                 thumb, beside a 40px one. */
+                              className="flex-none rounded-lg p-2 text-[var(--muted-fg)] transition-colors hover:bg-[var(--red-tint)] hover:text-[var(--red-500)]"
                             >
                               <Trash2 className="h-4 w-4" />
                             </button>
@@ -444,14 +458,14 @@ export default function ApplicationPage() {
               {/* ── timeline ── */}
               {timeline.length > 0 && (
                 <div className="overflow-hidden rounded-2xl border border-[var(--line)] bg-white">
-                  <div className="flex items-center gap-3 border-b border-[var(--line)] px-6 py-4">
+                  <div className="flex items-center gap-3 border-b border-[var(--line)] px-5 py-4 sm:px-6">
                     <History className="h-3.5 w-3.5 flex-none text-[var(--green-700)]" />
                     <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--green-700)]">
                       {t("history")}
                     </p>
                     <span className="foil-rule h-px flex-1 opacity-35" aria-hidden="true" />
                   </div>
-                  <div className="p-6">
+                  <div className="p-5 sm:p-6">
                     <StatusTimeline entries={timeline} />
                   </div>
                 </div>
@@ -541,14 +555,14 @@ export default function ApplicationPage() {
             </div>
           ) : !decided ? (
             <div className="overflow-hidden rounded-2xl border border-[var(--line)] bg-white">
-              <div className="flex items-center gap-3 border-b border-[var(--line)] px-6 py-4">
+              <div className="flex items-center gap-3 border-b border-[var(--line)] px-5 py-4 sm:px-6">
                 <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--green-700)]">
                   {editable ? t("whatRemains") : t("dossierPieces")}
                 </p>
                 <span className="foil-rule h-px flex-1 opacity-35" aria-hidden="true" />
               </div>
 
-              <div className="p-6">
+              <div className="p-5 sm:p-6">
                 <RequirementChecklist
                   readiness={readiness}
                   editable={editable}
@@ -579,7 +593,7 @@ export default function ApplicationPage() {
                   waiting for. Gold the moment it can be pressed. */}
               {editable && (
                 <div
-                  className="border-t px-6 py-5"
+                  className="border-t px-5 py-5 sm:px-6"
                   style={{
                     borderColor: canSubmit ? "var(--gold-500)" : "var(--line)",
                     background: canSubmit ? "var(--gold-tint)" : "#fbfcfb",
@@ -702,7 +716,7 @@ function Detail({ label, value, mono = false }: {
   label: string; value?: string | null; mono?: boolean;
 }) {
   return (
-    <div className="flex items-baseline justify-between gap-4 px-4 py-2.5">
+    <div className="flex items-baseline justify-between gap-3 px-4 py-2.5 sm:gap-4">
       <dt className="flex-none text-[11.5px] font-semibold text-[var(--slate)]">
         {label}
       </dt>

@@ -104,16 +104,20 @@ export function EmploymentCard({
   }
 
   return (
-    <div className="rounded-2xl border border-[var(--line)] bg-white p-6">
-      <div className="flex items-center gap-3">
+    <div className="rounded-2xl border border-[var(--line)] bg-white p-5 sm:p-6">
+      {/* ⚠️ flex-wrap: the "complet" badge and the heading competed for a
+          303px row at 375px, and the heading lost. Allowed to wrap, the badge
+          drops below rather than squeezing the title into three words a
+          line. */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <span className="flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-[var(--green-tint)]">
           <Briefcase className="h-4 w-4 text-[var(--green-700)]" />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-[14px] font-extrabold text-[var(--green-900)]">
+          <p className="text-[13.5px] font-extrabold leading-snug text-[var(--green-900)] sm:text-[14px]">
             {t("title")}
           </p>
-          <p className="text-[12px] text-[var(--slate)]">{t("subtitle")}</p>
+          <p className="text-[12px] leading-snug text-[var(--slate)]">{t("subtitle")}</p>
         </div>
 
         {complete && (
@@ -134,7 +138,11 @@ export function EmploymentCard({
               setSpecialisationId(e.target.value ? Number(e.target.value) : null);
               setError(undefined);
             }}
-            className="h-9 rounded-lg border border-[var(--line)] bg-white px-3 text-[13px] outline-none focus-visible:border-[var(--green-500)] focus-visible:ring-2 focus-visible:ring-[var(--green-500)]/25 disabled:opacity-60"
+            /* ⚠️ h-10 below sm. A native select is the one control a phone
+               renders itself — the height here is only the tap target, and
+               36px is under the 44 a thumb needs. It costs nothing on a
+               desktop to make it 40. */
+            className="h-10 w-full rounded-lg border border-[var(--line)] bg-white px-3 text-[13.5px] outline-none focus-visible:border-[var(--green-500)] focus-visible:ring-2 focus-visible:ring-[var(--green-500)]/25 disabled:opacity-60 sm:h-9 sm:text-[13px]"
           >
             <option value="">{t("choose")}</option>
             {/* ONE language in the list. The pairing belonged in the preview
@@ -169,7 +177,7 @@ export function EmploymentCard({
       {/* ══ what will actually be printed ══
           ARABIC IN BOTH LANGUAGES — see the note at the top of the file. */}
       {complete && (
-        <div className="mt-4 rounded-xl border border-[var(--line)] bg-[#fbfcfb] p-4">
+        <div className="mt-4 rounded-xl border border-[var(--line)] bg-[#fbfcfb] p-3.5 sm:p-4">
           <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--green-700)]">
             <IdCard className="h-3 w-3 flex-none" /> {t("asPrinted")}
           </p>
@@ -177,7 +185,7 @@ export function EmploymentCard({
           {/* One dir on the container rather than on every cell: this block
               is a fragment of the card, and the card is an RTL document. */}
           <dl dir="rtl" lang="ar" className="mt-2.5 space-y-1.5">
-            <div className="flex items-baseline justify-between gap-4">
+            <div className="flex items-baseline justify-between gap-3 sm:gap-4">
               <dt className="flex-none text-[12.5px] font-semibold text-[var(--slate)]">
                 التخصص :
               </dt>
@@ -185,7 +193,7 @@ export function EmploymentCard({
                 {chosen?.labelAr}
               </dd>
             </div>
-            <div className="flex items-baseline justify-between gap-4">
+            <div className="flex items-baseline justify-between gap-3 sm:gap-4">
               <dt className="flex-none text-[12.5px] font-semibold text-[var(--slate)]">
                 المؤسسة :
               </dt>
@@ -200,14 +208,19 @@ export function EmploymentCard({
       )}
 
       {error && (
-        <p className="mt-3 rounded-lg bg-[var(--red-tint)] px-3 py-2 text-[12.5px] font-medium text-[var(--red-700)]">
+        /* dir="auto" and break-words: this may be a server sentence in either
+           language, and it must wrap rather than run past the panel. */
+        <p dir="auto" className="mt-3 break-words rounded-lg bg-[var(--red-tint)] px-3 py-2 text-[12.5px] font-medium leading-relaxed text-[var(--red-700)]">
           {error}
         </p>
       )}
 
       {editable && (
-        <div className="mt-5 flex justify-end border-t border-[var(--line)] pt-4">
-          <Button onClick={submit} disabled={save.isPending}>
+        /* ⚠️ Full width below sm. A lone button at the far corner is the
+           hardest place on a phone to reach, and this is the action that
+           records where someone works. */
+        <div className="mt-5 flex border-t border-[var(--line)] pt-4 sm:justify-end">
+          <Button className="w-full sm:w-auto" onClick={submit} disabled={save.isPending}>
             {save.isPending ? t("saving") : t("save")}
           </Button>
         </div>

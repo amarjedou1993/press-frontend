@@ -124,25 +124,25 @@ export function ObjectionPanel({
 
     return (
       <section className="overflow-hidden rounded-2xl border border-[var(--gold-500)]/50 bg-white">
-        <div className="flex items-start gap-4 bg-[var(--gold-tint)] px-6 py-5">
-          <span className="flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-[var(--gold-700)]">
+        <div className="flex items-start gap-3.5 bg-[var(--gold-tint)] px-5 py-4 sm:gap-4 sm:px-6 sm:py-5">
+          <span className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-[var(--gold-700)] sm:h-11 sm:w-11">
             <Gavel className="h-5 w-5 text-white" />
           </span>
           <div className="min-w-0 flex-1">
             <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--gold-700)]/75">
               {t("filedEyebrow")}
             </p>
-            <p className="mt-1 text-[16px] font-extrabold text-[var(--gold-700)]">
+            <p className="mt-1 text-[15px] font-extrabold leading-snug text-[var(--gold-700)] sm:text-[16px]">
               {t("filedTitle")}
             </p>
-            <p className="mt-1.5 text-[13px] leading-relaxed text-[var(--gold-700)]">
+            <p className="mt-1.5 text-[12.5px] leading-relaxed text-[var(--gold-700)] sm:text-[13px]">
               {t("filedBody")}
             </p>
           </div>
         </div>
 
         {filed.data && (
-          <div className="space-y-4 px-6 py-5">
+          <div className="space-y-4 px-5 py-4 sm:px-6 sm:py-5">
             <div className="min-w-0">
               <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--green-700)]">
                 {t("groundInvoked")}
@@ -160,7 +160,7 @@ export function ObjectionPanel({
               {/* dir="auto": the candidate wrote this in their own language. */}
               <blockquote
                 dir="auto"
-                className="user-text mt-2 whitespace-pre-wrap rounded-e-xl border-s-[3px] border-[var(--gold-700)] bg-[#fbfcfb] px-4 py-3 text-[13.5px] leading-[1.7] text-[var(--ink)]"
+                className="user-text mt-2 whitespace-pre-wrap break-words rounded-e-xl border-s-[3px] border-[var(--gold-700)] bg-[#fbfcfb] px-3.5 py-3 text-[13px] leading-[1.7] text-[var(--ink)] sm:px-4 sm:text-[13.5px]"
               >
                 {filed.data.argument}
               </blockquote>
@@ -194,15 +194,15 @@ export function ObjectionPanel({
       : t("notAvailableBody");
 
     return (
-      <section className="flex items-start gap-4 rounded-2xl border border-[var(--line)] bg-white p-6">
+      <section className="flex items-start gap-3.5 rounded-2xl border border-[var(--line)] bg-white p-5 sm:gap-4 sm:p-6">
         <span className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-[#eef1ef]">
           <Lock className="h-4 w-4 text-[var(--muted-fg)]" />
         </span>
         <div className="min-w-0">
-          <p className="text-[14px] font-extrabold text-[var(--green-900)]">
+          <p className="text-[13.5px] font-extrabold leading-snug text-[var(--green-900)] sm:text-[14px]">
             {t("notAvailable")}
           </p>
-          <p className="mt-1.5 max-w-2xl text-[13.5px] leading-relaxed text-[var(--slate)]">
+          <p className="mt-1.5 max-w-2xl text-[13px] leading-relaxed text-[var(--slate)] sm:text-[13.5px]">
             {blocked}
           </p>
         </div>
@@ -225,44 +225,63 @@ export function ObjectionPanel({
       <section className="overflow-hidden rounded-2xl border-2 bg-white"
         style={{ borderColor: tone.edge }}>
 
-        {/* ── the window ── */}
-        <div className="flex flex-wrap items-center gap-4 px-6 py-5"
-          style={{ background: tone.bg }}>
-          <span className="flex h-11 w-11 flex-none items-center justify-center rounded-xl"
-            style={{ background: tone.edge }}>
-            <Scale className="h-5 w-5 text-white" />
-          </span>
+        {/*
+          ── the window ──
 
-          <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em]"
-              style={{ color: tone.fg, opacity: 0.75 }}>
-              {t("eyebrow")}
-            </p>
-            <p className="mt-0.5 text-[16px] font-extrabold" style={{ color: tone.fg }}>
-              {t("youMayContest")}
-            </p>
-            <p className="mt-1.5 text-[13px] leading-relaxed" style={{ color: tone.fg }}>
-              {/* THE GUARANTEE, emphasised by the catalogue rather than the
-                  component: a different member examines it. */}
-              {t.rich("differentMember", { b: (c) => <b>{c}</b> })}
-              {e.deadline && (
-                <>
-                  {" "}
-                  {t.rich("fileBefore", {
-                    b: (c) => <b>{c}</b>,
-                    date: deadlineText,
-                  })}
-                </>
-              )}
-            </p>
+          ⚠️ THE ICON AND THE TEXT ARE ONE GROUP, AND THAT IS THE FIX.
+
+          As three siblings in a flex row, the countdown held its width and
+          the message shrank to about 130px on a 375px screen — "Vous pouvez
+          contester cette décision" over four lines beside a number, on the
+          panel explaining someone's only recourse.
+
+          Grouped, the countdown has nothing to sit beside below sm and drops
+          to its own full-width band. It reads as a header rule rather than a
+          badge, which is what a deadline actually is here.
+        */}
+        <div className="flex flex-wrap items-center gap-3.5 px-5 py-4 sm:gap-4 sm:px-6 sm:py-5"
+          style={{ background: tone.bg }}>
+
+          <div className="flex w-full min-w-0 items-start gap-3.5 sm:w-auto sm:flex-1 sm:gap-4">
+            <span className="flex h-10 w-10 flex-none items-center justify-center rounded-xl sm:h-11 sm:w-11"
+              style={{ background: tone.edge }}>
+              <Scale className="h-5 w-5 text-white" />
+            </span>
+
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em]"
+                style={{ color: tone.fg, opacity: 0.75 }}>
+                {t("eyebrow")}
+              </p>
+              <p className="mt-0.5 text-[15px] font-extrabold leading-snug sm:text-[16px]"
+                style={{ color: tone.fg }}>
+                {t("youMayContest")}
+              </p>
+              <p className="mt-1.5 text-[12.5px] leading-relaxed sm:text-[13px]"
+                style={{ color: tone.fg }}>
+                {/* THE GUARANTEE, emphasised by the catalogue rather than the
+                    component: a different member examines it. */}
+                {t.rich("differentMember", { b: (c) => <b>{c}</b> })}
+                {e.deadline && (
+                  <>
+                    {" "}
+                    {t.rich("fileBefore", {
+                      b: (c) => <b>{c}</b>,
+                      date: deadlineText,
+                    })}
+                  </>
+                )}
+              </p>
+            </div>
           </div>
 
-          <div className="flex-none rounded-xl bg-white/70 px-4 py-2.5 text-center">
+          {/* A full-width band on a phone, a compact block from sm. */}
+          <div className="flex w-full items-center justify-center gap-2 rounded-xl bg-white/70 px-4 py-2 sm:w-auto sm:flex-none sm:flex-col sm:gap-0 sm:py-2.5 sm:text-center">
             <p className="font-mono text-[20px] font-extrabold leading-none"
               style={{ color: tone.fg }}>
               {e.daysRemaining}
             </p>
-            <p className="mt-1 text-[9.5px] font-bold uppercase tracking-[0.12em]"
+            <p className="text-[9.5px] font-bold uppercase tracking-[0.12em] sm:mt-1"
               style={{ color: tone.fg, opacity: 0.7 }}>
               {t("days", { count: e.daysRemaining })}
             </p>
@@ -271,7 +290,7 @@ export function ObjectionPanel({
 
         {/* ── the decision being contested, in view while they write ── */}
         {e.contestedJustification && (
-          <div className="border-b border-[var(--line)] px-6 py-5">
+          <div className="border-b border-[var(--line)] px-5 py-4 sm:px-6 sm:py-5">
             <p className="flex flex-wrap items-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--red-700)]">
               <FileText className="h-3 w-3 flex-none" />
               {t("contestedDecision")}
@@ -285,7 +304,12 @@ export function ObjectionPanel({
                 language they use. */}
             <blockquote
               dir="auto"
-              className="user-text mt-2 whitespace-pre-wrap rounded-e-xl border-s-[3px] border-[var(--red-500)] bg-[var(--red-tint)] px-4 py-3 text-[13.5px] leading-[1.7] text-[var(--ink)]"
+              /* ⚠️ break-words. whitespace-pre-wrap keeps the line breaks the
+                 member typed but does nothing for one long token — and a
+                 refusal is exactly where someone cites a URL. This is the
+                 text the objection argues against; it cannot be the text that
+                 runs off the screen. */
+              className="user-text mt-2 whitespace-pre-wrap break-words rounded-e-xl border-s-[3px] border-[var(--red-500)] bg-[var(--red-tint)] px-3.5 py-3 text-[13px] leading-[1.7] text-[var(--ink)] sm:px-4 sm:text-[13.5px]"
             >
               {e.contestedJustification}
             </blockquote>
@@ -293,7 +317,7 @@ export function ObjectionPanel({
         )}
 
         {/* ── the ground ── */}
-        <div className="px-6 py-5">
+        <div className="px-5 py-4 sm:px-6 sm:py-5">
           <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--green-700)]">
             {t("onWhatGround")}
           </p>
@@ -340,7 +364,7 @@ export function ObjectionPanel({
         </div>
 
         {/* ── the argument ── */}
-        <div className="border-t border-[var(--line)] px-6 py-5">
+        <div className="border-t border-[var(--line)] px-5 py-4 sm:px-6 sm:py-5">
           <label htmlFor="objection-argument"
             className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--green-700)]">
             {t("setOutYourCase")}
@@ -375,21 +399,28 @@ export function ObjectionPanel({
           </div>
 
           {error && (
-            <p dir="auto" className="mt-3 flex items-start gap-2 rounded-lg bg-[var(--red-tint)] px-3 py-2 text-[12.5px] font-medium text-[var(--red-700)]">
+            <p dir="auto" className="mt-3 flex items-start gap-2 rounded-lg bg-[var(--red-tint)] px-3 py-2 text-[12.5px] font-medium leading-relaxed text-[var(--red-700)]">
               <AlertTriangle className="mt-0.5 h-3.5 w-3.5 flex-none" />
-              {error}
+              {/* min-w-0 so a long sentence wraps rather than pushing the
+                  icon out of the panel. */}
+              <span className="min-w-0 break-words">{error}</span>
             </p>
           )}
         </div>
 
         {/* ── submit ── */}
-        <div className="flex flex-wrap items-center gap-4 border-t border-[var(--line)] bg-[#fbfcfb] px-6 py-4">
-          <p className="flex min-w-0 flex-1 items-start gap-2 text-[12.5px] leading-relaxed text-[var(--slate)]">
+        {/* ⚠️ The warning takes the full width below sm and the button its
+            own line. Side by side at 375px the sentence had about 120px —
+            and "vous ne pourrez déposer qu'une seule réclamation" is the
+            thing to read before pressing, not after. */}
+        <div className="flex flex-wrap items-center gap-3 border-t border-[var(--line)] bg-[#fbfcfb] px-5 py-4 sm:gap-4 sm:px-6">
+          <p className="flex w-full min-w-0 items-start gap-2 text-[12.5px] leading-relaxed text-[var(--slate)] sm:w-auto sm:flex-1">
             <AlertTriangle className="mt-0.5 h-3.5 w-3.5 flex-none text-[var(--gold-700)]" />
-            <span>{t.rich("onlyOne", { b: (c) => <b>{c}</b> })}</span>
+            <span className="min-w-0">{t.rich("onlyOne", { b: (c) => <b>{c}</b> })}</span>
           </p>
 
-          <Button size="sm" className="flex-none" disabled={!ready || submit.isPending}
+          <Button size="sm" className="w-full sm:w-auto sm:flex-none"
+            disabled={!ready || submit.isPending}
             onClick={() => setConfirming(true)}>
             <Send className="h-4 w-4 flex-none" />
             {t("fileObjection")}
@@ -416,8 +447,11 @@ export function ObjectionPanel({
           </p>
 
           <AlertDialogFooter>
-            <AlertDialogCancel>{t("rereadMyCase")}</AlertDialogCancel>
-            <AlertDialogAction onClick={() => submit.mutate()}
+            <AlertDialogCancel className="w-full sm:w-auto">
+              {t("rereadMyCase")}
+            </AlertDialogCancel>
+            <AlertDialogAction className="w-full sm:w-auto"
+              onClick={() => submit.mutate()}
               disabled={submit.isPending}>
               {submit.isPending ? t("sending") : t("confirmFile")}
             </AlertDialogAction>
