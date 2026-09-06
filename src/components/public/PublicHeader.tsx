@@ -36,8 +36,20 @@ export async function PublicHeader() {
 
   /* ── the two halves of the emblem lockup ── */
 
+  /*
+   * ⚠️ lang="fr" AND dir="ltr", AND THEY ARE NOT DECORATION.
+   *
+   * In an Arabic page `html[dir="rtl"] body` sets Cairo and every descendant
+   * inherits it — so this block, which is the state's name in French, was
+   * being set in the Arabic face. Cairo carries Latin glyphs, so nothing
+   * broke; the French simply stopped looking like French.
+   *
+   * The [lang="fr"] rule in globals.css restores Inter, and it can only match
+   * an element that says so. The arabicBlock below already carried its own
+   * lang for the mirror-image reason.
+   */
   const latinBlock = (
-    <span className="leading-none">
+    <span lang="fr" dir="ltr" className="leading-none">
       <span className="gold-foil block text-[17px] font-extrabold tracking-[0.16em] sm:text-[19px]">
         RIM
       </span>
@@ -92,7 +104,12 @@ export async function PublicHeader() {
             </>
           ) : (
             <>
-              <p className="text-[8.5px] font-bold uppercase tracking-[0.2em] text-white/45 sm:text-[9px] sm:tracking-[0.24em]">
+              {/* lang="fr" here too, so the rule does not depend on which
+                  branch rendered the line. */}
+              <p
+                lang="fr"
+                className="text-[8.5px] font-bold uppercase tracking-[0.2em] text-white/45 sm:text-[9px] sm:tracking-[0.24em]"
+              >
                 République Islamique de Mauritanie
               </p>
               <p

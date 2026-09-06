@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PaginationBar } from "@/components/ui/pagination-bar";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -43,6 +44,22 @@ export default function SessionsPage() {
   const qc = useQueryClient();
   const [confirming, setConfirming] = useState<SessionResponse | null>(null);
 
+  /**
+   * The register's filter.
+   *
+   * ⚠️ BY YEAR, NOT BY FREE-TEXT SEARCH.
+   *
+   * A closed cycle has no name to search for — it is a period. "Session du 12
+   * mars 2026" is a date rendered as a title, and the register already groups
+   * itself by year, so the filter is the grouping made selectable rather than
+   * a second way of finding things.
+   *
+   * "" means every year.
+   */
+  const [year, setYear] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(12);
+
   const { data: sessions, isLoading } = useQuery({
     queryKey: sessionKeys.all,
     queryFn: listSessions,
@@ -58,6 +75,30 @@ export default function SessionsPage() {
       .sort((a, b) => b.startDate.localeCompare(a.startDate)),
     [sessions]
   );
+
+  /** The years present in the register, newest first. */
+  const years = useMemo(
+    () => [...new Set(archived.map((s) => yearOf(s.startDate)))]
+      .sort((a, b) => b - a),
+    [archived]
+  );
+
+  const filtered = useMemo(
+    () => (year ? archived.filter((s) => String(yearOf(s.startDate)) === year) : archived),
+    [archived, year]
+  );
+
+  const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const safePage = Math.min(page, pageCount);
+  const visible = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
+
+  /**
+   * ⚠️ Back to page one when the year changes.
+   *
+   * An administrator on page two who selects 2024 — three sessions — would
+   * otherwise see an empty list and conclude there were none.
+   */
+  useEffect(() => { setPage(1); }, [year]);
 
   const advance = useMutation({
     mutationFn: (id: number) => advanceSessionPhase(id),
@@ -370,31 +411,88 @@ export default function SessionsPage() {
           <span className="foil-rule h-px flex-1 opacity-30" aria-hidden="true" />
           {archived.length > 0 && (
             <span className="flex-none font-mono text-[11px] text-[var(--muted-fg)]">
-              {archived.length}
+              {year ? `${filtered.length} / ${archived.length}` : archived.length}
             </span>
           )}
         </div>
 
+        {/*
+          ⚠️ THE FILTER APPEARS ONLY WHEN THERE IS MORE THAN ONE YEAR.
+
+          Two to four cycles a year means the first year of operation has
+          nothing to filter — and a control with a single option is furniture
+          that teaches an administrator to ignore the controls that matter.
+
+          It earns its place from the second year, and by the tenth the
+          register is forty rows deep.
+        */}
+        {!isLoading && years.length > 1 && (
+          <div className="flex flex-wrap items-center gap-1.5 px-1">
+            <button
+              type="button"
+              onClick={() => setYear("")}
+              aria-pressed={year === ""}
+              className="rounded-lg px-3 py-1.5 text-[12px] font-bold transition-all"
+              style={year === ""
+                ? { background: "var(--green-700)", color: "#fff" }
+                : { background: "#f2f5f3", color: "var(--slate)" }}
+            >
+              Toutes
+            </button>
+            {years.map((y) => {
+              const selected = year === String(y);
+              return (
+                <button
+                  key={y}
+                  type="button"
+                  onClick={() => setYear(String(y))}
+                  aria-pressed={selected}
+                  className="rounded-lg px-3 py-1.5 font-mono text-[12px] font-bold transition-all"
+                  style={selected
+                    ? { background: "var(--green-700)", color: "#fff" }
+                    : { background: "#f2f5f3", color: "var(--slate)" }}
+                >
+                  {y}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
         {isLoading ? (
           <Skeleton className="h-32 w-full rounded-2xl" />
-        ) : archived.length === 0 ? (
+        ) : filtered.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-[var(--line)] bg-white p-10 text-center">
             <Archive className="mx-auto h-8 w-8 text-[var(--muted-fg)] opacity-45" />
             <p className="mt-3.5 text-[14px] font-extrabold text-[var(--green-900)]">
-              Aucun cycle clôturé
+              {year ? `Aucun cycle clôturé en ${year}` : "Aucun cycle clôturé"}
             </p>
-            <p className="mt-1.5 text-[13px] text-[var(--slate)]">
-              Les sessions terminées formeront ici le registre des cycles
-              d&apos;accréditation.
+            <p className="mt-1.5 text-[13px] leading-relaxed text-[var(--slate)]">
+              {year
+                ? "Aucune session ne s'est terminée cette année-là."
+                : "Les sessions terminées formeront ici le registre des cycles d'accréditation."}
             </p>
+            {year && (
+              <button type="button" onClick={() => setYear("")}
+                className="mt-4 text-[12.5px] font-bold text-[var(--green-700)] underline underline-offset-2">
+                Voir toutes les années
+              </button>
+            )}
           </div>
         ) : (
-          <ul className="overflow-hidden rounded-2xl border border-[var(--line)] bg-white">
-            {archived.map((s, i) => {
-              // The year is printed only when it changes — a register groups
-              // itself, and repeating "2026" on every line is noise.
-              const showYear = i === 0
-                || yearOf(s.startDate) !== yearOf(archived[i - 1].startDate);
+          <div className="overflow-hidden rounded-2xl border border-[var(--line)] bg-white">
+          <ul>
+            {visible.map((s, i) => {
+              /*
+                The year is printed only when it changes — a register groups
+                itself, and repeating "2026" on every line is noise.
+
+                ⚠️ AND NOT AT ALL WHEN A YEAR IS SELECTED. Every row would
+                then carry the same heading, which is the filter repeated as a
+                separator.
+              */
+              const showYear = !year && (i === 0
+                || yearOf(s.startDate) !== yearOf(visible[i - 1].startDate));
               return (
                 <li key={s.id}>
                   {showYear && (
@@ -444,6 +542,21 @@ export default function SessionsPage() {
               );
             })}
           </ul>
+
+          {/* ⚠️ Only once the register outgrows a page. Below that it is a bar
+              saying "1 to 8 of 8" — an answer to a question nobody asked. */}
+          {filtered.length > pageSize && (
+            <PaginationBar
+              page={safePage}
+              pageSize={pageSize}
+              total={filtered.length}
+              onPageChange={setPage}
+              onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
+              itemNounSingular="cycle"
+              itemNounPlural="cycles"
+            />
+          )}
+          </div>
         )}
       </section>
 

@@ -70,6 +70,29 @@ export function IssuedCardPreview({
 
   return (
     <div
+      /*
+       * ───────────────────────────────────────────────────────────────────
+       * ⚠️ dir="ltr" AND lang="fr" ON THE CARD ITSELF.
+       *
+       * dir MATTERS MOST. Without it the card inherits the page's direction,
+       * so in an Arabic page every flex row inside it mirrors: the photograph
+       * moves to the right, MCACRP swaps with بطاقة صحفية, the machine line
+       * runs the other way.
+       *
+       * This is a rendering of a PHYSICAL OBJECT with a fixed layout. Mirrored
+       * it shows a card that does not exist — and a candidate checking their
+       * details against what will be printed is checking against a fiction.
+       * The specimen on the landing page carries the same note; this one was
+       * missing it.
+       *
+       * lang="fr" then restores Inter to the Latin text, which otherwise
+       * inherits Cairo from an Arabic body — and, with the globals.css
+       * correction, restores the letter-spacing that MCACRP and the machine
+       * line are set in. The Arabic title below overrides both on itself.
+       * ───────────────────────────────────────────────────────────────────
+       */
+      dir="ltr"
+      lang="fr"
       className={`relative mx-auto aspect-[1.586] w-full max-w-[400px] overflow-hidden rounded-2xl ${className}`}
       style={{
         // ⚠️ Set in style rather than as a utility class, so it works
@@ -116,8 +139,9 @@ export function IssuedCardPreview({
               Relations avec le Parlement
             </p>
           </div>
-          {/* text-end, not text-right: the card is not mirrored, but a logical
-              property costs nothing and survives a future bilingual variant. */}
+          {/* text-end resolves to text-right here, because the card declares
+              dir="ltr" on itself. Kept logical anyway: it costs nothing and
+              survives a future variant. */}
           <div className="flex-none text-end">
             <p dir="rtl" lang="ar" className="text-[2.5cqw] font-semibold leading-snug text-[var(--green-700)]">
               بطاقة صحفية

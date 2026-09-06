@@ -319,6 +319,51 @@ html[dir="rtl"] body {
   font-family: var(--font-arabic), var(--font-sans), sans-serif;
 }
 
+/*
+ * ⚠️ AND THE CONVERSE — A LATIN RUN INSIDE AN ARABIC PAGE.
+ *
+ * `html[dir="rtl"] body` sets Cairo, and every descendant INHERITS it. An
+ * element marked lang="fr" had no font-family of its own, so it inherited
+ * Cairo as well — and Cairo carries Latin glyphs, so nothing visibly broke.
+ * The French simply stopped looking like French: one page, two languages,
+ * a single typeface.
+ *
+ * `.latin` already escaped this because it declares its own family below, and
+ * a declared value always beats an inherited one. [lang="fr"] never did.
+ *
+ * dir="ltr" is here for the same reason: an e-mail address or a URL marked
+ * LTR inside an Arabic paragraph is Latin text and belongs in the Latin face.
+ *
+ * ⚠️ Placed AFTER the Arabic rule deliberately. The two selectors have equal
+ * specificity, so on the impossible element carrying both, source order
+ * decides — and Latin content marked as such should win.
+ */
+[lang="fr"],
+[dir="ltr"] {
+  font-family: var(--font-latin), system-ui, sans-serif;
+}
+
+/*
+ * ⚠️ AND THE CASE NEITHER ATTRIBUTE CAN COVER: dir="auto".
+ *
+ * A journalist's name, an outlet, a commission member's observation — the
+ * language is unknown until the row arrives, so nothing can be marked in
+ * advance. Those runs carry dir="auto", which resolves DIRECTION at runtime
+ * and says nothing about the typeface: in an Arabic page they inherited
+ * Cairo and a French name was set in the Arabic face.
+ *
+ * :dir() matches the RESOLVED direction, including the one dir="auto" worked
+ * out from the first strong character. So a Latin name inside an Arabic page
+ * gets the Latin face without anyone having had to know its language.
+ *
+ * ⚠️ This is a refinement of .user-text, not a replacement. .user-text lists
+ * both families so a name that MIXES scripts falls back per glyph; this rule
+ * settles the whole run when it is unmixed. Keep both.
+ */
+html[dir="rtl"] [dir="auto"]:dir(ltr) {
+  font-family: var(--font-latin), var(--font-arabic), system-ui, sans-serif;
+}
+
 /* Machine values keep the Latin mono face in BOTH languages: a card number
    read on screen must match the one printed on the card, digit for digit. */
 html[dir="rtl"] .font-mono,
@@ -343,14 +388,36 @@ html[dir="rtl"] li {
    letter-spacing separates joined letterforms — the word visibly falls apart.
    Tailwind's tracking-* utilities are used throughout this codebase for
    small-caps labels; they must not reach Arabic text. */
-html[dir="rtl"] [class*="tracking-"] {
+/*
+ * ⚠️ THE EXCEPTION IS IN THE SELECTOR, NOT IN A SECOND RULE — AND IT HAD TO
+ * MOVE THERE.
+ *
+ * The escape below used to be its own rule:
+ *
+ *     html[dir="rtl"] .latin { letter-spacing: revert; }
+ *
+ * which never worked. An !important declaration beats a normal one whatever
+ * the specificity, so every Latin run marked .latin or lang="fr" still lost
+ * its tracking on an Arabic page — MCACRP on the card specimen, the machine
+ * line, the small-caps labels.
+ *
+ * `revert` would not have helped even if it had won: it reverts to the
+ * user-agent origin, which is `normal`, not to the tracking Tailwind set.
+ *
+ * Excluding them from the match is the only form that works. The descendant
+ * selectors ([lang="fr"] *) matter too: a lang on a container must protect
+ * the tracked elements inside it, which is how the card marks itself.
+ */
+html[dir="rtl"] [class*="tracking-"]:not(
+  .latin,
+  [lang="fr"],
+  .font-mono,
+  .latin *,
+  [lang="fr"] *,
+  [dir="ltr"],
+  [dir="ltr"] *
+) {
   letter-spacing: 0 !important;
-}
-/* …except on Latin runs deliberately marked as such. */
-html[dir="rtl"] .latin,
-html[dir="rtl"] [lang="fr"],
-html[dir="rtl"] .font-mono {
-  letter-spacing: revert;
 }
 
 /* A Latin run inside Arabic text — an outlet name, a card number. */

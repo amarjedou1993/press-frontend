@@ -10,6 +10,26 @@ export function PressCard({ className = "" }: { className?: string }) {
   return (
     <div className={`press-card-wrap ${className}`}>
       <article
+        /*
+         * ─────────────────────────────────────────────────────────────────
+         * ⚠️ dir="ltr" AND lang="fr" — THE CARD DOES NOT FOLLOW THE READER.
+         *
+         * Every page that renders this specimen says in a comment that the
+         * card is not mirrored. Nothing enforced it: without dir, an Arabic
+         * page flips every flex row inside — the tricolour bars move, the
+         * portrait swaps with the seal, RIM trades places with الجمهورية.
+         *
+         * The result is a card that does not exist, shown as the product on
+         * the front page.
+         *
+         * lang="fr" then keeps the Latin text in Inter rather than Cairo, and
+         * keeps the letter-spacing that RIM, CARTE DE PRESSE, SPÉCIMEN and
+         * the MRZ strip are set in. The Arabic runs override it on
+         * themselves.
+         * ─────────────────────────────────────────────────────────────────
+         */
+        dir="ltr"
+        lang="fr"
         className="press-card relative aspect-[1.586] w-full overflow-hidden rounded-[18px] bg-white"
         style={{
           boxShadow:
@@ -52,18 +72,25 @@ export function PressCard({ className = "" }: { className?: string }) {
                 <p className="text-[13px] font-extrabold leading-none tracking-[0.1em] text-[var(--green-800,#0f4a30)]">
                   RIM
                 </p>
+                {/* ⚠️ "République", not "Réplique". The specimen is the first
+                    thing a visitor sees on the home page, and it misspelt the
+                    name of the state. */}
                 <p className="mt-1 max-w-[168px] text-[6px] font-bold uppercase leading-[1.5] tracking-[0.1em] text-[var(--muted-fg)]">
-                  Réplique Islamique de Mauritanie
+                  République Islamique de Mauritanie
                 </p>
               </div>
             </div>
+            {/* ⚠️ lang="ar" so it keeps Cairo inside a card now marked fr.
+                And «الإسلامية» with its hamza — the header and the landing
+                page both spell it that way; this one did not. */}
             <p
               dir="rtl"
-              className="text-right text-[10.5px] font-semibold leading-[1.5] text-[var(--green-700)]"
+              lang="ar"
+              className="text-end text-[10.5px] font-semibold leading-[1.5] text-[var(--green-700)]"
             >
               الجمهورية
-                <br />
-                الاسلامية الموريتانية
+              <br />
+              الإسلامية الموريتانية
             </p>
           </header>
 
@@ -75,7 +102,7 @@ export function PressCard({ className = "" }: { className?: string }) {
             <h3 className="text-[15px] font-extrabold tracking-[0.06em] text-[var(--green-900)]">
               CARTE DE PRESSE
             </h3>
-            <span dir="rtl" className="text-[13px] font-bold text-[var(--green-900)]">
+            <span dir="rtl" lang="ar" className="text-[13px] font-bold text-[var(--green-900)]">
               بطاقة صحفية
             </span>
           </div>
@@ -108,6 +135,8 @@ export function PressCard({ className = "" }: { className?: string }) {
             {/* data fields */}
             <dl className="min-w-0 flex-1 space-y-[7px] pt-0.5">
               {[
+                // A bilingual label inside a card marked fr: the Arabic word
+                // needs its own mark-up, so this row carries both.
                 ["Nom / الاسم", "————————————"],
                 ["Catégorie", "————————————"],
                 ["N° de carte", "RIM-2026-000000"],

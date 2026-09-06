@@ -118,7 +118,7 @@ export default function PublicRegistryPage() {
           aria-hidden="true"
         />
 
-        <div className="relative z-10 mx-auto max-w-5xl px-6 py-16">
+        <div className="relative z-10 mx-auto max-w-5xl px-5 py-12 sm:px-6 sm:py-16">
           <div className="flex items-center gap-3">
             <span className="inline-flex items-center gap-[3px]" aria-hidden="true">
               <i className="h-3.5 w-1.5 rounded-full bg-[var(--green-500)]" />
@@ -130,7 +130,7 @@ export default function PublicRegistryPage() {
             </p>
           </div>
 
-          <div className="mt-6 flex items-end justify-between gap-8">
+          <div className="mt-6 flex items-end justify-between gap-5 sm:gap-8">
             <h1 className="min-w-0 text-[clamp(32px,5vw,52px)] font-extrabold leading-[1.02] tracking-[-0.02em]">
               {t.rich("title", { br: () => <br /> })}
             </h1>
@@ -144,20 +144,33 @@ export default function PublicRegistryPage() {
             </p>
           </div>
 
-          <p className="mt-5 max-w-2xl text-[15px] leading-[1.75] text-white/65">
+          <p className="mt-5 max-w-2xl text-[14px] leading-[1.75] text-white/65 sm:text-[15px]">
             {t("lede")}
           </p>
 
           {/* ── the field: the page's centre of gravity ── */}
-          <div className="relative mt-9 max-w-2xl">
-            <Search className="field-icon-start pointer-events-none absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--green-900)]/35" />
+          <div className="relative mt-7 max-w-2xl sm:mt-9">
+            {/*
+              ⚠️ start-5, NOT left-5 + the .field-icon-start shim.
+
+              The shim in globals.css moves the icon to right: 0.875rem under
+              RTL — but this one sits at left-5, which is 1.25rem. So in an
+              Arabic page it landed six pixels off the padding the field
+              reserves for it (ps-14), and the icon floated in a gap.
+
+              Tailwind's start-* maps to inset-inline-start and follows the
+              direction natively, at the offset actually written. The shim was
+              a workaround for utilities that had no logical form when it was
+              written; this one does.
+            */}
+            <Search className="pointer-events-none absolute start-5 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--green-900)]/35" />
             <input
               type="search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t("searchPlaceholder")}
               aria-label={t("searchLabel")}
-              className="h-14 w-full rounded-2xl bg-white ps-14 pe-12 text-[15.5px] text-[var(--ink)] shadow-[0_20px_50px_-26px_rgba(0,0,0,.8)] outline-none
+              className="h-13 w-full rounded-2xl bg-white ps-14 pe-12 text-[15px] text-[var(--ink)] shadow-[0_20px_50px_-26px_rgba(0,0,0,.8)] outline-none sm:h-14 sm:text-[15.5px]
                          placeholder:text-[var(--muted-fg)]
                          focus-visible:ring-4 focus-visible:ring-[var(--gold-500)]/45"
             />
@@ -193,7 +206,7 @@ export default function PublicRegistryPage() {
       />
 
       {/* ══ THE ROLL ══ */}
-      <section className="mx-auto max-w-5xl px-6 py-14">
+      <section className="mx-auto max-w-5xl px-5 py-10 sm:px-6 sm:py-14">
 
         {registry.isLoading && (
           <div className="space-y-3">
@@ -282,7 +295,11 @@ export default function PublicRegistryPage() {
                     itself information. */}
                 <nav
                   aria-label={t("indexLabel")}
-                  className="sticky top-4 z-20 -mx-2 mb-8 rounded-2xl border border-[var(--line)] bg-white/85 px-2 py-2 backdrop-blur-md"
+                  /* ⚠️ top-2 below sm. The rail is sticky and the public
+                     header is already sticky above it — at top-4 on a phone
+                     the two overlapped by four pixels of blur, which reads as
+                     a rendering fault rather than a gap. */
+                  className="sticky top-2 z-20 -mx-2 mb-8 rounded-2xl border border-[var(--line)] bg-white/85 px-2 py-2 backdrop-blur-md sm:top-4"
                 >
                   <ul className="flex flex-wrap justify-center gap-0.5">
                     {rail.map((letter) => {
@@ -370,7 +387,7 @@ export default function PublicRegistryPage() {
         )}
 
         {!registry.isLoading && !searching && all.length === 0 && (
-          <div className="rounded-2xl border border-[var(--line)] bg-white p-14 text-center">
+          <div className="rounded-2xl border border-[var(--line)] bg-white p-10 text-center sm:p-14">
             <Info className="mx-auto h-8 w-8 text-[var(--muted-fg)]" />
             <p className="mt-4 text-[15px] font-extrabold text-[var(--green-900)]">
               {t("noneYetTitle")}
@@ -383,10 +400,10 @@ export default function PublicRegistryPage() {
       </section>
 
       {/* ══ what this register is, and is not ══ */}
-      <section className="mx-auto max-w-5xl px-6 pb-20">
+      <section className="mx-auto max-w-5xl px-5 pb-16 sm:px-6 sm:pb-20">
         <Overline index="02">{t("scopeOverline")}</Overline>
 
-        <div className="relative mt-8 overflow-hidden rounded-2xl border border-[var(--line)] bg-white p-7">
+        <div className="relative mt-8 overflow-hidden rounded-2xl border border-[var(--line)] bg-white p-5 sm:p-7">
           <Guilloche
             className="rtl-mirror pointer-events-none absolute -bottom-28 -right-24 h-72 w-72 text-[var(--green-900)] opacity-[0.03]"
             rings={30}
@@ -496,8 +513,22 @@ function RollEntry({
         aria-hidden="true"
       />
 
-      {/* dir="auto": the name may be in either script, whatever the page is. */}
-      <p dir="auto" className="truncate text-[14px] font-bold text-[var(--green-900)]">
+      {/*
+        dir="auto": the name may be in either script, whatever the page is.
+
+        ⚠️ AND .user-text WITH IT. dir="auto" resolves the DIRECTION of a run
+        at runtime; it says nothing about the typeface. So in an Arabic page a
+        Latin name inherited Cairo from body and was set in the Arabic face —
+        legible, because Cairo carries Latin glyphs, but not French.
+
+        lang cannot fix this: the language of a name is unknown until the row
+        arrives. .user-text lists BOTH families, so the browser falls back per
+        glyph — Inter for the Latin, Cairo for the Arabic, in the same line if
+        the name mixes them.
+
+        Every dir="auto" run on this page carries it for the same reason.
+      */}
+      <p dir="auto" className="user-text truncate text-[14px] font-bold text-[var(--green-900)]">
         {journalist.fullName}
       </p>
 
@@ -506,7 +537,7 @@ function RollEntry({
         {journalist.institution && (
           <>
             <span className="flex-none opacity-35">·</span>
-            <span dir="auto" className="truncate opacity-80">
+            <span dir="auto" className="user-text truncate opacity-80">
               {journalist.institution}
             </span>
           </>
@@ -551,7 +582,7 @@ function OutletCard({
           <Building2 className="h-4 w-4 text-[var(--gold-500)]" />
         </span>
         {/* An outlet name is free text in whatever script its owner uses. */}
-        <p dir="auto" className="min-w-0 flex-1 truncate text-[14.5px] font-extrabold">
+        <p dir="auto" className="user-text min-w-0 flex-1 truncate text-[14.5px] font-extrabold">
           {named ? institution : t("unnamedOutlet")}
         </p>
         <span className="flex-none rounded-full bg-white/10 px-3 py-1 font-mono text-[11px] font-bold text-white/85 ring-1 ring-inset ring-white/20">
@@ -563,7 +594,7 @@ function OutletCard({
         {members.map((j) => (
           <li key={j.cardNumber}
             className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 px-5 py-3 transition-colors hover:bg-[#fbfcfb]">
-            <span dir="auto" className="text-[13.5px] font-bold text-[var(--green-900)]">
+            <span dir="auto" className="user-text text-[13.5px] font-bold text-[var(--green-900)]">
               {j.fullName}
             </span>
             {spec(j) && (
@@ -626,7 +657,7 @@ function RegisterEntry({
         </span>
 
         <div className="min-w-0 flex-1">
-          <p dir="auto" className="text-[16.5px] font-extrabold leading-tight text-[var(--green-900)]">
+          <p dir="auto" className="user-text text-[16.5px] font-extrabold leading-tight text-[var(--green-900)]">
             {journalist.fullName}
           </p>
 
@@ -638,7 +669,7 @@ function RegisterEntry({
               </span>
             )}
             {journalist.institution && (
-              <span dir="auto" className="flex items-center gap-1.5">
+              <span dir="auto" className="user-text flex items-center gap-1.5">
                 <Building2 className="h-3 w-3 flex-none opacity-55" />
                 {journalist.institution}
               </span>

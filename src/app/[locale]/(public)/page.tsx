@@ -96,11 +96,27 @@ export default async function LandingPage() {
                     This is the page's masthead, and a masthead names the state
                     in both — so it stays, and it swaps. In French the Arabic
                     runs down the edge; in Arabic the French does. */}
-                <p
+                {/* <p
                   dir={arabic ? "ltr" : "rtl"}
                   lang={arabic ? "fr" : "ar"}
                   className="hidden self-stretch border-e border-white/15 pe-5 text-[15px] font-semibold leading-[2.1] text-white/45 sm:block"
                   style={{ writingMode: "vertical-rl", letterSpacing: arabic ? "0.06em" : 0 }}
+                > */}
+                                <p
+                  dir={arabic ? "ltr" : "rtl"}
+                  lang={arabic ? "fr" : "ar"}
+                  className="hidden self-stretch border-e border-white/15 pe-5 text-[15px] font-semibold leading-[2.1] text-white/45 sm:block"
+                  style={{
+                    writingMode: "vertical-rl",
+                    /* ⚠️ isolate, and it is what stops the reversal.
+                       In vertical-rl, `dir` orders the flow down the column
+                       and the bidi algorithm still resolves the run against
+                       its surroundings. An explicit dir opposite to the page's
+                       made the glyphs run backwards. Isolating the run keeps
+                       it ordered by its own direction alone. */
+                    unicodeBidi: "isolate",
+                    letterSpacing: arabic ? "0.06em" : 0,
+                  }}
                 >
                   {t("titleVertical")}
                 </p>
@@ -170,10 +186,27 @@ export default async function LandingPage() {
             {/* ── specimen column ── */}
             <div className="reveal reveal-2 min-w-0 justify-self-center lg:justify-self-end">
               <div className="relative w-[min(430px,88vw)]">
-                {/* -left-14 is a physical offset: mirrored so the seal always
-                    overlaps the card's outer corner. */}
+                {/*
+                  ⚠️ NO rtl-mirror. IT WAS FLIPPING THE SEAL ITSELF.
+
+                  rtl-mirror is transform: scaleX(-1). The intent was to move
+                  the seal to the card's other outer corner in an Arabic page
+                  — but scaleX flips the ARTWORK, not the position. Both
+                  legends read backwards and the tricolour at the centre ran
+                  red–gold–green: the flag reversed, on the front page.
+
+                  -start-14 does what the mirror was reaching for. It is a
+                  logical offset, so it resolves to the left in French and the
+                  right in Arabic, and it touches nothing drawn on the seal.
+
+                  ⚠️ The two Guilloche calls above KEEP their mirror, and that
+                  is not an inconsistency: a rosette of ellipses is symmetric,
+                  so scaleX changes where the composition sits without
+                  changing what it looks like. The seal is not symmetric — it
+                  has writing on it.
+                */}
                 <OfficialSeal
-                  className="rtl-mirror pointer-events-none absolute -left-14 -top-14 z-20 hidden h-32 w-32 opacity-95 drop-shadow-[0_8px_20px_rgba(0,0,0,.45)] xl:block"
+                  className="pointer-events-none absolute -start-14 -top-14 z-20 hidden h-32 w-32 opacity-95 drop-shadow-[0_8px_20px_rgba(0,0,0,.45)] xl:block"
                   color="var(--gold-500)"
                   id="hero-seal"
                 />

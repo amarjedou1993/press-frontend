@@ -62,8 +62,28 @@ function Seal({ className, stroke, label, arabic }: {
             transform={`rotate(${i * 7.5} 100 100)`} />
         ))}
       </g>
+      {/* The monogram is Latin in both languages — it is the ministry's
+          initials, not a word. It declares its face so an Arabic page does
+          not set it in Cairo. */}
       <text fill={stroke} fontSize="13" fontWeight="800" letterSpacing="3"
-        textAnchor="middle" x="100" y="96">MCACRP</text>
+        textAnchor="middle" x="100" y="96"
+        direction="ltr"
+        style={{ fontFamily: "var(--font-latin), system-ui, sans-serif" }}>
+        MCACRP
+      </text>
+      {/*
+        ⚠️ direction is already explicit here — unlike the seal in patterns.tsx,
+        which inherited it and reversed once <html> carried dir="rtl".
+
+        unicode-bidi: isolate is the part that was missing. A label containing
+        a dash, a full stop or a bracket carries bidi-NEUTRAL characters, and
+        those take their side from whatever surrounds them — so they can land
+        at the wrong end of the phrase while every letter is correct.
+
+        And the font, for the reason the arcs in patterns.tsx now declare
+        theirs: an SVG <text> inherits the document's family, which on an
+        Arabic page is Cairo.
+      */}
       <text
         fill={stroke}
         fontSize={arabic ? "9" : "7.5"}
@@ -71,6 +91,12 @@ function Seal({ className, stroke, label, arabic }: {
         letterSpacing={arabic ? "0" : "1.6"}
         textAnchor="middle" x="100" y={arabic ? "114" : "112"}
         direction={arabic ? "rtl" : "ltr"}
+        style={{
+          fontFamily: arabic
+            ? "var(--font-arabic), serif"
+            : "var(--font-latin), system-ui, sans-serif",
+          unicodeBidi: "isolate",
+        }}
       >
         {label}
       </text>
@@ -266,8 +292,24 @@ export function DecisionOutcome({
           relationship rather than removing the seal, which is part of what
           makes this read as a formal notice.
         */}
+        {/*
+          ⚠️ NO rtl-mirror. IT WAS FLIPPING THE SEAL ITSELF.
+
+          rtl-mirror is transform: scaleX(-1). It was there to move the
+          impression to the other corner in an Arabic page — but scaleX flips
+          the ARTWORK, not the position, so the legend read backwards on the
+          formal notification of a decision.
+
+          -end-14 / sm:-end-6 does what the mirror was reaching for: a logical
+          offset resolves to the right in French and the left in Arabic, and
+          touches nothing drawn on the seal.
+
+          ⚠️ The Rosette above KEEPS its mirror. A lathe pattern of ellipses
+          is symmetric, so scaleX moves where the composition sits without
+          changing what it looks like. A seal carries writing; it is not.
+        */}
         <Seal
-          className="rtl-mirror pointer-events-none absolute -right-14 top-1/2 h-32 w-32 -translate-y-1/2 opacity-[0.13] sm:-right-6 sm:h-44 sm:w-44"
+          className="pointer-events-none absolute -end-14 top-1/2 h-32 w-32 -translate-y-1/2 opacity-[0.13] sm:-end-6 sm:h-44 sm:w-44"
           stroke={p.accent}
           label={t(`${key}.seal`)}
           arabic={arabic}

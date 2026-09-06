@@ -108,7 +108,26 @@ export function GuillocheBand({
    a seal nobody could recognise twice.
 
    Arabic leads on the upper arc, as on the state's own documents.
-   ─────────────────────────────────────────────────────────────── */
+
+   ═══════════════════════════════════════════════════════════════
+   ⚠️⚠️ NEVER PUT .rtl-mirror ON THIS COMPONENT.
+
+   rtl-mirror is `transform: scaleX(-1)`. On a Guilloche that is invisible —
+   a rosette of ellipses mirrors to itself. On THIS it flips the artwork:
+
+     · both legends read backwards, letter by letter;
+     · the national mark at the centre runs RED–GOLD–GREEN, which is the
+       flag reversed.
+
+   That shipped, on the landing hero, in Arabic. It looked like a text
+   direction problem and was not: the text was correct and the whole drawing
+   was inside out.
+
+   TO MOVE THE SEAL, USE A LOGICAL OFFSET — `-start-14` rather than
+   `-left-14` with a mirror. That places it at the other corner in an RTL
+   page without touching a single thing drawn on it, which is what the
+   mirroring was reaching for in the first place.
+   ═══════════════════════════════════════════════════════════════ */
 export function OfficialSeal({
   className = "",
   color = "var(--gold-500)",
@@ -152,20 +171,52 @@ export function OfficialSeal({
         fontWeight="700"
         letterSpacing="0"
         direction="rtl"
-        style={{ fontFamily: "var(--font-arabic), serif" }}
+        style={{ fontFamily: "var(--font-arabic), serif", unicodeBidi: "isolate" }}
       >
         <textPath href={`#${id}-top`} startOffset="50%" textAnchor="middle">
           وزارة الثقافة
         </textPath>
       </text>
 
-      <text fill={color} fontSize="10" fontWeight="600" letterSpacing="2.4" opacity="0.85">
+      {/*
+        ⚠️ direction="ltr" IS REQUIRED, AND ITS ABSENCE REVERSED THE LEGEND.
+
+        A <textPath> inherits direction from the document. The Arabic arc
+        above declares rtl explicitly; this one declared nothing — so once
+        <html> carried dir="rtl", "MINISTÈRE DE LA CULTURE" ran backwards
+        along its own path, on the seal of a ministry.
+
+        ⚠️ unicode-bidi: isolate for the em dash. It is a bidi-NEUTRAL
+        character: it takes its side from whatever surrounds it, so it can
+        jump to the wrong end of the phrase even when every letter is right.
+        Isolating the run resolves it against the run's own direction alone.
+
+        ⚠️ AND THE FONT, for the same reason as the direction. The Arabic arc
+        sets font-arabic; this one inherited — which on an Arabic page meant
+        Cairo, so the seal carried both halves of its legend in one face.
+        That is precisely what a bilingual seal must not do.
+      */}
+      <text
+        fill={color}
+        fontSize="10"
+        fontWeight="600"
+        letterSpacing="2.4"
+        opacity="0.85"
+        direction="ltr"
+        style={{
+          fontFamily: "var(--font-latin), system-ui, sans-serif",
+          unicodeBidi: "isolate",
+        }}
+      >
         <textPath href={`#${id}-bottom`} startOffset="50%" textAnchor="middle">
           MINISTÈRE DE LA CULTURE — R.I.M.
         </textPath>
       </text>
 
-      {/* national mark at centre */}
+      {/* The national mark at the centre.
+          ⚠️ GREEN, GOLD, RED — left to right, always. This is the one place
+          in the file where a mirror is detectable at a glance, and it is how
+          the rtl-mirror bug was finally seen. */}
       <g transform="translate(100 100)">
         <rect x="-13" y="-11" width="7" height="22" rx="3.5" fill="var(--green-500)" />
         <rect x="-3.5" y="-11" width="7" height="22" rx="3.5" fill="var(--gold-500)" />
@@ -197,9 +248,16 @@ export function MicroprintRule({
 }) {
   return (
     <div
-      // dir="ltr": a Latin string rendered inside an RTL page would have its
-      // middle dots reordered, breaking the even rhythm the effect depends on.
+      /* dir="ltr": a Latin string rendered inside an RTL page would have its
+         middle dots reordered, breaking the even rhythm the effect depends on.
+
+         ⚠️ AND IT NOW ALSO KEEPS THE TRACKING. The global rule zeroes
+         tracking-* under dir="rtl", and tracking-[0.3em] is the entire effect
+         here — without it the microprint collapsed into a solid line on every
+         Arabic page. The corrected rule in globals.css excludes [dir="ltr"],
+         which is why this attribute is load-bearing rather than decorative. */
       dir="ltr"
+      lang="fr"
       className={`overflow-hidden whitespace-nowrap font-mono text-[6.5px] leading-none tracking-[0.3em] ${className}`}
       aria-hidden="true"
     >
