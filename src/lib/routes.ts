@@ -1,70 +1,3 @@
-// import { Role } from "./types";
-
-// export const routes = {
-//   /* ── public ─────────────────────────────────────────── */
-//   home: "/",
-//   publicSessions: "/sessions",
-//   publicJournalists: "/journalistes",          // week 7
-
-//   /* ── auth (anonymous only) ──────────────────────────── */
-//   auth: {
-//     login: "/login",
-//     register: "/register",
-//     forgotPassword: "/forgot-password",       // planned
-//     resetPassword: "/reset-password",         // planned
-//     loginExpired: "/login?expired=1",         // global 401 landing
-//   },
-
-//   /* ── candidate space ────────────────────────────────── */
-//   candidate: {
-//     dashboard: "/dashboard",
-//     application: "/application",             
-//     newApplication: "/application/new",       
-//     correction: "/application/correction",    
-//     profile: "/profile",                      
-//   },
-
-//   /* ── reviewer space ─────────────────────────────────── */
-//   reviewer: {
-//       home: "/reviewer",
-//       cards: "/reviewer/cartes", 
-//       examination: (id: number) => `/reviewer/${id}`,
-//     },
-
-//   /* ── printer space ──────────────────────────────────── */
-//   printer: {
-//     home: "/printer",
-//     history: "/printer/historique",
-//   },
-
-//   /* ── admin space ────────────────────────────────────── */
-//   admin: {
-//     home: "/admin",
-//     sessions: "/admin/sessions",
-//     newSession: "/admin/sessions/new",
-//     session: (id: number | string) => `/admin/sessions/${id}`,   // week 3: results
-//     reviewers: "/admin/users",
-//     cards: "/admin/cards",
-//     revocations: "/admin/cards/revocations",
-//     sessionResults: (id: number | string) => `/admin/sessions/${id}/resultats`,                  
-//   },
-// } as const;
-
-// /** Where each role lands after login / when bounced from a wrong space. */
-// export function homeForRole(role: Role): string {
-//   switch (role) {
-//     case "SUPER_ADMIN":
-//       return routes.admin.home;
-//     case "REVIEWER":
-//       return routes.reviewer.home;
-//     case "PRINTER":
-//       return routes.printer.home;
-//     case "CANDIDATE":
-//     default:
-//       return routes.candidate.dashboard;
-//   }
-// }
-
 // src/lib/routes.ts
 import { Role } from "./types";
 
@@ -83,12 +16,29 @@ export const routes = {
     loginExpired: "/login?expired=1",         // global 401 landing
   },
 
-  /* ── candidate space ────────────────────────────────── */
+  // /* ── candidate space ────────────────────────────────── */
+  // candidate: {
+  //   dashboard: "/dashboard",
+  //   application: "/application",
+  //   newApplication: "/application/new",
+  //   correction: "/application/correction",
+  //   profile: "/profile",
+  // },
+
+    /* ── candidate space ────────────────────────────────── */
   candidate: {
     dashboard: "/dashboard",
     application: "/application",
     newApplication: "/application/new",
     correction: "/application/correction",
+    /**
+     * ⚠️ NOT under /application. A renewal is where a holder decides whether
+     * to file at all — the eligibility, the card being replaced, the
+     * deadline. Only once they accept does it become an ordinary dossier at
+     * /application, and nesting it there would imply a dossier already
+     * exists.
+     */
+    renewal: "/renewal",
     profile: "/profile",
   },
 

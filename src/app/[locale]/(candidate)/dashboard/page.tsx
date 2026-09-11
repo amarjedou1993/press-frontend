@@ -17,7 +17,9 @@ import {
   type ApplicationStatus,
 } from "@/lib/api/applications";
 import { getMyCard, myCardKeys } from "@/lib/api/my-card";
-import { listOpenSessions, catalogKeys } from "@/lib/api/sessions-public";
+import {
+  listOpenSessions, openCandidacySession, catalogKeys,
+} from "@/lib/api/sessions-public";
 import { getMe, accountKeys } from "@/lib/api/account";
 import { routes } from "@/lib/routes";
 
@@ -94,7 +96,24 @@ export default function DashboardPage() {
   const sessions = useQuery({ queryKey: catalogKeys.openSessions, queryFn: listOpenSessions });
 
   const current = applications.data?.[0];
-  const openSession = sessions.data?.[0];
+
+  /*
+   * ⚠️ THE CANDIDATURE, NOT sessions[0].
+   *
+   * The endpoint returns both kinds, newest first — so index zero was
+   * whichever opened last. Once a renewal session existed, this dashboard
+   * announced it as "une session est ouverte" and offered a button to
+   * /application/new, which filters properly and then said "aucune session
+   * ouverte".
+   *
+   * A dead end, built by two screens reading one list and disagreeing about
+   * what index zero meant. The answer is named once, in sessions-public.
+   *
+   * ⚠️ A RENEWAL IS NOT SHOWN HERE. A holder learns of theirs by e-mail and
+   * from /renewal, which asks the server whether THIS candidate is eligible —
+   * a question a session list cannot answer.
+   */
+  const openSession = openCandidacySession(sessions.data);
   const left = openSession ? daysUntil(openSession.receivingEnd) : null;
 
   /* What is stopping submission. Only while the dossier is still the

@@ -71,7 +71,8 @@
   "header": {
     "sessionOpen": "Session ouverte — dépôts jusqu'au <b>{date}</b>",
     "sessionClosed": "Aucune session de candidature ouverte actuellement",
-    "consult": "Consulter"
+    "consult": "Consulter",
+    "renewalOpen": "Le <b>renouvellement des cartes</b> est ouvert jusqu'au <b>{date}</b> — réservé aux titulaires"
   },
   "footer": {
     "mission": "Ministère de la Culture chargé de la délivrance de la carte de presse aux journalistes exerçant en République Islamique de Mauritanie.",
@@ -96,7 +97,7 @@
     "lede": "Le Ministère de la Culture, des Arts, de la Communication et des Relations avec le Parlement délivre la carte de presse aux journalistes exerçant en Mauritanie. Déposez votre demande en ligne et suivez chaque étape de son instruction.",
     "openUntil": "Candidatures ouvertes jusqu'au {date}",
     "noSession": "Aucune session ouverte actuellement",
-    "seeSessions": "Consulter les sessions",
+    "seeSessions": "Consulter",
     "cta": "Déposer une demande",
     "candidateSpace": "Espace candidat",
     "specimen": "Spécimen — carte de presse bilingue",
@@ -145,7 +146,7 @@
     "metaTitle": "Sessions de candidature — MCACRP",
     "metaDescription": "Sessions d'accréditation ouvertes pour la carte de presse en Mauritanie. Consultez les dates et déposez votre demande auprès du Ministère.",
     "eyebrow": "Accréditation presse",
-    "title": "Sessions de<br></br>candidature",
+    "title": "Sessions<br></br>ouvertes",
     "titleOther": "دورات الترشح",
     "lede": "Le Ministère ouvre périodiquement des sessions durant lesquelles les journalistes peuvent déposer une demande de carte de presse. Seules les sessions en cours de réception des dossiers figurent ci-dessous.",
     "openCount": "{count, plural, one {# session ouverte} other {# sessions ouvertes}}",
@@ -162,7 +163,11 @@
     "daysRemaining": "{count, plural, =0 {dernier jour} one {jour restant} other {jours restants}}",
     "apply": "Déposer ma demande",
     "afterClosing": "Après la clôture des dépôts, la commission d'examen étudie les dossiers. Vous serez informé par courriel de la décision et, le cas échéant, d'une demande de correction.",
-    "categoriesOverline": "Catégories d'accréditation"
+    "categoriesOverline": "Catégories d'accréditation",
+    "renewalBadge": "Renouvellement",
+    "renewalOpenedOn": "Session de renouvellement du {date}",
+    "renewalSignIn": "Accéder à mon espace",
+    "renewalFootnote": "Cette session est réservée aux titulaires d'une carte de presse. Les titulaires concernés ont été invités par e-mail ; en l'absence de message, connectez-vous à votre espace pour vérifier votre éligibilité."
   },
   "registry": {
     "eyebrow": "Registre officiel",
@@ -603,7 +608,8 @@
     "PROFILE_INCOMPLETE": "Complétez votre profil (identité, date et lieu de naissance, photographie) avant de soumettre.",
     "SPECIALISATION_MISSING": "Indiquez votre spécialité : elle figure sur la carte de presse.",
     "INSTITUTION_MISSING": "Indiquez l'organe de presse pour lequel vous exercez : il figure sur la carte de presse.",
-    "DOCUMENTS_INCOMPLETE": "Votre dossier est incomplet : complétez les pièces ci-dessus."
+    "DOCUMENTS_INCOMPLETE": "Votre dossier est incomplet : complétez les pièces ci-dessus.",
+    "PHOTO_MISSING": "Déposez une photographie récente : celle de votre profil a déjà servi à votre carte actuelle."
   },
   "decision": {
     "ariaLabel": "Notification de décision",
@@ -899,6 +905,48 @@
     "updated": "{type} a été mis à jour.",
     "replaceFailed": "Le remplacement a échoué."
   },
+
+  "renewal": {
+    "eyebrow": "Renouvellement",
+    "title": "Renouveler votre carte de presse",
+    "yourCard": "Votre carte",
+    "expiresOn": "Arrive à échéance le {date}",
+    "lapsedOn": "Expirée depuis le {date}",
+    "deadline": "Dépôt avant le",
+
+    "lapsedWarning": "Votre carte est <b>expirée</b> et n'est pas valable : elle apparaît comme telle à toute vérification. Le renouvellement reste possible, mais votre carte ne redeviendra valable qu'à l'édition de la nouvelle.",
+
+    "whatIsAsked": "Ce qui vous est demandé",
+    "identityCarriedOver": "Votre identité a déjà été vérifiée : acte de naissance, pièce d'identité et diplôme ne vous sont pas redemandés. Seules les pièces relatives à votre activité actuelle sont nécessaires.",
+    "asked": {
+      "employment": "Votre contrat de travail en cours",
+      "work": "Vos travaux publiés récents",
+      "outlet": "L'organe de presse pour lequel vous exercez",
+      "photo": "Une photographie récente"
+    },
+    "photoNote": "La photographie doit être nouvelle : celle de votre profil figure déjà sur votre carte actuelle, et une carte porte le visage de son titulaire pendant deux ans.",
+
+    "step1": "Étape 1 sur 2",
+    "categoryQuestion": "Dans quelle catégorie renouvelez-vous ?",
+    "categoryHint": "Elle peut différer de celle de votre carte actuelle si votre activité a changé.",
+
+    "step2": "Étape 2 sur 2",
+    "employerQuestion": "Exercez-vous toujours pour cet organe ?",
+    "stillThere": "Oui, c'est toujours le cas",
+    "hasChanged": "Non, cela a changé",
+    "changedNote": "Vous indiquerez votre nouvel organe et votre spécialité dans le dossier, à l'étape suivante.",
+
+    "cancel": "Annuler",
+    "continue": "Commencer le renouvellement",
+    "creating": "Création…",
+
+    "notAvailable": "Renouvellement indisponible",
+    "notAvailableBody": "Le renouvellement est réservé aux titulaires d'une carte, pendant une session de renouvellement.",
+    "backToDashboard": "Retour à mon espace",
+    "cannotStart": "Impossible de commencer",
+    "tryAgain": "Réessayez."
+  },
+
   "notFound": {
     "code": "Erreur 404",
     "title": "Cette page n'existe pas",
@@ -927,6 +975,10 @@
     "completeBody": "Rien ne vous empêche de déposer un dossier.",
     "missingCount": "{count, plural, one {# élément manquant} other {# éléments manquants}}",
     "missingSeparator": " · ",
+    "loadFailedTitle": "Votre profil n'a pas pu être chargé",
+    "loadFailedBody": "Vos informations n'ont pas pu être récupérées. Elles ne sont pas perdues — réessayez, et si le problème persiste, déconnectez-vous puis reconnectez-vous.",
+    "retry": "Réessayer",
+    "unknownCount": "indisponible",
     "missing": {
       "fullName": "nom complet",
       "nniOrPassport": "NNI ou passeport",

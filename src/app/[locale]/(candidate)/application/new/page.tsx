@@ -1,17 +1,20 @@
 "use client";
-// src/app/[locale]/(candidate)/candidat/nouvelle-candidature/page.tsx
+// src/app/[locale]/(candidate)/application/new/page.tsx
 
 import { useState } from "react";
 import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, ArrowRight, Check, CalendarClock } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, CalendarClock, RefreshCw } from "lucide-react";
 import { useRouter } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { VerificationBanner } from "@/components/candidate/VerificationBanner";
-import { listOpenSessions, listCategories, catalogKeys } from "@/lib/api/sessions-public";
+import {
+  listOpenSessions, listCategories, openCandidacySession, catalogKeys,
+} from "@/lib/api/sessions-public";
 import { startApplication, applicationKeys } from "@/lib/api/applications";
+import { getRenewalContext, renewalKeys } from "@/lib/api/renewal";
 import { ApiError } from "@/lib/api/client";
 import { routes } from "@/lib/routes";
 
@@ -28,7 +31,34 @@ export default function NewApplicationPage() {
   const sessions = useQuery({ queryKey: catalogKeys.openSessions, queryFn: listOpenSessions });
   const categories = useQuery({ queryKey: catalogKeys.categories, queryFn: listCategories });
 
-  const session = sessions.data?.[0];
+  /**
+   * ⚠️ ASKED HERE TOO, NOT ONLY ON /renewal.
+   *
+   * A holder with a current card who reaches this page must not be allowed to
+   * choose a category and press Continuer: the server refuses it — the guard
+   * is in startOrResume — but a refusal at the last step, after the work of
+   * choosing, is a refusal that reads as a fault.
+   *
+   * The screen says so first, and offers the renewal instead.
+   */
+   const renewal = useQuery({
+    queryKey: renewalKeys.context,
+    queryFn: getRenewalContext,
+    /*
+     * ⚠️ A 403 is not an answer, and it should not be asked for.
+     *
+     * The endpoint is CANDIDATE-only. Fired unconditionally it throws for
+     * anyone else — and the page needs no answer from them anyway: a
+     * non-candidate is not eligible to renew.
+     */
+    retry: false,
+  });
+
+  /* ⚠️ The candidature. See sessions-public: index zero is whichever session
+     opened last, of either kind — and a renewal is not something a new
+     candidate may file in. */
+  const session = openCandidacySession(sessions.data);
+  const eligibleForRenewal = renewal.data?.eligibility?.eligible ?? false;
 
   const start = useMutation({
     mutationFn: () =>
@@ -48,8 +78,51 @@ export default function NewApplicationPage() {
   const fmtDate = (iso: string) =>
     format.dateTime(new Date(iso + "T00:00:00"), "long");
 
-  if (sessions.isLoading || categories.isLoading) {
+  if (sessions.isLoading || categories.isLoading || renewal.isLoading) {
     return <Skeleton className="mx-auto h-96 max-w-3xl rounded-2xl" />;
+  }
+
+  /*
+   * ══ a holder renews; they do not re-apply ══
+   *
+   * ⚠️ SHOWN BEFORE THE "no session" PANEL, deliberately.
+   *
+   * listOpenSessions returns BOTH kinds — openCandidacySession then picks the
+   * candidature out of them, and returns undefined when only a renewal is
+   * running. So during a renewal window `session` is undefined and the panel
+   * below would say "aucune session ouverte" — to a holder whose own window
+   * is open and whose card lapses in weeks.
+   *
+   * That is the worst possible wrong answer: it tells someone with something
+   * to do that there is nothing to do. Hence this branch first.
+   */
+  if (eligibleForRenewal) {
+    const r = renewal.data!.eligibility;
+    return (
+      <div className="mx-auto max-w-3xl space-y-6">
+        <VerificationBanner />
+        <div className="rounded-2xl border border-[var(--green-500)]/40 bg-[var(--green-tint)] p-6 text-center sm:p-10">
+          <RefreshCw className="mx-auto h-9 w-9 text-[var(--green-600)]" />
+          <p className="mt-4 text-[15px] font-extrabold text-[var(--green-900)]">
+            {t("renewalTitle")}
+          </p>
+          <p className="mx-auto mt-2.5 max-w-md text-[13.5px] leading-relaxed text-[var(--green-700)]">
+            {t("renewalBody", { cardNumber: r.cardNumber ?? "—" })}
+          </p>
+          <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:justify-center">
+            <Button variant="outline" className="w-full sm:w-auto"
+              onClick={() => router.push(routes.candidate.dashboard)}>
+              {t("backToDashboard")}
+            </Button>
+            <Button className="w-full sm:w-auto"
+              onClick={() => router.push(routes.candidate.renewal)}>
+              {t("goToRenewal")}
+              <ArrowRight className="rtl-flip h-4 w-4 flex-none" />
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (!session) {

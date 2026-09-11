@@ -10,6 +10,7 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import {
   ArrowLeft, Inbox, Gavel, PenLine, Scale, CalendarClock, Info, IdCard,
+  Mail,  UserPlus, RefreshCw
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -123,8 +124,11 @@ export default function NewSessionPage() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          <h2 className="text-xl font-extrabold text-[var(--green-900)]">
+          {/* <h2 className="text-xl font-extrabold text-[var(--green-900)]">
             Nouvelle session de candidature
+          </h2> */}
+          <h2 className="text-xl font-extrabold text-[var(--green-900)]">
+            Nouvelle session
           </h2>
           <p className="text-sm text-[var(--slate)]">
             Définissez la date de début, la durée de chaque phase et la validité
@@ -164,6 +168,93 @@ export default function NewSessionPage() {
       )}
 
       <form onSubmit={form.handleSubmit((v) => mutation.mutate(v))} className="space-y-6">
+                <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-extrabold text-[var(--green-900)]">
+              Type de session
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Controller
+              name="type"
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {([
+                      {
+                        value: "CANDIDACY" as const,
+                        Icon: UserPlus,
+                        title: "Candidature",
+                        body: "Ouverte à tous. Le dossier complet est demandé : identité, diplôme, activité.",
+                      },
+                      {
+                        value: "RENEWAL" as const,
+                        Icon: RefreshCw,
+                        title: "Renouvellement",
+                        body: "Réservée aux titulaires d'une carte. Seules les pièces d'activité sont demandées ; l'identité est reprise.",
+                      },
+                    ]).map((option) => {
+                      const selected = field.value === option.value;
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => field.onChange(option.value)}
+                          aria-pressed={selected}
+                          className="flex w-full items-start gap-3 rounded-xl border-2 p-4 text-start transition-all"
+                          style={{
+                            borderColor: selected ? "var(--green-500)" : "var(--line)",
+                            background: selected ? "var(--green-tint)" : "white",
+                          }}
+                        >
+                          <option.Icon
+                            className="mt-0.5 h-4 w-4 flex-none"
+                            style={{ color: selected ? "var(--green-600)" : "var(--muted-fg)" }}
+                          />
+                          <span className="min-w-0">
+                            <span className="block text-[14px] font-bold text-[var(--green-900)]">
+                              {option.title}
+                            </span>
+                            <span className="mt-1 block text-[12.5px] leading-relaxed text-[var(--slate)]">
+                              {option.body}
+                            </span>
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/*
+                    ⚠️ THE CONSEQUENCE, STATED BEFORE THE CLICK.
+
+                    Opening a renewal session sends an invitation to EVERY
+                    eligible holder — two hundred messages, at the moment the
+                    phase advances to RECEIVING. An administrator should know
+                    that before choosing, not discover it from the outbox.
+
+                    It is also the one irreversible thing on this form: a
+                    session can be edited, a mail cannot be recalled.
+                  */}
+                  {field.value === "RENEWAL" && (
+                    <p className="mt-3 flex items-start gap-2.5 rounded-lg bg-[var(--gold-tint)] px-3.5 py-2.5 text-[12.5px] leading-relaxed text-[var(--gold-700)]">
+                      <Mail className="mt-0.5 h-3.5 w-3.5 flex-none" />
+                      <span>
+                        <b className="font-bold">
+                          Tous les titulaires éligibles seront invités par e-mail
+                        </b>{" "}
+                        à l&apos;ouverture de la phase de dépôt. Un message envoyé
+                        ne peut pas être rappelé.
+                      </span>
+                    </p>
+                  )}
+
+                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                </Field>
+              )}
+            />
+          </CardContent>
+        </Card>
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-extrabold text-[var(--green-900)]">

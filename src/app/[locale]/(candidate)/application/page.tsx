@@ -32,7 +32,9 @@ import {
   applicationKeys, STATUS_KIND, type DocumentType,
 } from "@/lib/api/applications";
 import { getMyCard, myCardKeys } from "@/lib/api/my-card";
-import { listOpenSessions, catalogKeys } from "@/lib/api/sessions-public";
+import {
+  listOpenSessions, openCandidacySession, catalogKeys,
+} from "@/lib/api/sessions-public";
 import { getMe, accountKeys } from "@/lib/api/account";
 import { openProtectedFile } from "@/lib/api/files";
 import { useAuthStore } from "@/lib/auth";
@@ -188,7 +190,20 @@ export default function ApplicationPage() {
   const canSubmit = readiness.canSubmit;
 
   /* The deposit deadline — relevant only while the dossier is unsubmitted. */
-  const openSession = sessions.data?.[0];
+  /*
+   * ⚠️ THE CANDIDATURE, NOT sessions[0] — THE THIRD SITE OF ONE MISTAKE.
+   *
+   * /api/public/sessions returns every RECEIVING session of either kind,
+   * newest first. Index zero was therefore whichever opened last, and once a
+   * renewal session existed this page counted down to ITS deadline on a
+   * candidature dossier — a date the candidate does not have.
+   *
+   * The same line appeared on the dashboard and on /application/new. It was
+   * written three times because "the open session" had no single definition;
+   * openCandidacySession is that definition, so a fourth screen does not have
+   * to get it right independently.
+   */
+  const openSession = openCandidacySession(sessions.data);
   const left = editable && openSession ? daysUntil(openSession.receivingEnd) : null;
   const urgent = left !== null && left <= 3;
 

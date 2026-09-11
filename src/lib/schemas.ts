@@ -13,12 +13,26 @@ const days = (phase: string) =>
 /* ── Session creation ──────────────────────────────────────── */
 export const createSessionSchema = z
   .object({
+    /**
+     * ⚠️ REQUIRED, WITH NO DEFAULT.
+     *
+     * A default would let the form submit a renewal as a candidacy by
+     * omission — and the two differ in who may file, which pieces are
+     * demanded, and whether two hundred invitations go out at the moment the
+     * phase opens.
+     *
+     * z.enum with no `.default()` means the field is absent until chosen, so
+     * the form cannot be submitted without an answer. That is the point.
+     */
+    type: z.enum(["CANDIDACY", "RENEWAL"], {
+      message: "Choisissez le type de session.",
+    }),
     startDate: z.string().min(1, "La date de début est requise."),
     receivingDays: days("réception"),
     reviewDays: days("examen"),
     correctionDays: days("correction"),
     reclamationDays: days("réclamation"),
-     /* The expiry printed on every card from this session — an accreditation
+    /* The expiry printed on every card from this session — an accreditation
        runs in cycles, so all holders renew together. The "after the session
        ends" rule is enforced by the date picker, the service and a DB CHECK;
        recomputing the phase calendar here would be a fourth implementation

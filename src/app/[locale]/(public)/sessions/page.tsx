@@ -1,5 +1,5 @@
 import { getLocale, getTranslations } from "next-intl/server";
-import { ArrowRight, CalendarDays, Clock, AlertTriangle } from "lucide-react";
+import { ArrowRight, CalendarDays, Clock, AlertTriangle, RefreshCw, Mail } from "lucide-react";
 import { fetchOpenSessions, fetchCategories } from "@/lib/api/public";
 import { routes } from "@/lib/routes";
 import { Link } from "@/i18n/navigation";
@@ -135,6 +135,7 @@ export default async function PublicSessionsPage() {
             {sessions.map((s, i) => {
               const left = daysUntil(s.receivingEnd);
               const urgent = left >= 0 && left <= 5;
+              const renewal = s.type === "RENEWAL";
               return (
                 <article
                   key={s.id}
@@ -145,8 +146,21 @@ export default async function PublicSessionsPage() {
                   }}
                 >
                   <Guilloche className="rtl-mirror pointer-events-none absolute -right-20 -top-24 h-[320px] w-[320px] text-white opacity-[0.06]" rings={34} />
+                  {/*
+                    ⚠️ NO rtl-mirror. IT WAS FLIPPING THE SEAL ITSELF.
+
+                    rtl-mirror is transform: scaleX(-1) — it moves the artwork,
+                    not the position. On this seal both legends read backwards
+                    and the tricolour at its centre runs red–gold–green: the
+                    flag reversed, on the page announcing a session.
+
+                    -end-6 does what the mirror was reaching for. The Guilloche
+                    above KEEPS its mirror: a rosette of ellipses is symmetric,
+                    so scaleX changes where it sits without changing what it
+                    looks like. A seal carries writing; it is not.
+                  */}
                   <OfficialSeal
-                    className="rtl-mirror pointer-events-none absolute -bottom-8 -right-6 hidden h-40 w-40 opacity-[0.13] sm:block"
+                    className="pointer-events-none absolute -bottom-8 -end-6 hidden h-40 w-40 opacity-[0.13] sm:block"
                     color="var(--gold-500)"
                     id={`sess-seal-${s.id}`}
                   />
@@ -154,13 +168,37 @@ export default async function PublicSessionsPage() {
                   <div className="relative z-10 p-8">
                     <div className="flex flex-wrap items-start justify-between gap-6">
                       <div className="min-w-0">
-                        <span className="inline-flex items-center gap-2 rounded-full bg-[var(--green-500)] px-3.5 py-1.5 text-[11px] font-extrabold uppercase tracking-wider">
-                          <span className="h-1.5 w-1.5 rounded-full bg-white motion-safe:animate-pulse" />
-                          {t("openBadge")}
-                        </span>
+                        <div className="flex flex-wrap items-center gap-2.5">
+                          <span className="inline-flex items-center gap-2 rounded-full bg-[var(--green-500)] px-3.5 py-1.5 text-[11px] font-extrabold uppercase tracking-wider">
+                            <span className="h-1.5 w-1.5 rounded-full bg-white motion-safe:animate-pulse" />
+                            {t("openBadge")}
+                          </span>
+
+                          {/*
+                            ⚠️ A RENEWAL SESSION IS SHOWN, AND MARKED.
+
+                            It could have been hidden — only holders may file,
+                            and they are told by e-mail. But a holder whose
+                            message went to spam would then read "aucune
+                            session ouverte" while their own window runs and
+                            their card lapses. That is the worst wrong answer a
+                            public page can give: it tells someone with
+                            something to do that there is nothing to do.
+
+                            So it appears, saying plainly who it is for.
+                          */}
+                          {renewal && (
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-wider ring-1 ring-inset ring-white/25">
+                              <RefreshCw className="h-3 w-3 flex-none" />
+                              {t("renewalBadge")}
+                            </span>
+                          )}
+                        </div>
 
                         <h2 className="mt-5 text-[clamp(21px,2.6vw,27px)] font-extrabold leading-tight">
-                          {t("openedOn", { date: fmtLong(s.startDate) })}
+                          {renewal
+                            ? t("renewalOpenedOn", { date: fmtLong(s.startDate) })
+                            : t("openedOn", { date: fmtLong(s.startDate) })}
                         </h2>
 
                         <div className="mt-5 flex flex-wrap items-center gap-x-8 gap-y-3">
@@ -200,19 +238,37 @@ export default async function PublicSessionsPage() {
                             {t("daysRemaining", { count: Math.max(left, 0) })}
                           </p>
                         </div>
+                        {/*
+                          ⚠️ A RENEWAL SENDS THE HOLDER TO SIGN IN, NOT TO
+                          REGISTER.
+
+                          "Déposer une candidature" on a renewal card would
+                          invite a stranger to do something they cannot, and
+                          send a holder to create a second account — under
+                          which their card does not exist.
+
+                          Their dossier is behind their existing login, so
+                          that is where the button goes.
+                        */}
                         <Link
-                          href={routes.auth.register}
+                          href={renewal ? routes.auth.login : routes.auth.register}
                           className="group inline-flex items-center justify-center gap-2 rounded-xl bg-white px-6 py-3.5 text-[13.5px] font-bold text-[var(--green-900)] transition-all hover:-translate-y-0.5"
                         >
-                          {t("apply")}
+                          {renewal ? t("renewalSignIn") : t("apply")}
                           <ArrowRight className="rtl-flip h-4 w-4" />
                         </Link>
                       </div>
                     </div>
 
+                    {/* ⚠️ Who it is for, said in the card rather than
+                        inferred from a badge. A holder must recognise their
+                        own window; a stranger must understand at once that
+                        this one is not for them. */}
                     <p className="mt-7 flex items-start gap-2 border-t border-white/10 pt-5 text-[12.5px] leading-relaxed text-white/45">
-                      <Clock className="mt-0.5 h-3.5 w-3.5 flex-none" />
-                      {t("afterClosing")}
+                      {renewal
+                        ? <Mail className="mt-0.5 h-3.5 w-3.5 flex-none" />
+                        : <Clock className="mt-0.5 h-3.5 w-3.5 flex-none" />}
+                      {renewal ? t("renewalFootnote") : t("afterClosing")}
                     </p>
                   </div>
                   <TricolorRule />
