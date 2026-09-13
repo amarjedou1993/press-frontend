@@ -361,13 +361,138 @@
     "expiryMustBeFuture": "La date d'expiration doit être postérieure à aujourd'hui.",
     "grantReasonRequired": "Indiquez le motif de l'octroi.",
     "identityRequired": "Le NNI ou le numéro de passeport est obligatoire.",
-    "statusReasonRequired": "Indiquez le motif de cette décision."
+    "statusReasonRequired": "Indiquez le motif de cette décision.",
+    "fullNameRequired": "Le nom complet est requis.",
+    "holderAlreadyCarded": "Cette personne détient déjà une carte en cours dans votre institution.",
+    "grantedCannotBeEdited": "Cette fiche a été octroyée : ses informations sont signées et ne peuvent plus être modifiées.",
+    "grantedCannotBeWithdrawn": "Cette fiche a été octroyée : la carte existe et doit être retirée, non supprimée.",
+    "selectionEmpty": "Sélectionnez au moins une fiche.",
+    "notFound": "Cette fiche est introuvable."
   },
   "candidateShell": {
     "title": "Espace candidat",
     "subtitle": "Votre demande de carte de presse",
     "myApplicationGroup": "Ma candidature"
   },
+
+    "institution": {
+    "eyebrow": "Espace institution",
+    "title": "Vos journalistes",
+    "lede": "Déposez vos agents ; le Ministère octroie leurs cartes. Votre identité est déjà établie : seules les informations de vos journalistes sont demandées.",
+
+    "grantedCount": "cartes octroyées",
+    "noPhotoCount": "sans photo",
+    "import": "Importer",
+    "fileOne": "Déposer un agent",
+
+    "awaitingNote": "<b>{count, plural, one {Une fiche attend} other {# fiches attendent}}</b> l'octroi du Ministère. Vous n'avez rien à faire : vous serez informé dès que les cartes seront établies.",
+
+    "searchPlaceholder": "Nom, NNI, fonction…",
+    "staffCount": "{count, plural, one {# agent} other {# agents}}",
+
+    "noneTitle": "Aucun agent déposé",
+    "noneBody": "Déposez vos journalistes un par un, ou importez votre registre complet en une archive.",
+    "noneMatch": "Aucun agent ne correspond",
+    "noneMatchBody": "Vérifiez l'orthographe, ou effacez la recherche.",
+    "noneNoPhoto": "Toutes les fiches ont leur photographie",
+    "noneNoPhotoBody": "Rien n'attend d'image : toutes vos cartes peuvent être produites.",
+    "scopeAll": "Toutes",
+    "scopeNoPhoto": "Sans photo",
+    "scopeAwaiting": "En attente",
+    "scopeGranted": "Octroyées",
+
+    "statusGranted": "Carte octroyée",
+    "statusFiled": "Déposé",
+    "validUntil": "Valable jusqu'au {date}",
+
+    "photo": "Photo",
+    "photoRequired": "Photo requise",
+    "addPhoto": "Ajouter la photographie",
+    "replacePhoto": "Remplacer la photographie",
+    "edit": "Modifier",
+    "grantedLocked": "Carte octroyée : les informations sont signées et ne peuvent plus changer.",
+
+    "withdrawTitle": "Retirer cette fiche ?",
+    "withdrawBody": "La fiche de {name} sera supprimée. Aucune carte n'ayant été octroyée, rien n'est invalidé.",
+    "withdrawAction": "Retirer",
+    "withdrawing": "Retrait…",
+    "withdrawn": "Fiche retirée",
+    "withdrawFailed": "Retrait impossible",
+
+    "filedTitle": "{name} déposé",
+    "filedBody": "Ajoutez sa photographie : sans elle, sa carte ne pourra pas être produite.",
+    "filingFailed": "Dépôt impossible",
+    "updated": "Fiche modifiée",
+    "updateFailed": "Modification impossible",
+    "photoSaved": "Photographie enregistrée",
+    "photoFailed": "Téléversement impossible",
+    "tryAgain": "Réessayez.",
+    "cancel": "Annuler",
+    "save": "Enregistrer",
+    "saving": "Enregistrement…",
+    "done": "Terminer",
+    "choose": "Sélectionnez…",
+
+    "dialogFileTitle": "Déposer un agent",
+    "dialogFileBody": "Vous déclarez que cette personne exerce chez vous. Le Ministère octroiera sa carte.",
+    "dialogEditTitle": "Modifier la fiche",
+    "dialogEditBody": "Possible tant que la carte n'a pas été octroyée.",
+    "fileAction": "Déposer",
+
+    "sectionHolder": "Titulaire",
+    "sectionEmployment": "Fonction et rattachement",
+    "fieldName": "Nom complet",
+    "placeholderName": "Prénom et nom",
+    "fieldIdentity": "NNI ou numéro de passeport",
+    "placeholderBirthplace": "Nouakchott",
+    "fieldIdentityHint": "Il sert à signer la carte : sans lui, elle ne peut pas être établie.",
+    "fieldBirthdate": "Date de naissance",
+    "fieldBirthplace": "Lieu de naissance",
+    "fieldJobTitle": "Fonction",
+    "fieldJobTitlePlaceholder": "Rédacteur, reporter, photographe…",
+    "fieldJobTitleHint": "Ne figure pas sur la carte. Le Ministère la lit avant d'octroyer.",
+    "fieldCategory": "Catégorie",
+    "fieldSpecialisation": "Spécialité",
+
+    "filingNote": "La date d'expiration n'est pas demandée : le Ministère la fixe à l'octroi, pour l'ensemble de vos agents.",
+
+    "errorNameRequired": "Le nom complet est requis.",
+    "errorIdentityRequired": "Le NNI ou le numéro de passeport est requis.",
+    "errorIdentityShort": "Numéro trop court.",
+
+    "importTitle": "Importer votre registre",
+    "importBody": "Un classeur et un dossier de photographies, dans une seule archive .zip.",
+    "importDoneTitle": "Import terminé",
+    "importDoneBody": "Vos agents ont été déposés.",
+    "importFailed": "Import impossible",
+    "importReading": "Lecture de l'archive…",
+    "importChoose": "Choisir une archive .zip",
+    "importChooseHint": "Les lignes refusées vous seront nommées.",
+
+    "templateTitle": "Commencez par le modèle",
+    "templateBody": "Il contient les colonnes attendues, la liste des catégories et la convention de nommage des photographies.",
+    "templateAction": "Modèle .xlsx",
+    "templateFailed": "Téléchargement impossible",
+
+    "archiveShape": "Structure de l'archive",
+    "archiveNote": "Chaque photographie porte le NNI ou le numéro de passeport de son titulaire. 10 Mo maximum, une quarantaine d'agents.",
+
+    "tallyFiled": "déposés",
+    "tallyPhotos": "avec photo",
+    "tallyRefused": "refusés",
+    "refusedHeading": "Lignes refusées — elles n'ont pas été déposées",
+    "failedHeading": "Lignes en échec",
+    "photosMissing": "{count, plural, one {Une fiche attend sa photographie} other {# fiches attendent leur photographie}}.",
+    "photosMissingHint": "Ajoutez-la depuis leur ligne : sans elle, leur carte ne peut pas être produite."
+  },
+
+  "institutionShell": {
+    "title": "Espace institution",
+    "subtitle": "Vos journalistes et leurs cartes",
+    "navGroup": "Registre",
+    "staff": "Mes journalistes"
+  },
+
   "dashboard": {
     "eyebrow": "Ma demande de carte de presse",
     "dossierNo": "Dossier n° {id}",

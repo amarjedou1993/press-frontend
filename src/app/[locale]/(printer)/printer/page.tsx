@@ -17,12 +17,14 @@ import { PaginationBar } from "@/components/ui/pagination-bar";
 import { Guilloche, OfficialSeal } from "@/components/public/patterns";
 import {
   getPrintableSessions, getPrintableCards, getPrintableHonourCards,
-  downloadPrinterArchive, downloadHonourArchive, printerKeys,
-  type PrintableCard, type PrintableHonourCard,
+  getPrintableInstitutionalCards,
+  downloadPrinterArchive, downloadHonourArchive, downloadInstitutionalArchive,
+  printerKeys,
+  type PrintableCard, type PrintableHonourCard, type PrintableInstitutionalCard,
 } from "@/lib/api/printer";
 import { useAuthStore } from "@/lib/auth";
 
-type Tab = "session" | "honour";
+type Tab = "session" | "honour" | "institutional";
 
 function longFr(iso?: string | null) {
   if (!iso) return "—";
@@ -38,6 +40,14 @@ export default function PrinterPage() {
 
   const [tab, setTab] = useState<Tab>("session");
   const [sessionId, setSessionId] = useState<number | null>(null);
+  /**
+   * ⚠️ THE INSTITUTION IS TO A C CARD WHAT A SESSION IS TO AN A CARD.
+   *
+   * Both answer "which batch am I making". An institution's cards are
+   * collected together, by one body, in one envelope — so a producer picks
+   * the body first, exactly as they pick the cohort first.
+   */
+  const [institutionId, setInstitutionId] = useState<number | null>(null);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -67,6 +77,25 @@ export default function PrinterPage() {
     enabled: tab === "session" && sessionId !== null,
   });
 
+  const institutional = useQuery({
+    queryKey: printerKeys.institutional,
+    queryFn: getPrintableInstitutionalCards,
+    enabled: tab === "institutional",
+  });
+
+  /**
+   * The first body, chosen for them.
+   *
+   * ⚠️ The same reasoning as the session default above: a producer opening
+   * this tab has one job, and an empty select saying "choose an institution"
+   * is a click that adds nothing.
+   */
+  useEffect(() => {
+    if (institutionId === null && institutional.data && institutional.data.length > 0) {
+      setInstitutionId(institutional.data[0].institutionId);
+    }
+  }, [institutional.data, institutionId]);
+
   const honour = useQuery({
     queryKey: printerKeys.honour,
     queryFn: getPrintableHonourCards,
@@ -86,18 +115,45 @@ export default function PrinterPage() {
     setPage(1);
   }, [tab]);
 
-  const rows: Array<PrintableCard | PrintableHonourCard> =
-    tab === "session" ? (cards.data ?? []) : (honour.data ?? []);
+  const rows: Array<PrintableCard | PrintableHonourCard | PrintableInstitutionalCard> =
+    tab === "session" ? (cards.data ?? [])
+    : tab === "honour" ? (honour.data ?? [])
+    /* ⚠️ ONE BODY AT A TIME. The endpoint returns every institution's
+       producible cards, grouped; the tab shows the selected group. A run
+       spanning two bodies would be a ZIP nobody could hand to one person. */
+    : (institutional.data?.find((g) => g.institutionId === institutionId)?.cards ?? []);
 
-  const loading = tab === "session" ? cards.isLoading : honour.isLoading;
+  const loading = tab === "session" ? cards.isLoading
+    : tab === "honour" ? honour.isLoading
+    : institutional.isLoading;
 
-  const filtered = useMemo(() => {
+    const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
     return rows.filter((c) => {
       if (!term) return true;
+
+      /*
+       * ⚠️ THE THREE SERIES NAME THE BODY DIFFERENTLY, AND THAT IS RIGHT.
+       *
+       * An ordinary card and an honour card carry `institution` as free text
+       * — the outlet a journalist works for, typed into a dossier. An
+       * institutional card carries `institutionNameFr`, looked up from the
+       * body that filed it. One is a claim about employment; the other is the
+       * authority standing behind the card.
+       *
+       * A shared `institution` field would have made them the same thing, and
+       * a producer searching "HAPA" would not know which they had found.
+       */
+      const body = "institution" in c ? c.institution
+                 : "institutionNameFr" in c ? c.institutionNameFr
+                 : null;
+
+      const job = "jobTitle" in c ? c.jobTitle : null;
+
       return c.holderFullName.toLowerCase().includes(term)
           || c.cardNumber.toLowerCase().includes(term)
-          || (c.institution ?? "").toLowerCase().includes(term);
+          || (body ?? "").toLowerCase().includes(term)
+          || (job ?? "").toLowerCase().includes(term);
     });
   }, [rows, search]);
 
@@ -116,10 +172,13 @@ export default function PrinterPage() {
   const archive = useMutation({
     mutationFn: () => tab === "session"
       ? downloadPrinterArchive([...selected], sessionId, token)
-      : downloadHonourArchive([...selected], token),
+      : tab === "honour"
+        ? downloadHonourArchive([...selected], token)
+        : downloadInstitutionalArchive([...selected], token),
     onSuccess: ({ included, skipped }) => {
       qc.invalidateQueries({ queryKey: printerKeys.cards(sessionId ?? 0) });
       qc.invalidateQueries({ queryKey: printerKeys.honour });
+      qc.invalidateQueries({ queryKey: printerKeys.institutional });
       qc.invalidateQueries({ queryKey: printerKeys.history });
       setSelected(new Set());
 
@@ -131,9 +190,9 @@ export default function PrinterPage() {
         });
       } else {
         toast.success(`${included} carte(s) exportée(s)`, {
-          description: tab === "honour"
-            ? "Photographie et code de vérification, un dossier par carte."
-            : "L'archive contient un dossier par carte.",
+          description: tab === "session"
+            ? "L'archive contient un dossier par carte."
+            : "Photographie et code de vérification, un dossier par carte.",
         });
       }
     },
@@ -150,69 +209,12 @@ export default function PrinterPage() {
 
   const nothingAtAll = !sessions.isLoading
     && (sessions.data?.length ?? 0) === 0
-    && (honour.data?.length ?? 0) === 0;
+    && (honour.data?.length ?? 0) === 0
+    && (institutional.data?.length ?? 0) === 0;
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
       {/* ══ hero ══ */}
-      {/* <section
-        className="relative overflow-hidden rounded-2xl text-white shadow-[0_20px_50px_-30px_rgba(11,46,31,.8)]"
-        style={{
-          background:
-            "radial-gradient(700px 340px at 88% -25%, rgba(255,215,0,.15), transparent 60%), linear-gradient(158deg, var(--green-900) 0%, #0e3d29 60%, #0b3524 100%)",
-        }}
-      >
-        <div className="pointer-events-none absolute inset-0 opacity-[0.05]"
-          style={{ backgroundImage: "repeating-linear-gradient(115deg,#fff 0 1px,transparent 1px 12px)" }}
-          aria-hidden="true" />
-        <Guilloche
-          className="pointer-events-none absolute -right-20 -top-24 h-[300px] w-[300px] text-white opacity-[0.06]"
-          rings={34}
-        />
-
-        <div className="relative z-10 flex flex-wrap items-end justify-between gap-6 p-7">
-          <div>
-            <p className="text-[10.5px] font-bold uppercase tracking-[0.2em] text-[var(--gold-500)]">
-              Production
-            </p>
-            <h2 className="mt-2.5 text-[26px] font-extrabold leading-tight">
-              Cartes à produire
-            </h2>
-            <p className="mt-2 max-w-lg text-[14px] leading-relaxed text-white/65">
-              Chaque carte est fournie avec sa photographie et son code de
-              vérification.
-            </p>
-          </div>
-
-          <div className="flex gap-3">
-            <div className="rounded-xl border border-white/15 bg-black/20 px-5 py-3.5 text-center">
-              <p className="font-mono text-[26px] font-extrabold leading-none">
-                {loading ? "—" : filtered.length}
-              </p>
-              <p className="mt-1.5 text-[9.5px] font-bold uppercase tracking-[0.14em] text-white/50">
-                {tab === "session" ? "dans la session" : "cartes d'honneur"}
-              </p>
-            </div>
-            {selected.size > 0 && (
-              <div className="rounded-xl border border-[var(--gold-500)]/40 bg-black/20 px-5 py-3.5 text-center">
-                <p className="font-mono text-[26px] font-extrabold leading-none text-[var(--gold-500)]">
-                  {selected.size}
-                </p>
-                <p className="mt-1.5 text-[9.5px] font-bold uppercase tracking-[0.14em] text-white/50">
-                  sélectionnées
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="flex h-1.5" aria-hidden="true">
-          <i className="flex-1 bg-[var(--green-500)]" />
-          <i className="flex-1 bg-[var(--gold-500)]" />
-          <i className="flex-1 bg-[var(--red-500)]" />
-        </div>
-      </section> */}
-
             <section
         className="relative overflow-hidden rounded-[20px] text-white shadow-[0_24px_60px_-36px_rgba(11,46,31,.9)]"
         style={{
@@ -291,6 +293,11 @@ export default function PrinterPage() {
         {([
           { key: "session" as const, label: "Par session", Icon: CalendarRange },
           { key: "honour" as const, label: "Cartes d'honneur", Icon: Award },
+          /* ⚠️ A third tab, because a third table. An institutional card
+             lives in institutional_cards with its own C sequence — unlike a
+             renewal, which produces an ordinary row in `cards` and needed no
+             tab at all. The tab count follows the tables, not the features. */
+          { key: "institutional" as const, label: "Institutions", Icon: Building2 },
         ]).map((t) => {
           const on = tab === t.key;
           return (
@@ -350,6 +357,33 @@ export default function PrinterPage() {
               </div>
             )}
 
+            {/* ⚠️ THE SAME CONTROL, FOR THE SAME REASON.
+                An institution is the cohort of a C card: its staff are
+                collected together, by one body, in one envelope. A producer
+                picks the body before selecting, exactly as they pick the
+                session. */}
+            {tab === "institutional" && (institutional.data?.length ?? 0) > 0 && (
+              <div className="relative">
+                <Building2 className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--muted-fg)]" />
+                <select
+                  value={institutionId ?? ""}
+                  onChange={(e) => {
+                    setInstitutionId(Number(e.target.value));
+                    setPage(1);
+                    setSelected(new Set());
+                  }}
+                  aria-label="Institution"
+                  className="h-9 rounded-lg border border-[var(--green-500)] bg-white pl-9 pr-3 text-[13px] font-semibold outline-none focus-visible:ring-2 focus-visible:ring-[var(--green-500)]/25"
+                >
+                  {institutional.data?.map((g) => (
+                    <option key={g.institutionId} value={g.institutionId}>
+                      {g.institutionNameFr} ({g.cards.length})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--muted-fg)]" />
               <input
@@ -378,12 +412,37 @@ export default function PrinterPage() {
           {loading ? (
             <Skeleton className="m-5 h-32" />
           ) : filtered.length === 0 ? (
-            <p className="px-5 py-12 text-center text-[13.5px] text-[var(--slate)]">
+            <p className="px-5 py-12 text-center text-[13.5px] leading-relaxed text-[var(--slate)]">
+              {/*
+                ⚠️ INSIDE THE ELEMENT, NOT BEFORE IT.
+
+                This comment sat between the ternary's `?` and its <p>, which
+                does not parse: a branch holds ONE expression, and a braced
+                JSX comment is itself an expression. The compiler stopped at
+                the second — "Expected '</', got 'ident'" — which names the
+                symptom and not the cause.
+
+                ⚠️ THREE TABS, THREE MESSAGES.
+
+                The ternary had two branches: session, and everything else —
+                so the institutional tab said "Aucune carte d'honneur à
+                produire", naming the wrong series on the one screen whose
+                whole job is to keep them apart.
+
+                And the institutional message says WHY, because the reason is
+                almost always the same and it is not the Ministry's to fix: a
+                granted card with no photograph is valid and waits, and the
+                institution is the only party holding the picture.
+              */}
               {search
                 ? "Aucune carte ne correspond à cette recherche."
                 : tab === "session"
                   ? "Aucune carte valable dans cette session."
-                  : "Aucune carte d'honneur à produire."}
+                  : tab === "honour"
+                    ? "Aucune carte d'honneur à produire."
+                    : (institutional.data?.length ?? 0) === 0
+                      ? "Aucune carte institutionnelle à produire. Une carte octroyée n'apparaît ici qu'une fois sa photographie fournie par l'institution."
+                      : "Aucune carte à produire pour cette institution."}
             </p>
           ) : (
             <>
@@ -417,7 +476,7 @@ export default function PrinterPage() {
                   <CardRow
                     key={card.cardId}
                     card={card}
-                    honour={tab === "honour"}
+                    kind={tab}
                     selected={selected.has(card.cardId)}
                     onToggle={() => toggle(card.cardId)}
                   />
@@ -444,15 +503,20 @@ export default function PrinterPage() {
 /* ══ one card to produce ══ */
 
 function CardRow({
-  card, honour, selected, onToggle,
+  card, kind, selected, onToggle,
 }: {
-  card: PrintableCard | PrintableHonourCard;
-  honour: boolean;
+  card: PrintableCard | PrintableHonourCard | PrintableInstitutionalCard;
+  kind: Tab;
   selected: boolean;
   onToggle: () => void;
 }) {
   const produced = card.producedCount > 0;
   const specialisation = "specialisationFr" in card ? card.specialisationFr : null;
+  /* ⚠️ An institutional card carries a job title where an ordinary one
+     carries a specialisation. Printed on neither — it is what tells a
+     producer which of two people with one name is which. */
+  const jobTitle = "jobTitle" in card ? card.jobTitle : null;
+  const institutionName = "institutionNameFr" in card ? card.institutionNameFr : null;
 
   return (
     <li className="flex flex-wrap items-center gap-4 px-5 py-3.5"
@@ -467,9 +531,13 @@ function CardRow({
         style={{ background: produced ? "var(--gold-tint)" : "var(--green-tint)" }}>
         {/* The icon says which kind: the B in the number does too, but a
             producer scanning a list reads shapes before digits. */}
-        {honour
+        {/* The icon says which series: the letter in the number does too, but
+            a producer scanning a list reads shapes before digits. */}
+        {kind === "honour"
           ? <Award className="h-4 w-4" style={{ color: produced ? "var(--gold-700)" : "var(--green-700)" }} />
-          : <Printer className="h-4 w-4" style={{ color: produced ? "var(--gold-700)" : "var(--green-700)" }} />}
+          : kind === "institutional"
+            ? <Building2 className="h-4 w-4" style={{ color: produced ? "var(--gold-700)" : "var(--green-700)" }} />
+            : <Printer className="h-4 w-4" style={{ color: produced ? "var(--gold-700)" : "var(--green-700)" }} />}
       </span>
 
       <div className="min-w-0 flex-1">
@@ -487,10 +555,25 @@ function CardRow({
               {specialisation}
             </span>
           )}
-          {card.institution && (
+          {jobTitle && (
+            <span className="flex items-center gap-1">
+              <Briefcase className="h-3 w-3 opacity-60" />
+              {jobTitle}
+            </span>
+          )}
+          {"institution" in card && card.institution && (
             <span className="flex items-center gap-1">
               <Building2 className="h-3 w-3 opacity-60" />
               {card.institution}
+            </span>
+          )}
+          {/* ⚠️ Shown even though the tab is already filtered to one body:
+              a producer who exports, then changes the select, then looks back
+              at a downloaded manifest needs the name on the row too. */}
+          {institutionName && (
+            <span className="flex items-center gap-1">
+              <Building2 className="h-3 w-3 opacity-60" />
+              {institutionName}
             </span>
           )}
           <span className="opacity-60">jusqu&apos;au {longFr(card.expiresAt)}</span>

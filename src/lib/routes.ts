@@ -16,16 +16,7 @@ export const routes = {
     loginExpired: "/login?expired=1",         // global 401 landing
   },
 
-  // /* ── candidate space ────────────────────────────────── */
-  // candidate: {
-  //   dashboard: "/dashboard",
-  //   application: "/application",
-  //   newApplication: "/application/new",
-  //   correction: "/application/correction",
-  //   profile: "/profile",
-  // },
-
-    /* ── candidate space ────────────────────────────────── */
+  /* ── candidate space ────────────────────────────────── */
   candidate: {
     dashboard: "/dashboard",
     application: "/application",
@@ -55,6 +46,18 @@ export const routes = {
     history: "/printer/historique",
   },
 
+  /* ── institution space ──────────────────────────────────
+     ⚠️ ONE DESTINATION, AND THAT IS THE WHOLE SPACE.
+
+     The account belongs to the body rather than to a person, so there is no
+     profile to edit and no identity to change. An institution files its
+     staff, attaches their photographs, and waits for the Ministry to grant.
+     A sidebar with one entry is honest about that; three entries invented to
+     fill it would not be. */
+  institution: {
+    home: "/institution",
+  },
+
   /* ── admin space ────────────────────────────────────── */
   admin: {
     home: "/admin",
@@ -65,6 +68,10 @@ export const routes = {
     /** Producer accounts — a contractor's access, not a commission's roll. */
     printers: "/admin/printers",
     honour: "/admin/honour",
+    /** Les corps admis à déposer — pas leurs registres. */
+    institutions: "/admin/institutions",
+    /** Le registre d'un corps, côté Ministère : ce qui attend l'octroi. */
+    institutionalStaff: (id: number | string) => `/admin/institutions/${id}/agents`,
     cards: "/admin/cards",
     revocations: "/admin/cards/revocations",
     sessionResults: (id: number | string) => `/admin/sessions/${id}/resultats`,
@@ -93,6 +100,8 @@ export function homeForRole(role: Role): string {
       return routes.reviewer.home;
     case "PRINTER":
       return routes.printer.home;
+    case "INSTITUTION":
+      return routes.institution.home;
     case "CANDIDATE":
     default:
       return routes.candidate.dashboard;
