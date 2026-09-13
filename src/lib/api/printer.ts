@@ -39,25 +39,6 @@ export interface PrintableCard {
   producedCount: number;
 }
 
-export interface RunSummary {
-  id: number;
-  printedAt: string;
-  actorName: string;
-  sessionId?: number | null;
-  sessionLabel?: string | null;
-  kind: "ASSETS" | "PDF";
-  /**
-   * ⚠️ WHICH SERIES, and it is not the same question as `kind`.
-   *
-   * kind says HOW the cards left — assets to a producer, a signed PDF to the
-   * Ministry. series says WHAT they were. A run of honour cards and a run of
-   * institutional cards are both ASSETS, and without this the history shows
-   * them identically.
-   */
-  series: "CARD" | "HONOUR" | "INSTITUTIONAL";
-  cardCount: number;
-}
-
 export interface PrintableHonourCard {
   cardId: number;
   cardNumber: string;
@@ -77,17 +58,19 @@ export interface PrintableHonourCard {
  *
  * An honour card belongs to no cohort — granted one at a time, on its own
  * occasion, so a flat list is the honest shape. An institution's cards are a
- * batch: collected together, by one body, in one envelope. A run for HAPA and
- * a run for another agency are two physical batches, and the producer picks
- * the body before selecting — exactly as they pick the session for an
+ * batch: collected together, by one body, in one envelope. A run for one
+ * agency and a run for another are two physical batches, and the producer
+ * picks the body before selecting — exactly as they pick the session for an
  * ordinary card.
  */
 export interface PrintableInstitutionalCard {
   cardId: number;
   cardNumber: string;
   holderFullName: string;
-  /** Printed on nothing. It is what tells a producer which of two people
-   *  with one name is which. */
+  /**
+   * Printed on nothing. It is what tells a producer which of two people with
+   * one name is which.
+   */
   jobTitle?: string | null;
   categoryLabelFr: string;
   institutionId: number;
@@ -105,6 +88,19 @@ export interface PrintableInstitutionGroup {
   cards: PrintableInstitutionalCard[];
 }
 
+/**
+ * One production run.
+ *
+ * ⚠️ THIS INTERFACE WAS DECLARED TWICE, AND THE HISTORY SCREEN PAID FOR IT.
+ *
+ * The second declaration — added while the institutional types were pasted in
+ * — carried no `series`. TypeScript takes the LAST one, so `run.series` did
+ * not exist, every chip fell back to its default, and three series rendered
+ * as "Session" on every row of the printer's history.
+ *
+ * It compiled, and it type-checked. A duplicate interface is not an error in
+ * TypeScript: the later declaration simply wins, silently.
+ */
 export interface RunSummary {
   id: number;
   printedAt: string;
@@ -113,6 +109,19 @@ export interface RunSummary {
   sessionLabel?: string | null;
   /** ASSETS for a producer, PDF for an administrator. Never interchangeable. */
   kind: "ASSETS" | "PDF";
+  /**
+   * ⚠️ WHICH SERIES, and it is not the same question as `kind`.
+   *
+   * `kind` says HOW the cards left — assets to a producer, a signed PDF to
+   * the Ministry. `series` says WHAT they were. A run of honour cards and a
+   * run of institutional cards are both ASSETS, and without this the history
+   * shows them identically: a producer asked in January what they made in
+   * November could not say.
+   *
+   * Derived server-side from which column of print_run_cards is set, never
+   * stored on the run — the series is already on the card each row points at.
+   */
+  series: "CARD" | "HONOUR" | "INSTITUTIONAL";
   cardCount: number;
 }
 
@@ -120,7 +129,6 @@ export interface ArchiveResult {
   included: number;
   skipped: number;
 }
-
 
 export const printerKeys = {
   sessions: ["printer", "sessions"] as const,
