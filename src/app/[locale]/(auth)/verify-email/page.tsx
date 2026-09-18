@@ -75,16 +75,38 @@ function VerifyEmailInner() {
   }
 
   if (verify.isSuccess) {
+    /*
+     * ───────────────────────────────────────────────────────────────────
+     * ⚠️ TWO WAYS TO SUCCEED, AND THEY ARE NOT THE SAME NEWS.
+     *
+     * The endpoint is idempotent: a link clicked a second time — from a
+     * browser history, a second device, the message never deleted —
+     * succeeds, because the address IS verified and that is what the person
+     * asked for.
+     *
+     * But reading "votre adresse a été vérifiée" on a link they used last
+     * week invites a reasonable doubt: was I unverified all this time? Did
+     * the first click fail silently? "Elle l'était déjà" closes that.
+     *
+     * ⚠️ READ FROM A BOOLEAN, NOT FROM THE MESSAGE. The server sends both;
+     * matching on its French sentence would break the day somebody rewords
+     * it, and cannot work at all on this page in Arabic.
+     * ───────────────────────────────────────────────────────────────────
+     */
+    const already = verify.data?.alreadyVerified === true;
+
     return (
       <div className="rounded-xl border border-[var(--green-500)] bg-[var(--green-tint)] p-6 text-center">
         <CheckCircle2 className="mx-auto h-9 w-9 text-[var(--green-700)]" />
         <p className="mt-3 text-[15px] font-extrabold text-[var(--green-900)]">
-          {t("verifyDoneTitle")}
+          {already ? t("verifyAlreadyTitle") : t("verifyDoneTitle")}
         </p>
         {/* This sentence is the WHOLE POINT of the verification: it says what
-            the candidate can now do, not merely that a step succeeded. */}
+            the candidate can now do, not merely that a step succeeded. Both
+            versions end the same way, because the answer to "what now" does
+            not depend on which click did it. */}
         <p className="mt-1.5 text-[13.5px] leading-relaxed text-[var(--green-700)]">
-          {t("verifyDoneBody")}
+          {already ? t("verifyAlreadyBody") : t("verifyDoneBody")}
         </p>
         <Button
           className="mt-5"

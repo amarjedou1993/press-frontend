@@ -29,6 +29,10 @@ export interface FilingResponse {
    * except the photograph, which is printed rather than signed.
    */
   granted: boolean;
+    /** True when this filing replaces a card the holder already carries. */
+  renewal: boolean;
+  /** The number being replaced — null for a first filing. */
+  renewedFromCardNumber?: string | null;
   cardNumber?: string | null;
   expiresAt?: string | null;
   status: string;

@@ -20,6 +20,10 @@ export interface AdminCardResponse {
   specialisationLabelFr?: string | null;
   hasPhoto: boolean;
   granted: boolean;
+    /** True when this filing replaces a card the holder already carries. */
+  renewal: boolean;
+  /** The number being replaced — null for a first filing. */
+  renewedFromCardNumber?: string | null;
   cardNumber?: string | null;
   issuedAt?: string | null;
   expiresAt?: string | null;

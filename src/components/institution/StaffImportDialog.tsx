@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import {
   Upload, FileSpreadsheet, Download, Camera, CameraOff, X, Check,
   Loader2, AlertTriangle,
+  RefreshCw,
 } from "lucide-react";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
@@ -39,11 +40,22 @@ import { useAuthStore } from "@/lib/auth";
  * ───────────────────────────────────────────────────────────────────────
  */
 export function StaffImportDialog({
-  open, onOpenChange, onImported,
+  open, onOpenChange, onImported, renewalsDue = 0,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onImported: () => void;
+  /**
+   * How many of this body's cards are approaching expiry.
+   *
+   * ⚠️ THE NOTICE BELOW APPEARS ONLY WHEN THERE ARE ANY. An institution
+   * filing its first roll has nothing to renew, and a paragraph about
+   * renewals would be one more thing between them and the work.
+   *
+   * The same count the banner on the roll uses — one definition, two
+   * readings.
+   */
+  renewalsDue?: number;
 }) {
   const t = useTranslations("institution");
   const token = useAuthStore((s) => s.token);
@@ -109,7 +121,35 @@ export function StaffImportDialog({
                   {t("templateAction")}
                 </Button>
               </div>
+                             {/*
+                ⚠️ SAID IN THE DIALOG THEY ARE ABOUT TO USE.
 
+                The banner on the roll tells an institution to re-file. Until
+                it reads this, it is looking at the same Import button that —
+                before renewals existed — would have REFUSED every employee
+                already holding a card.
+
+                Nothing said the behaviour changed. A body that suspects it
+                will create duplicates does not press the button, and the
+                feature exists without being usable.
+
+                ⚠️ AND THE OMISSION IS STATED. Leaving someone out IS how an
+                institution declines to renew them, and it is silent.
+              */}
+              {renewalsDue > 0 && (
+                <div className="rounded-xl border border-[var(--gold-500)]/40 bg-[var(--gold-tint)] px-5 py-4">
+                  <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--gold-700)]">
+                    <RefreshCw className="h-3 w-3 flex-none" />
+                    {t("importRenewalHeading")}
+                  </p>
+                  <p className="mt-2.5 text-[12.5px] leading-relaxed text-[var(--gold-700)]">
+                    {t.rich("importRenewalBody", {
+                      count: renewalsDue,
+                      b: (c) => <b className="font-bold">{c}</b>,
+                    })}
+                  </p>
+                </div>
+              )}
               <div className="rounded-xl bg-[var(--green-tint)] px-5 py-4">
                 <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--green-700)]">
                   {t("archiveShape")}

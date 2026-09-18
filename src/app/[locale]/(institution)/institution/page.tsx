@@ -6,8 +6,8 @@ import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
-  Plus, Pencil, Trash2, Camera, Upload, Users2, Search, Inbox,
-  FileSpreadsheet, Check, Clock, Lock, ShieldCheck,
+  Plus, Pencil, Trash2, Camera, Upload, Users2, Inbox,
+  FileSpreadsheet, Check, Clock, Lock, ShieldCheck, RefreshCw, ArrowRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -48,6 +48,7 @@ export default function InstitutionStaffPage() {
   const t = useTranslations("institution");
   const locale = useLocale();
   const arabic = locale === "ar";
+  const format = useFormatter();
   const qc = useQueryClient();
   const token = useAuthStore((s) => s.token);
 
@@ -107,6 +108,49 @@ export default function InstitutionStaffPage() {
           || (r.jobTitle ?? "").toLowerCase().includes(term);
     });
   }, [all, filters]);
+
+  /*
+   * ───────────────────────────────────────────────────────────────────
+   * ⚠️ NINETY DAYS, MATCHING InstitutionalRenewalJob's HORIZON.
+   *
+   * The banner and the e-mail must agree. A body told by message that twelve
+   * cards expire, then shown a screen mentioning nine, learns to trust
+   * neither — and the screen is the recourse when the message lands in spam,
+   * which is exactly what it will do until SPF and DKIM are in place.
+   *
+   * So both count the same thing: granted, valid, lapsing within the window,
+   * and NOT ALREADY RE-FILED. That last clause is what stops a body being
+   * chased on Tuesday for work it did on Monday.
+   * ───────────────────────────────────────────────────────────────────
+   */
+  const expiring = useMemo(() => {
+    const horizon = new Date();
+    horizon.setHours(0, 0, 0, 0);
+    horizon.setDate(horizon.getDate() + 90);
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // ⚠️ A card whose successor is already filed is not due: `renewal` on the
+    // newer row names the number it replaces.
+    const replaced = new Set(
+      all.filter((r) => r.renewal && r.renewedFromCardNumber)
+         .map((r) => r.renewedFromCardNumber));
+
+    return all
+      .filter((r) => {
+        if (!r.granted || !r.expiresAt || r.status !== "VALID") return false;
+        if (replaced.has(r.cardNumber ?? "")) return false;
+        const expiry = new Date(r.expiresAt + "T00:00:00");
+        return expiry <= horizon && expiry >= today;
+      })
+      .sort((a, b) => (a.expiresAt ?? "").localeCompare(b.expiresAt ?? ""));
+  }, [all]);
+
+  const expiringSoon = expiring.length;
+  const earliestExpiry = expiring[0]?.expiresAt
+    ? format.dateTime(new Date(expiring[0].expiresAt + "T00:00:00"), "long")
+    : null;
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
   const safePage = Math.min(page, pageCount);
@@ -290,6 +334,40 @@ export default function InstitutionStaffPage() {
         </p>
       )}
 
+      {/*
+        ═══════════════════════════════════════════════════════════════════
+        ⚠️ THE SECOND CHANNEL, AND IT EXISTS BECAUSE THE FIRST MAY NOT ARRIVE.
+
+        The Ministry writes to this body when its cards approach expiry — that
+        is the notification, and it is the professional act. But SPF and DKIM
+        are not yet in place, and a message that lands in spam is a renewal
+        window missed in silence.
+
+        So the roll says it too. A body that never opened the e-mail sees it
+        the moment it signs in, and the e-mail's own text points here.
+
+        ⚠️ AND IT IS A BUTTON. The scope it opens is the list of cards
+        concerned — a banner that only announced would leave the reader to
+        find them.
+        ═══════════════════════════════════════════════════════════════════
+      */}
+      {expiringSoon > 0 && (
+        <button
+          type="button"
+          onClick={() => setFilters({ ...filters, scope: "granted", search: "" })}
+          className="flex w-full items-start gap-2.5 rounded-xl bg-[var(--gold-tint)] px-4 py-3 text-start text-[12.5px] leading-relaxed text-[var(--gold-700)] transition-colors hover:bg-[var(--gold-tint)]/70"
+        >
+          <RefreshCw className="mt-0.5 h-3.5 w-3.5 flex-none" />
+          <span className="min-w-0 flex-1">
+            {t.rich("expiringNote", {
+              count: expiringSoon,
+              date: earliestExpiry ?? "",
+              b: (c) => <b className="font-bold">{c}</b>,
+            })}
+          </span>
+        </button>
+      )}
+
       <StaffFilters value={filters} onChange={setFilters} counts={counts} />
 
       {/* ══ the roll ══ */}
@@ -355,6 +433,7 @@ export default function InstitutionStaffPage() {
         open={importOpen}
         onOpenChange={setImportOpen}
         onImported={refresh}
+        renewalsDue={expiringSoon}
       />
 
       {/* ══ withdraw ══ */}
@@ -437,6 +516,20 @@ function StaffRow({
           {row.granted ? t("statusGranted") : t("statusFiled")}
         </span>
 
+        {/*
+          ⚠️ A RENEWAL LOOKS LIKE A FIRST FILING OTHERWISE.
+
+          Re-uploading the roll produces both kinds in one import, and "which
+          of these are new people" is the first thing an institution asks of
+          the result. Without the badge the answer is a spreadsheet comparison.
+        */}
+        {row.renewal && (
+          <span className="inline-flex flex-none items-center gap-1 rounded-full bg-[var(--gold-tint)] px-2.5 py-1 text-[10.5px] font-bold text-[var(--gold-700)]">
+            <RefreshCw className="h-2.5 w-2.5 flex-none" />
+            {t("renewalBadge")}
+          </span>
+        )}
+
         <div className="flex flex-none items-center gap-1">
           <input
             ref={fileInput}
@@ -491,6 +584,16 @@ function StaffRow({
           )}
         </div>
       </div>
+
+      {/* ⚠️ WHICH card is replaced, not merely that one is.
+          An employee filed twice by mistake and an employee genuinely renewed
+          look identical without the number — and only one of them is correct. */}
+      {row.renewal && row.renewedFromCardNumber && (
+        <p className="flex items-center gap-2 border-t border-[var(--line)] bg-[#fbfcfb] px-5 py-2 text-[12px] text-[var(--slate)]">
+          <ArrowRight className="rtl-flip h-3 w-3 flex-none opacity-60" />
+          {t("replacesCard", { number: row.renewedFromCardNumber })}
+        </p>
+      )}
 
       {row.granted && row.expiresAt && (
         <div className="flex items-center gap-2 border-t border-[var(--line)] bg-[#fbfcfb] px-5 py-2.5 text-[12px] text-[var(--slate)]">

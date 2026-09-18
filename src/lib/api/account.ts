@@ -65,7 +65,7 @@ export function getVerificationStatus() {
 }
 
 export function verifyEmail(token: string) {
-  return apiFetch<{ message: string }>("/api/auth/verify-email", {
+  return apiFetch<VerifyEmailResponse>("/api/auth/verify-email", {
     method: "POST",
     body: JSON.stringify({ token }),
   });
@@ -102,4 +102,21 @@ export function changePassword(body: {
     method: "PUT",
     body: JSON.stringify(body),
   });
+}
+
+/**
+ * The outcome of a verification link.
+ *
+ * ⚠️ `alreadyVerified` IS THE FACT; `message` IS FOR ANYTHING THAT CANNOT
+ * TRANSLATE.
+ *
+ * The endpoint is idempotent — a link clicked twice succeeds both times — but
+ * the two successes are different news, and the page says which. Reading the
+ * sentence to tell them apart would mean matching French in a screen that
+ * also renders in Arabic.
+ */
+export interface VerifyEmailResponse {
+  message: string;
+  /** True when the link had already been used and the address is verified. */
+  alreadyVerified: boolean;
 }

@@ -4,7 +4,9 @@
 import { useEffect, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ShieldCheck, CalendarClock, Check, X, CameraOff } from "lucide-react";
+import {
+  ShieldCheck, CalendarClock, Check, X, CameraOff, RefreshCw,
+} from "lucide-react";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader,
   DialogTitle,
@@ -57,6 +59,7 @@ export function GrantDialog({
   }, [open]);
 
   const withoutPhoto = cards.filter((c) => !c.hasPhoto).length;
+  const renewals = cards.filter((c) => c.renewal).length;
 
   const grant = useMutation({
     mutationFn: () => grantMany(cards.map((c) => c.id), expiresAt),
@@ -143,6 +146,36 @@ export function GrantDialog({
                 </p>
               </div>
 
+              {/*
+                ═══════════════════════════════════════════════════════════
+                ⚠️ SAID BEFORE THE ACT, AND IN THE STRONGEST TERMS ON THIS
+                SCREEN — WHICH IS WHY IT SITS ABOVE THE PHOTOGRAPH NOTICE.
+
+                Granting a renewal REVOKES A CARD SOMEBODY IS CARRYING. The
+                holder is never told: an institutional card's holder has no
+                account, and it is the institution that informs them. So this
+                dialog is the only moment anyone weighs it.
+
+                A batch of forty where thirty-two are renewals withdraws
+                thirty-two credentials in one click. That is the correct
+                behaviour, and it should not be a surprise.
+                ═══════════════════════════════════════════════════════════
+              */}
+              {renewals > 0 && (
+                <p className="flex items-start gap-2.5 rounded-lg bg-[var(--gold-tint)] px-3.5 py-2.5 text-[12.5px] leading-relaxed text-[var(--gold-700)]">
+                  <RefreshCw className="mt-0.5 h-3.5 w-3.5 flex-none" />
+                  <span>
+                    <b className="font-bold">
+                      {renewals} renouvellement{renewals > 1 ? "s" : ""}.
+                    </b>{" "}
+                    L&apos;octroi retirera {renewals > 1 ? "les cartes" : "la carte"}
+                    {" "}correspondante{renewals > 1 ? "s" : ""}, actuellement en
+                    circulation. Une vérification les signalera comme retirées
+                    dès cet instant.
+                  </span>
+                </p>
+              )}
+
               {/* ⚠️ SAID BEFORE THE ACT, not discovered after.
                   A card granted without a photograph is valid and will not
                   reach the printer — which is the right behaviour, and not
@@ -174,6 +207,13 @@ export function GrantDialog({
                       <span dir="ltr" className="flex-none font-mono text-[11px] text-[var(--muted-fg)]">
                         {c.identityNumber}
                       </span>
+                      {/* ⚠️ WHICH ones, not merely how many. The count above
+                          says thirty-two cards will be withdrawn; this says
+                          whose, on the list an administrator is reading when
+                          they decide. */}
+                      {c.renewal && (
+                        <RefreshCw className="h-3 w-3 flex-none text-[var(--gold-700)]" />
+                      )}
                       {!c.hasPhoto && (
                         <CameraOff className="h-3 w-3 flex-none text-[var(--gold-700)]" />
                       )}

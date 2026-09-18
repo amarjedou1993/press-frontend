@@ -290,6 +290,8 @@
     "verifyInProgress": "Vérification en cours…",
     "verifyGoToSpace": "Accéder à mon espace",
     "verifyDoneTitle": "Adresse vérifiée",
+    "verifyAlreadyTitle": "Adresse déjà vérifiée",
+    "verifyAlreadyBody": "Ce lien avait déjà été utilisé. Votre adresse est confirmée, vous pouvez déposer votre dossier.",
     "verifyDoneBody": "Vous pouvez désormais soumettre votre demande de carte de presse.",
     "verifyIncompleteTitle": "Lien incomplet",
     "verifyIncompleteBody": "Ouvrez le lien directement depuis votre e-mail, sans le recopier.",
@@ -364,6 +366,7 @@
     "statusReasonRequired": "Indiquez le motif de cette décision.",
     "fullNameRequired": "Le nom complet est requis.",
     "holderAlreadyCarded": "Cette personne détient déjà une carte en cours dans votre institution.",
+    "holderAlreadyRenewed": "Cette personne a déjà été renouvelée : sa nouvelle fiche est en attente d'octroi.",
     "grantedCannotBeEdited": "Cette fiche a été octroyée : ses informations sont signées et ne peuvent plus être modifiées.",
     "grantedCannotBeWithdrawn": "Cette fiche a été octroyée : la carte existe et doit être retirée, non supprimée.",
     "selectionEmpty": "Sélectionnez au moins une fiche.",
@@ -386,6 +389,7 @@
     "fileOne": "Déposer un agent",
 
     "awaitingNote": "<b>{count, plural, one {Une fiche attend} other {# fiches attendent}}</b> l'octroi du Ministère. Vous n'avez rien à faire : vous serez informé dès que les cartes seront établies.",
+    "expiringNote": "<b>{count, plural, one {Une carte arrive} other {# cartes arrivent}}</b> à échéance, la première le {date}. Redéposez votre registre pour les renouveler : les agents que vous y faites figurer seront renouvelés.",
 
     "searchPlaceholder": "Nom, NNI, fonction…",
     "staffCount": "{count, plural, one {# agent} other {# agents}}",
@@ -404,6 +408,8 @@
     "statusGranted": "Carte octroyée",
     "statusFiled": "Déposé",
     "validUntil": "Valable jusqu'au {date}",
+    "renewalBadge": "Renouvellement",
+    "replacesCard": "Remplace la carte n° {number}",
 
     "photo": "Photo",
     "photoRequired": "Photo requise",
@@ -454,14 +460,16 @@
     "fieldCategory": "Catégorie",
     "fieldSpecialisation": "Spécialité",
 
-    "filingNote": "La date d'expiration n'est pas demandée : le Ministère la fixe à l'octroi, pour l'ensemble de vos agents.",
-
+    "filingNote": "La date d'expiration n'est pas demandée : le Ministère la fixe à l'octroi, pour l'ensemble de vos agents. Si cette personne détient déjà une carte, ce dépôt la renouvellera — elle ne sera pas dupliquée.",
+    
     "errorNameRequired": "Le nom complet est requis.",
     "errorIdentityRequired": "Le NNI ou le numéro de passeport est requis.",
     "errorIdentityShort": "Numéro trop court.",
 
     "importTitle": "Importer votre registre",
     "importBody": "Un classeur et un dossier de photographies, dans une seule archive .zip.",
+    "importRenewalHeading": "Ce dépôt renouvellera vos cartes",
+    "importRenewalBody": "<b>{count, plural, one {Une de vos cartes arrive} other {# de vos cartes arrivent}}</b> à échéance. Les agents déjà titulaires d'une carte seront <b>renouvelés, non dupliqués</b> : leur ancienne carte sera retirée à l'octroi de la nouvelle. Ceux que vous omettez de ce dépôt ne seront pas renouvelés.",
     "importDoneTitle": "Import terminé",
     "importDoneBody": "Vos agents ont été déposés.",
     "importFailed": "Import impossible",

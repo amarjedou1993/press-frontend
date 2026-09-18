@@ -6,7 +6,7 @@ import { useParams } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft, ShieldCheck, Camera, CameraOff, AlertTriangle, Clock, Inbox,
-  Search, EyeOff,
+  Search, EyeOff, RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -354,12 +354,38 @@ function AgentRow({
             : <CameraOff className="h-3.5 w-3.5 text-[var(--gold-700)]" />}
         </span>
 
+        {/* ⚠️ A RENEWAL IS NOT THE SAME DECISION AS A FIRST GRANT.
+            Granting this one withdraws a card somebody is carrying, and forty
+            identical rows give an administrator no way to see which. */}
+        {!card.granted && card.renewal && (
+          <span className="inline-flex flex-none items-center gap-1 rounded-full bg-[var(--gold-tint)] px-2.5 py-1 text-[10.5px] font-bold text-[var(--gold-700)]">
+            <RefreshCw className="h-2.5 w-2.5 flex-none" />
+            Renouvellement
+          </span>
+        )}
+
         {card.granted && (
           <span dir="ltr" className="flex-none font-mono text-[11.5px] font-bold text-[var(--green-700)]">
             {card.cardNumber}
           </span>
         )}
       </div>
+
+      {/* ⚠️ STATED AS A CONSEQUENCE, not as a label.
+          "Renouvellement" says what the filing is; this says what granting it
+          does — and what it does is withdraw a credential in circulation. */}
+      {!card.granted && card.renewal && card.renewedFromCardNumber && (
+        <p className="flex items-start gap-2 bg-[var(--gold-tint)]/40 px-5 py-2 text-[12px] leading-relaxed text-[var(--gold-700)]">
+          <RefreshCw className="mt-0.5 h-3 w-3 flex-none" />
+          <span>
+            L&apos;octroi retirera la carte n°{" "}
+            <span dir="ltr" className="font-mono font-bold">
+              {card.renewedFromCardNumber}
+            </span>
+            , actuellement en circulation.
+          </span>
+        </p>
+      )}
 
       {!card.granted && card.cannotGrantReasonFr && (
         <p className="bg-[var(--gold-tint)]/50 px-5 py-2 text-[12px] leading-relaxed text-[var(--gold-700)]">
