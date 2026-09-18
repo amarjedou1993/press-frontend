@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import {
   Plus, Pencil, Building2, Search, Inbox, KeyRound, ShieldOff, ShieldCheck,
   Users2, ChevronRight, AlertTriangle, Mail, UserPlus,
+  FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -28,12 +29,15 @@ import {
 } from "@/lib/api/admin-institutions";
 import { ApiError } from "@/lib/api/client";
 import { routes } from "@/lib/routes";
+import { PvRangeDialog } from "@/components/admin/PvRangeDialog";
+import { downloadInstitutionalPv } from "@/lib/api/pv";
 
 export default function InstitutionsPage() {
   const qc = useQueryClient();
   const router = useRouter();
 
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [pvOpen, setPvOpen] = useState(false);
   const [editing, setEditing] = useState<InstitutionResponse | null>(null);
   const [accountFor, setAccountFor] = useState<InstitutionResponse | null>(null);
   const [deactivating, setDeactivating] = useState<InstitutionResponse | null>(null);
@@ -181,6 +185,30 @@ export default function InstitutionsPage() {
               </div>
             )}
 
+            {/*
+              ⚠️ LE PV À CÔTÉ DES AUTRES ACTIONS, ET PAS SUR UNE PAGE DÉDIÉE.
+
+              Une rubrique « Documents » regrouperait par FORMAT — ce qu'un
+              système produit. Les écrans regroupent par SUJET — ce qu'une
+              administration fait. Un administrateur ne pense pas « il me faut
+              un docx » ; il pense « il me faut le relevé des cartes institutionnelles », et il est
+              déjà ici quand la question se pose.
+
+              Le test : où irait le quatrième PV ? Sur l'écran des retraits, il
+              serait évident. Dans une page « Documents », il faudrait d'abord
+              se souvenir qu'elle existe.
+            */}
+            <button
+              type="button"
+              onClick={() => setPvOpen(true)}
+              className="inline-flex h-11 flex-1 items-center justify-center gap-2 self-end rounded-xl border border-white/25 px-4 text-[13px] font-bold text-white transition-colors hover:border-white/45 hover:bg-white/10
+                         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--green-900)]
+                         sm:flex-none"
+            >
+              <FileText className="h-4 w-4 flex-none" />
+              Procès-verbal
+            </button>
+
             <button
               type="button"
               onClick={() => { setEditing(null); setDialogOpen(true); }}
@@ -304,6 +332,14 @@ export default function InstitutionsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <PvRangeDialog
+        open={pvOpen}
+        onOpenChange={setPvOpen}
+        title="Procès-verbal des cartes institutionnelles"
+        description="Les cartes octroyées sur la période retenue, toutes institutions confondues."
+        onDownload={downloadInstitutionalPv}
+      />
     </div>
   );
 }

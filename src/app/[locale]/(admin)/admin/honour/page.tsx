@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import {
   Plus, Pencil, Camera, ShieldAlert, ShieldCheck, Lock, Upload, Inbox,
   FileSpreadsheet, Search,
+  FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -30,6 +31,8 @@ import {
 } from "@/lib/api/honour";
 import { ApiError } from "@/lib/api/client";
 import { useAuthStore } from "@/lib/auth";
+import { PvRangeDialog } from "@/components/admin/PvRangeDialog";
+import { downloadHonourPv } from "@/lib/api/pv";
 
 /** The four scopes, as predicates — one definition, used for both the counts
  *  and the filtering, so a tab can never disagree with what it opens. */
@@ -46,6 +49,7 @@ export default function HonourCardsPage() {
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const [pvOpen, setPvOpen] = useState(false);
   const [editing, setEditing] = useState<HonourCardResponse | null>(null);
   const [statusFor, setStatusFor] = useState<HonourCardResponse | null>(null);
   const [statusReason, setStatusReason] = useState("");
@@ -218,6 +222,30 @@ export default function HonourCardsPage() {
 
             {/* ⚠️ SECONDARY, in outline. A single grant is the ordinary act;
                 the import is the exception one goes looking for. */}
+            {/*
+              ⚠️ LE PV À CÔTÉ DES AUTRES ACTIONS, ET PAS SUR UNE PAGE DÉDIÉE.
+
+              Une rubrique « Documents » regrouperait par FORMAT — ce qu'un
+              système produit. Les écrans regroupent par SUJET — ce qu'une
+              administration fait. Un administrateur ne pense pas « il me faut
+              un docx » ; il pense « il me faut le relevé des cartes d'honneur », et il est
+              déjà ici quand la question se pose.
+
+              Le test : où irait le quatrième PV ? Sur l'écran des retraits, il
+              serait évident. Dans une page « Documents », il faudrait d'abord
+              se souvenir qu'elle existe.
+            */}
+            <button
+              type="button"
+              onClick={() => setPvOpen(true)}
+              className="inline-flex h-11 flex-1 items-center justify-center gap-2 self-end rounded-xl border border-white/25 px-4 text-[13px] font-bold text-white transition-colors hover:border-white/45 hover:bg-white/10
+                         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--green-900)]
+                         sm:flex-none"
+            >
+              <FileText className="h-4 w-4 flex-none" />
+              Procès-verbal
+            </button>
+
             <button
               type="button"
               onClick={() => setImportOpen(true)}
@@ -388,6 +416,14 @@ export default function HonourCardsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <PvRangeDialog
+        open={pvOpen}
+        onOpenChange={setPvOpen}
+        title="Procès-verbal des cartes d'honneur"
+        description="Les cartes octroyées sur la période retenue."
+        onDownload={downloadHonourPv}
+      />
     </div>
   );
 }

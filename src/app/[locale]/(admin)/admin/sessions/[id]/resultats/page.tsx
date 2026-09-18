@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
-  ArrowLeft, FileSpreadsheet, Search, Scale, IdCard, PenLine, Inbox,
+  ArrowLeft, FileSpreadsheet, FileText, Search, Scale, IdCard, PenLine, Inbox,
   AlertTriangle, Check, X, Clock, Users, ArrowRight, Loader2, CircleDot,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import {
 } from "@/lib/api/session-results";
 import { useAuthStore } from "@/lib/auth";
 import { routes } from "@/lib/routes";
+import { SessionPvDialog } from "@/components/admin/SessionPvDialog";
 
 const OUTCOME_TONE: Record<Outcome, { bg: string; fg: string; label: string }> = {
   ACCEPTED: { bg: "var(--green-tint)", fg: "var(--green-700)", label: "Acceptée" },
@@ -68,6 +69,8 @@ export default function SessionResultsPage() {
     enabled: Number.isFinite(sessionId),
   });
 
+  const [pvOpen, setPvOpen] = useState(false);
+
   const exportXlsx = useMutation({
     mutationFn: () => downloadSessionResults(sessionId, token),
     onError: () => toast.error("Export impossible", {
@@ -114,6 +117,16 @@ export default function SessionResultsPage() {
             {r ? (r.closed ? "Résultats définitifs" : "Déroulement en cours") : "…"}
           </p>
         </div>
+        {/*
+          ⚠️ LE PV À CÔTÉ DE L'EXPORT, ET PAS AILLEURS.
+
+          Deux documents sur le même sujet : l'un est un outil de travail —
+          un classeur qu'on trie, qu'on filtre, qu'on annote — l'autre est un
+          acte signé. Les séparer dans l'interface dirait qu'ils n'ont rien à
+          voir, alors que c'est la même session vue deux fois.
+
+          Et l'administrateur qui veut le PV de cette session est déjà ici.
+        */}
         <Button variant="outline" size="sm"
           disabled={exportXlsx.isPending}
           onClick={() => exportXlsx.mutate()}>
@@ -121,6 +134,10 @@ export default function SessionResultsPage() {
             ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
             : <FileSpreadsheet className="h-3.5 w-3.5" />}
           Exporter
+        </Button>
+        <Button size="sm" onClick={() => setPvOpen(true)}>
+          <FileText className="h-3.5 w-3.5" />
+          Procès-verbal
         </Button>
       </div>
 
@@ -423,6 +440,13 @@ export default function SessionResultsPage() {
           </>
         )}
       </section>
+
+      <SessionPvDialog
+        open={pvOpen}
+        onOpenChange={setPvOpen}
+        sessionId={sessionId}
+        sessionLabel={`Session n° ${sessionId}`}
+      />
     </div>
   );
 }

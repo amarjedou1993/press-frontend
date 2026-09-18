@@ -86,7 +86,15 @@ export function issueCards(applicationIds: number[]) {
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
 
-async function download(path: string, init: RequestInit, token: string | null,
+/**
+ * ⚠️ EXPORTÉE POUR pv.ts, ET POUR RIEN D'AUTRE.
+ *
+ * Elle lit Content-Disposition, gère le nom de repli et remonte le message du
+ * serveur plutôt qu'un échec générique. Une seconde implémentation
+ * divergerait le jour où le serveur changerait d'en-tête — et personne ne
+ * s'en apercevrait avant qu'un fichier arrive nommé « download ».
+ */
+export async function download(path: string, init: RequestInit, token: string | null,
                         fallbackName: string): Promise<Response> {
   const res = await fetch(`${BASE}${path}`, {
     ...init,
