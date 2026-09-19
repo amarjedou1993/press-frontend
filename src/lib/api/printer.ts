@@ -321,3 +321,40 @@ export async function downloadInstitutionalArchive(
     skipped: Number(res.headers.get("X-Archive-Skipped") ?? 0),
   };
 }
+
+/**
+ * Le bordereau de remise d'un lot produit.
+ *
+ * ⚠️ UN GET, pas un POST — contrairement aux trois PV du Ministère.
+ *
+ * Ceux-là portent une portée dans leur corps : une période, des membres de
+ * commission. Celui-ci ne porte rien : le lot EST la portée, et il est dans
+ * l'URL. Un POST vide donnerait l'impression qu'il reste quelque chose à
+ * choisir.
+ */
+export async function downloadRunRecap(runId: number, token: string | null) {
+  const res = await fetch(`${BASE}/api/printer/runs/${runId}/recap`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+
+  if (!res.ok) {
+    let message = "Le bordereau n'a pas pu être établi.";
+    try {
+      const body = await res.json();
+      message = body.detail ?? body.message ?? message;
+    } catch { /* keep the fallback */ }
+    throw new Error(message);
+  }
+
+  const disposition = res.headers.get("content-disposition") ?? "";
+  const match = disposition.match(/filename="?([^"]+)"?/);
+  const filename = match?.[1] ?? `bordereau-lot-${runId}.docx`;
+
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.click();
+  setTimeout(() => URL.revokeObjectURL(url), 30_000);
+}

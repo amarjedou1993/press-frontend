@@ -12,7 +12,11 @@ import {
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Guilloche, OfficialSeal } from "@/components/public/patterns";
-import { getPrintHistory, printerKeys, type RunSummary } from "@/lib/api/printer";
+import {
+  getPrintHistory, downloadRunRecap, printerKeys, type RunSummary,
+} from "@/lib/api/printer";
+import { useAuthStore } from "@/lib/auth";
+import { toast } from "sonner";
 
 function stamp(iso: string) {
   const d = new Date(iso);
@@ -137,50 +141,9 @@ export default function PrinterHistoryPage() {
   );
 }
 
-/* ══ one run ══ */
-
-// function RunRow({ run }: { run: RunSummary }) {
-//   const assets = run.kind === "ASSETS";
-
-//   return (
-//     <li className="flex flex-wrap items-center gap-4 px-5 py-3.5">
-//       <span className="flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-[var(--green-tint)]">
-//         {/* ⚠️ TWO KINDS, TWO ICONS.
-//             ASSETS is what a producer takes — photograph, QR, preview. PDF is
-//             the signed card, which only the Ministry generates. A history that
-//             drew them alike would suggest this account had held the signed
-//             document. */}
-//         {assets
-//           ? <FolderArchive className="h-4 w-4 text-[var(--green-700)]" />
-//           : <FileText className="h-4 w-4 text-[var(--green-700)]" />}
-//       </span>
-
-//       <div className="min-w-0 flex-1">
-//         <p className="text-[13.5px] font-bold text-[var(--green-900)]">
-//           {run.cardCount} carte{run.cardCount > 1 ? "s" : ""}
-//           <span className="ms-2 text-[11.5px] font-normal text-[var(--muted-fg)]">
-//             {assets ? "ressources de production" : "carte signée"}
-//           </span>
-//         </p>
-//         <p className="flex flex-wrap items-center gap-x-3 text-[12px] text-[var(--slate)]">
-//           <span>{stamp(run.printedAt)}</span>
-//           {run.sessionLabel && (
-//             <span className="flex items-center gap-1">
-//               <CalendarRange className="h-3 w-3 opacity-60" />
-//               {run.sessionLabel}
-//             </span>
-//           )}
-//         </p>
-//       </div>
-
-//       <span dir="ltr" className="flex-none font-mono text-[11px] text-[var(--muted-fg)]">
-//         n° {run.id}
-//       </span>
-//     </li>
-//   );
-// }
 
 function RunRow({ run }: { run: RunSummary }) {
+  const token = useAuthStore((s) => s.token);
   const assets = run.kind === "ASSETS";
 
   /*
@@ -240,6 +203,27 @@ function RunRow({ run }: { run: RunSummary }) {
       <span dir="ltr" className="flex-none font-mono text-[11px] text-[var(--muted-fg)]">
         n° {run.id}
       </span>
+
+      {/*
+        ⚠️ SUR LA LIGNE, PAS DANS UN MENU.
+
+        Le bordereau accompagne une remise physique : une pile de cartes qu'on
+        porte au Ministère. Il se réimprime le jour où quelqu'un demande ce
+        qui est sorti en novembre — et ce jour-là, la ligne de novembre est ce
+        qu'on regarde.
+      */}
+      <button
+        type="button"
+        onClick={() => downloadRunRecap(run.id, token).catch((e) =>
+          toast.error("Bordereau indisponible", {
+            description: e instanceof Error ? e.message : "Réessayez.",
+          }))}
+        title="Bordereau de remise"
+        aria-label={`Bordereau du lot n° ${run.id}`}
+        className="flex-none rounded-lg p-2 text-[var(--muted-fg)] transition-colors hover:bg-[var(--green-tint)] hover:text-[var(--green-700)]"
+      >
+        <FileText className="h-3.5 w-3.5" />
+      </button>
     </li>
   );
 }
