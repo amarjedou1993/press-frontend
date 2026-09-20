@@ -6,13 +6,17 @@ import { useQuery } from "@tanstack/react-query";
 import {
   Inbox, Gavel, PenLine, Scale, IdCard, Users, ArrowRight, ArrowUpRight,
   AlertTriangle, CalendarPlus, ShieldX, CalendarClock, BadgeCheck,
+  Award, Building2, ChevronRight,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   listSessions, sessionKeys, PHASE_LABELS, type SessionResponse,
 } from "@/lib/api/sessions";
 import { listReviewers, reviewerKeys } from "@/lib/api/admin";
-import { getIssuable, getRegistry, cardKeys } from "@/lib/api/cards";
+import { getIssuable, cardKeys } from "@/lib/api/cards";
+import {
+  getAdminStats, statsKeys, type SeriesStats,
+} from "@/lib/api/admin-stats";
 import { getPendingProposals, lifecycleKeys } from "@/lib/api/lifecycle";
 import { routes } from "@/lib/routes";
 
@@ -51,7 +55,18 @@ export default function AdminHomePage() {
   const sessions = useQuery({ queryKey: sessionKeys.all, queryFn: listSessions });
   const reviewers = useQuery({ queryKey: reviewerKeys.all, queryFn: listReviewers });
   const issuable = useQuery({ queryKey: cardKeys.issuable, queryFn: getIssuable });
-  const registry = useQuery({ queryKey: cardKeys.registry, queryFn: getRegistry });
+  /*
+   * ⚠️ LES CHIFFRES SONT COMPTÉS EN BASE — getRegistry() est parti.
+   *
+   * Cette page téléchargeait le registre entier et le filtrait ici : six
+   * cents lignes complètes sérialisées en JSON pour en tirer cinq nombres.
+   * Ça marchait, et ça serait devenu l'écran le plus lent du système sans
+   * que rien ne le laisse voir.
+   *
+   * ⚠️ ET LE REGISTRE NE COUVRAIT QUE LA SÉRIE A. « Combien de cartes en
+   * circulation » avait une réponse partielle qui avait l'air complète.
+   */
+  const stats = useQuery({ queryKey: statsKeys.admin, queryFn: getAdminStats });
   const proposals = useQuery({
     queryKey: lifecycleKeys.pending,
     queryFn: getPendingProposals,
@@ -78,36 +93,38 @@ export default function AdminHomePage() {
   const pending = proposals.data ?? [];
   const suspendedPending = pending.filter((p) => p.cardStatus === "SUSPENDED").length;
 
-  /* ══ the card population, across every session ══ */
+  /*
+   * ══ the card population, across every series ══
+   *
+   * ⚠️ LA SOMME DES TROIS SÉRIES, et plus seulement des cartes de session.
+   *
+   * « Combien de journalistes sont accrédités » se répond en additionnant ce
+   * que la commission a délivré, ce que le Ministère a octroyé et ce que les
+   * institutions ont déposé. La réponse d'avant en oubliait deux tiers.
+   */
   const population = useMemo(() => {
-    const cards = registry.data ?? [];
+    const s = stats.data;
+    if (!s) {
+      return { total: 0, inCirculation: 0, lapsingSoon: 0,
+               revoked: 0, suspended: 0, expired: 0, withheld: 0 };
+    }
+    const series = [s.candidacy, s.honour, s.institutional];
+    const sum = (pick: (x: SeriesStats) => number) =>
+      series.reduce((acc, x) => acc + pick(x), 0);
 
-    // In force TODAY. `expired` is derived server-side from expires_at, so a
-    // lapsed card can never count as valid because a job failed to run.
-    const inCirculation = cards.filter(
-      (c) => c.status === "VALID" && !c.expired).length;
-
-    // The planning figure: cards lapsing inside the horizon.
-    const lapsingSoon = cards.filter((c) => {
-      if (c.status !== "VALID" || c.expired) return false;
-      const days = daysUntil(c.expiresAt);
-      return days !== null && days >= 0 && days <= LAPSE_HORIZON_DAYS;
-    }).length;
-
-    const revoked = cards.filter((c) => c.status === "REVOKED").length;
-    const suspended = cards.filter((c) => c.status === "SUSPENDED").length;
-    const expired = cards.filter((c) => c.expired).length;
+    const revoked = sum((x) => x.revoked);
+    const suspended = sum((x) => x.suspended);
 
     return {
-      total: cards.length,
-      inCirculation,
-      lapsingSoon,
+      total: sum((x) => x.total),
+      inCirculation: sum((x) => x.inForce),
+      lapsingSoon: sum((x) => x.lapsingSoon),
       revoked,
       suspended,
-      expired,
+      expired: sum((x) => x.expired),
       withheld: revoked + suspended,
     };
-  }, [registry.data]);
+  }, [stats.data]);
 
   return (
     <div className="mx-auto max-w-5xl space-y-7 pb-4">
@@ -303,7 +320,7 @@ export default function AdminHomePage() {
 
         <div className="grid grid-cols-3 divide-x divide-[var(--line)] overflow-hidden rounded-[18px] border border-[var(--line)] bg-white">
           <Figure
-            value={registry.isLoading ? null : population.inCirculation}
+            value={stats.isLoading ? null : population.inCirculation}
             label="En circulation"
             note={population.expired > 0
               ? `${population.expired} expirée${population.expired > 1 ? "s" : ""}`
@@ -316,7 +333,7 @@ export default function AdminHomePage() {
               session should open in January — and knowing that in December is
               the difference between a planned cycle and a scramble. */}
           <Figure
-            value={registry.isLoading ? null : population.lapsingSoon}
+            value={stats.isLoading ? null : population.lapsingSoon}
             label="Expirent sous 90 j"
             note={population.lapsingSoon > 0
               ? "prévoir une session"
@@ -327,7 +344,7 @@ export default function AdminHomePage() {
           />
 
           <Figure
-            value={registry.isLoading ? null : population.withheld}
+            value={stats.isLoading ? null : population.withheld}
             label="Retirées / suspendues"
             note={population.withheld > 0
               ? `${population.revoked} retirée${population.revoked > 1 ? "s" : ""} · ${population.suspended} suspendue${population.suspended > 1 ? "s" : ""}`
@@ -340,7 +357,7 @@ export default function AdminHomePage() {
 
         {/* Said in a sentence as well as a number: an administrator planning
             the year's calendar should not have to infer the consequence. */}
-        {!registry.isLoading && population.lapsingSoon > 0 && !active && !planned && (
+        {!stats.isLoading && population.lapsingSoon > 0 && !active && !planned && (
           <div className="mt-2.5 flex items-start gap-2 rounded-xl bg-[var(--gold-tint)] px-4 py-3 text-[12.5px] leading-relaxed text-[var(--gold-700)]">
             <CalendarClock className="mt-0.5 h-3.5 w-3.5 flex-none" />
             <p>
@@ -356,6 +373,93 @@ export default function AdminHomePage() {
         )}
       </section>
 
+      {/*
+        ══════════════════════════════════════════════════════════════════
+        ⚠️ TROIS SÉRIES, TROIS COLONNES — PAS UN TOTAL.
+
+        Les compteurs au-dessus disent combien de cartes sont en circulation.
+        Ceux-ci disent PAR QUELLE VOIE elles ont été délivrées : ce que la
+        commission a examiné, ce que le Ministère a octroyé directement, ce
+        que les institutions ont déposé.
+
+        C'est un fait de gouvernance, et c'est ce qu'on demande à un tableau
+        de bord. Un nombre unique le cacherait.
+        ══════════════════════════════════════════════════════════════════
+      */}
+      <section>
+        <h3 className="px-1 pb-2.5 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--muted-fg)]">
+          Par voie d&apos;accréditation
+        </h3>
+
+        <div className="grid gap-3 sm:grid-cols-3">
+          <SeriesCard
+            letter="A"
+            label="Commission"
+            note="Examinées après candidature"
+            stats={stats.data?.candidacy}
+            loading={stats.isLoading}
+            Icon={IdCard}
+            accent="var(--green-600)"
+            onClick={() => router.push(routes.admin.cards)}
+          />
+          <SeriesCard
+            letter="B"
+            label="Cartes d'honneur"
+            note="Octroyées par le Ministère"
+            stats={stats.data?.honour}
+            loading={stats.isLoading}
+            Icon={Award}
+            accent="var(--gold-700)"
+            onClick={() => router.push(routes.admin.honour)}
+          />
+          <SeriesCard
+            letter="C"
+            label="Institutions"
+            note="Déposées, puis octroyées"
+            stats={stats.data?.institutional}
+            loading={stats.isLoading}
+            Icon={Building2}
+            accent="#2b7fa8"
+            onClick={() => router.push(routes.admin.institutions)}
+          />
+        </div>
+
+        {/* ⚠️ LA LIGNE QUI APPELLE UNE ACTION, séparée des trois compteurs.
+            Les cartes en circulation sont un état ; les fiches en attente
+            d'octroi sont une tâche. Mêlées aux cartes, elles se liraient
+            comme une quatrième statistique. */}
+        {(stats.data?.institutionalAwaitingGrant ?? 0) > 0 && (
+          <button
+            type="button"
+            onClick={() => router.push(routes.admin.institutions)}
+            className="mt-2.5 flex w-full items-center gap-2.5 rounded-xl bg-[var(--gold-tint)] px-4 py-3 text-start text-[12.5px] leading-relaxed text-[var(--gold-700)] transition-colors hover:bg-[var(--gold-tint)]/70"
+          >
+            <Building2 className="h-3.5 w-3.5 flex-none" />
+            <span className="min-w-0 flex-1">
+              <b className="font-bold">
+                {stats.data!.institutionalAwaitingGrant} fiche
+                {stats.data!.institutionalAwaitingGrant > 1 ? "s" : ""}
+              </b>{" "}
+              déposée{stats.data!.institutionalAwaitingGrant > 1 ? "s" : ""} par
+              une institution attend
+              {stats.data!.institutionalAwaitingGrant > 1 ? "ent" : ""} votre octroi.
+            </span>
+            <ChevronRight className="rtl-flip h-4 w-4 flex-none" />
+          </button>
+        )}
+
+        {stats.data && (
+          <p className="mt-2.5 px-1 text-[12px] text-[var(--muted-fg)]">
+            {stats.data.institutionsActive} institution
+            {stats.data.institutionsActive > 1 ? "s" : ""} active
+            {stats.data.institutionsActive > 1 ? "s" : ""}
+            {stats.data.institutionsTotal > stats.data.institutionsActive
+              && ` · ${stats.data.institutionsTotal - stats.data.institutionsActive} désactivée${
+                   stats.data.institutionsTotal - stats.data.institutionsActive > 1 ? "s" : ""}`}
+          </p>
+        )}
+      </section>
+
       {/* ══════════════════════════════════════════════════════════
           THE REGISTER — a measured row, not four boxes.
           ══════════════════════════════════════════════════════════ */}
@@ -366,7 +470,7 @@ export default function AdminHomePage() {
 
         <div className="grid grid-cols-2 divide-y divide-[var(--line)] overflow-hidden rounded-[18px] border border-[var(--line)] bg-white sm:grid-cols-4 sm:divide-x sm:divide-y-0">
           <Figure
-            value={registry.isLoading ? null : population.total}
+            value={stats.isLoading ? null : population.total}
             label="Cartes éditées"
             note={ready.length > 0 ? `+${ready.length} en attente` : "depuis l'origine"}
             onClick={() => router.push(routes.admin.cards)}
@@ -513,6 +617,68 @@ function Figure({
       {note && (
         <span className="mt-0.5 block text-[11.5px] text-[var(--muted-fg)]">
           {note}
+        </span>
+      )}
+    </button>
+  );
+}
+
+/**
+ * Une série, avec ce qui la concerne.
+ *
+ * ⚠️ LA LETTRE EST LE TITRE, pas une décoration.
+ *
+ * A, B et C sont ce qui est imprimé sur les cartes. Un administrateur qui lit
+ * « 142 » sous un A sait exactement de quoi il s'agit — et c'est la même
+ * marque qu'emploient le registre, l'imprimeur et le procès-verbal.
+ */
+function SeriesCard({
+  letter, label, note, stats, loading, Icon, accent, onClick,
+}: {
+  letter: string;
+  label: string;
+  note: string;
+  stats?: SeriesStats;
+  loading: boolean;
+  Icon: React.ElementType;
+  accent: string;
+  onClick: () => void;
+}) {
+  if (loading) {
+    return <Skeleton className="h-[128px] rounded-[18px]" />;
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="rounded-[18px] border border-[var(--line)] bg-white p-5 text-start transition-colors hover:bg-[var(--green-tint)]/30"
+    >
+      <span className="flex items-center gap-2.5">
+        <span
+          dir="ltr"
+          className="inline-flex h-6 w-6 flex-none items-center justify-center rounded font-mono text-[12px] font-extrabold text-white"
+          style={{ background: accent }}
+          aria-hidden="true"
+        >
+          {letter}
+        </span>
+        <Icon className="h-3.5 w-3.5 flex-none" style={{ color: accent }} />
+        <span className="min-w-0 flex-1 truncate text-[12.5px] font-bold text-[var(--green-900)]">
+          {label}
+        </span>
+      </span>
+
+      <span className="mt-3 block font-mono text-[30px] font-extrabold leading-none text-[var(--green-900)]">
+        {stats?.inForce ?? 0}
+      </span>
+      <span className="mt-1 block text-[11px] text-[var(--muted-fg)]">{note}</span>
+
+      {/* ⚠️ Un compteur d'échéances à zéro ne s'affiche pas : une ligne
+          « 0 arrivent à échéance » apprend à ignorer la ligne. */}
+      {(stats?.lapsingSoon ?? 0) > 0 && (
+        <span className="mt-2.5 block border-t border-[var(--line)] pt-2.5 text-[11.5px] font-semibold text-[var(--gold-700)]">
+          {stats!.lapsingSoon} à échéance sous 90 j
         </span>
       )}
     </button>
