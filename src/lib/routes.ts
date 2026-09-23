@@ -14,6 +14,15 @@ export const routes = {
     forgotPassword: "/forgot-password",
     resetPassword: "/reset-password",
     loginExpired: "/login?expired=1",         // global 401 landing
+    /**
+     * ⚠️ THE PATH IS BUILT INTO A SENT E-MAIL, so it cannot move.
+     *
+     * EmailService composes frontendLink(locale, "/institution-request/confirm",
+     * token). A request confirmed a week after it was filed follows the link
+     * as it was written that day — renaming this route breaks links already
+     * in people's inboxes.
+     */
+    institutionRequestConfirm: "/institution-request/confirm",
   },
 
   /* ── candidate space ────────────────────────────────── */
@@ -70,6 +79,14 @@ export const routes = {
     honour: "/admin/honour",
     /** Les corps admis à déposer — pas leurs registres. */
     institutions: "/admin/institutions",
+    /**
+     * ⚠️ SA PROPRE PAGE, et pas une section du registre.
+     *
+     * Examiner une demande, c'est lire une lettre officielle : elle a besoin
+     * de place, et on ne tranche pas trois dossiers en survolant une liste.
+     * Le registre annonce l'attente ; l'examen a son écran.
+     */
+    institutionRequests: "/admin/institutions/demandes",
     /** Le registre d'un corps, côté Ministère : ce qui attend l'octroi. */
     institutionalStaff: (id: number | string) => `/admin/institutions/${id}/agents`,
     cards: "/admin/cards",

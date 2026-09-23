@@ -26,6 +26,15 @@ export interface HonourCardResponse {
   expired: boolean;
   grantedByName: string;
   grantReason: string;
+  /** This card replaces that one. Null for a first grant. */
+  renewedFromCardNumber?: string | null;
+  /**
+   * ⚠️ This card has been replaced by that one.
+   *
+   * A renewed card stays in the list, now revoked — and "Retirée" without its
+   * successor reads as a sanction on somebody the Ministry meant to honour.
+   */
+  renewedByCardNumber?: string | null;
 
   /**
    * Whether this card's details may still be edited, and why not.
@@ -37,6 +46,15 @@ export interface HonourCardResponse {
    */
   produced: boolean;
   cannotEditReasonFr?: string | null;
+
+  /**
+   * Why this card cannot be renewed today, or null if it can.
+   *
+   * ⚠️ THE WHOLE RULE LIVES ON THE SERVER — expired or within ninety days,
+   * always when suspended, never when revoked or already renewed. The screens
+   * key the button off this string and test nothing themselves.
+   */
+  cannotRenewReasonFr?: string | null;
 }
 
 export interface GrantBody {
@@ -128,3 +146,21 @@ export async function uploadHonourPhoto(
  */
 export const honourPhotoPath = (id: number) =>
   `/api/admin/honour-cards/${id}/photo`;
+
+/**
+ * Renew an honour card: a new B number, the holder carried over, the
+ * predecessor retired.
+ *
+ * ⚠️ grantReason IS OPTIONAL — blank means "the same reason". The server
+ * carries the previous one over; retyping it would invite a paraphrase that
+ * reads as a different decision in the register.
+ */
+export function renewHonourCard(
+  id: number,
+  body: { expiresAt: string; grantReason?: string },
+) {
+  return apiFetch<HonourCardResponse>(`/api/admin/honour-cards/${id}/renew`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}

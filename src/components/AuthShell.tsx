@@ -21,7 +21,7 @@
 // Every call site is unchanged: they still pass `error` and it still renders.
 // ───────────────────────────────────────────────────────────────────────
 
-import { useState, type ReactNode } from "react";
+import { useState, type ComponentProps, type ReactNode } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -96,6 +96,17 @@ export function AuthShell({
     </p>
   );
 
+  /*
+      ⚠️ LES DEUX COLONNES S'ÉTIRENT — c'est voulu, et items-start ne l'était
+      pas : il laissait la colonne du formulaire s'arrêter à la hauteur de son
+      contenu, découvrant le fond de page sous elle et remontant le filet
+      tricolore au milieu de l'écran.
+
+      Le défaut à corriger n'était pas l'étirement mais la RÉPARTITION des
+      trois blocs décoratifs sur la hauteur obtenue. Elle est traitée plus bas,
+      par un conteneur d'une hauteur d'écran qui se fige.
+  */
+
   return (
     <main className="grid min-h-screen lg:grid-cols-[1.1fr_1fr]">
 
@@ -104,7 +115,7 @@ export function AuthShell({
           there is room for.
           ══════════════════════════════════════════════════════════ */}
       <section
-        className="relative hidden overflow-hidden px-12 py-4 text-white lg:flex lg:flex-col lg:justify-between"
+        className="relative hidden overflow-hidden px-12 py-4 text-white lg:block"
         style={{
           background:
             "radial-gradient(900px 460px at 88% -12%, rgba(255,215,0,.14), transparent 60%), radial-gradient(700px 500px at -10% 110%, rgba(0,169,92,.25), transparent 55%), linear-gradient(168deg, var(--green-900) 0%, #0e3d29 55%, #0b3524 100%)",
@@ -123,6 +134,20 @@ export function AuthShell({
           style={{ backgroundImage: "repeating-linear-gradient(115deg, #ffffff 0 1px, transparent 1px 11px)" }}
           aria-hidden="true"
         />
+
+        {/*
+          ⚠️ UNE HAUTEUR D'ÉCRAN, ET QUI SE FIGE.
+
+          Le panneau lui-même suit la hauteur de la rangée — donc celle du
+          formulaire, onze champs pour une institution. Ce conteneur-ci n'en
+          prend qu'un écran : le titre reste en haut, les mentions en bas de
+          CET écran, et le spécimen au milieu, quelle que soit la longueur du
+          formulaire.
+
+          Et il reste visible pendant le défilement, sans quoi on remplit la
+          moitié basse du formulaire face à un panneau vide.
+        */}
+        <div className="sticky top-0 flex h-screen flex-col py-4">
 
         <header className="relative z-10">
           <div className="mt-8 flex items-start gap-5">
@@ -162,8 +187,12 @@ export function AuthShell({
             is what they will actually be issued.
             ⚠️ NOT mirrored: the card is a physical object with a fixed
             layout, and Arabic already leads on it. */}
-        <div className="relative z-10 self-center px-6 py-8">
-          <PressCard className="mx-auto w-full max-w-[380px]" />
+        {/* ⚠️ flex-1 ET min-h-0 : le spécimen occupe ce qui reste entre
+            l'en-tête et le pied, centré dans cet espace-là plutôt que poussé
+            par une répartition. min-h-0 l'autorise à se réduire sur un écran
+            court au lieu de déborder. */}
+        <div className="relative z-10 flex min-h-0 flex-1 items-center justify-center px-6 py-6">
+          <PressCard className="w-full max-w-[380px]" />
         </div>
 
         <footer className="relative z-10">
@@ -182,6 +211,8 @@ export function AuthShell({
             {t("secureNotice")}
           </p>
         </footer>
+
+        </div>
       </section>
 
       {/* ══════════════════════════════════════════════════════════
@@ -255,7 +286,7 @@ export function AuthShell({
 
 export function Field({
   label, error, ...inputProps
-}: { label: string; error?: string } & React.ComponentProps<typeof Input>) {
+}: { label: string; error?: string } & ComponentProps<typeof Input>) {
   const id = inputProps.id ?? inputProps.name;
   const resolve = useFieldError();
   const message = resolve(error);
@@ -280,7 +311,7 @@ export function Field({
 
 export function PasswordField({
   label, error, ...inputProps
-}: { label: string; error?: string } & Omit<React.ComponentProps<typeof Input>, "type">) {
+}: { label: string; error?: string } & Omit<ComponentProps<typeof Input>, "type">) {
   const id = inputProps.id ?? inputProps.name;
   const t = useTranslations("auth");
   const resolve = useFieldError();

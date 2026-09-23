@@ -7,6 +7,7 @@ import {
   Inbox, Gavel, PenLine, Scale, IdCard, Users, ArrowRight, ArrowUpRight,
   AlertTriangle, CalendarPlus, ShieldX, CalendarClock, BadgeCheck,
   Award, Building2, ChevronRight,
+  FileText,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -423,6 +424,35 @@ export default function AdminHomePage() {
             onClick={() => router.push(routes.admin.institutions)}
           />
         </div>
+
+        {/*
+          ⚠️ LES DEMANDES AVANT LES OCTROIS, et l'ordre n'est pas décoratif.
+
+          Une demande d'enregistrement attend depuis qu'une institution l'a
+          déposée, et rien ne se passe tant que le Ministère ne l'a pas lue :
+          ni compte, ni dépôt, ni carte. Une fiche en attente d'octroi vient
+          d'un corps qui travaille déjà.
+
+          La plus ancienne des deux attentes se lit donc en premier.
+        */}
+        {(stats.data?.institutionRequestsPending ?? 0) > 0 && (
+          <button
+            type="button"
+            onClick={() => router.push(routes.admin.institutionRequests)}
+            className="mt-2.5 flex w-full items-center gap-2.5 rounded-xl bg-[var(--gold-tint)] px-4 py-3 text-start text-[12.5px] leading-relaxed text-[var(--gold-700)] transition-colors hover:bg-[var(--gold-tint)]/70"
+          >
+            <FileText className="h-3.5 w-3.5 flex-none" />
+            <span className="min-w-0 flex-1">
+              <b className="font-bold">
+                {stats.data!.institutionRequestsPending} demande
+                {stats.data!.institutionRequestsPending > 1 ? "s" : ""}
+              </b>{" "}
+              d&apos;enregistrement attend
+              {stats.data!.institutionRequestsPending > 1 ? "ent" : ""} votre examen.
+            </span>
+            <ChevronRight className="rtl-flip h-4 w-4 flex-none" />
+          </button>
+        )}
 
         {/* ⚠️ LA LIGNE QUI APPELLE UNE ACTION, séparée des trois compteurs.
             Les cartes en circulation sont un état ; les fiches en attente

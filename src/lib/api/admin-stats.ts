@@ -37,6 +37,13 @@ export interface AdminStats {
   institutionsTotal: number;
   /** ⚠️ Le seul chiffre de l'écran qui soit le tour de quelqu'un. */
   institutionalAwaitingGrant: number;
+   /**
+   * Demandes d'enregistrement confirmées, en attente d'examen.
+   *
+   * ⚠️ Distinct de institutionalAwaitingGrant : celle-ci attend qu'un corps
+   * soit admis, celle-là qu'un corps déjà admis voie ses fiches octroyées.
+   */
+  institutionRequestsPending: number;
 }
 
 export const statsKeys = {

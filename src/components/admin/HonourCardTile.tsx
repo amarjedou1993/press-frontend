@@ -1,9 +1,231 @@
+// "use client";
+// // src/components/admin/HonourCardTile.tsx
+
+// import { useRef } from "react";
+// import {
+//   Camera, Upload, Pencil, Lock, ShieldAlert, ShieldCheck, ShieldOff, Clock,
+//   RefreshCw, ArrowRight,
+// } from "lucide-react";
+// import { Button } from "@/components/ui/button";
+// import { HonourPhoto } from "./HonourPhoto";
+// import type { HonourCardResponse } from "@/lib/api/honour";
+
+// export const STATUS_TONE: Record<string, { bg: string; fg: string; Icon: React.ElementType }> = {
+//   VALID:     { bg: "var(--green-tint)", fg: "var(--green-700)", Icon: ShieldCheck },
+//   EXPIRED:   { bg: "#eef1ef",           fg: "var(--muted-fg)",  Icon: Clock },
+//   SUSPENDED: { bg: "var(--gold-tint)",  fg: "var(--gold-700)",  Icon: ShieldAlert },
+//   REVOKED:   { bg: "var(--red-tint)",   fg: "var(--red-700)",   Icon: ShieldOff },
+// };
+
+// export function toneOf(card: HonourCardResponse) {
+//   return STATUS_TONE[card.expired && card.status === "VALID" ? "EXPIRED" : card.status]
+//     ?? STATUS_TONE.VALID;
+// }
+
+// export function longFr(iso?: string | null) {
+//   if (!iso) return "—";
+//   const d = new Date(iso.length === 10 ? iso + "T00:00:00" : iso);
+//   return isNaN(d.getTime()) ? "—" : d.toLocaleDateString("fr-FR", {
+//     day: "numeric", month: "long", year: "numeric",
+//   });
+// }
+
+// /**
+//  * One honour card, in the grid.
+//  *
+//  * ───────────────────────────────────────────────────────────────────────
+//  * ⚠️ THE PHOTOGRAPH IS THE WHOLE POINT OF THIS VIEW.
+//  *
+//  * A grid of initials would say exactly what the list says, in three times the
+//  * space. What the grid answers that the list cannot is "are these forty faces
+//  * the right forty" — the question after a bulk import, and the one an
+//  * administrator has no other way to ask.
+//  *
+//  * So the tile is mostly photograph, and a card without one is a gold panel
+//  * that reads as a gap rather than as a portrait.
+//  * ───────────────────────────────────────────────────────────────────────
+//  */
+// export function HonourCardTile({
+//   card, onEdit, onStatus, onPhoto, onRenew, uploading,
+// }: {
+//   card: HonourCardResponse;
+//   onEdit: () => void;
+//   onStatus: () => void;
+//   onPhoto: (file: File) => void;
+//   /**
+//    * ⚠️ OPTIONAL, so every existing caller keeps compiling. A tile rendered
+//    * without it simply shows no renew button.
+//    */
+//   onRenew?: () => void;
+//   uploading: boolean;
+// }) {
+//   const fileInput = useRef<HTMLInputElement>(null);
+//   const tone = toneOf(card);
+
+//   return (
+//     <li className="group relative overflow-hidden rounded-2xl border border-[var(--line)] bg-white transition-shadow hover:shadow-[0_18px_40px_-26px_rgba(11,46,31,.5)]">
+//       {/* ⚠️ 3:4, the ratio PhotoStorageService enforces. A tile of another
+//           shape would crop the face the card will actually print. */}
+//       <div className="relative aspect-[3/4] w-full overflow-hidden bg-[#eef1ef]">
+//         <HonourPhoto
+//           cardId={card.id}
+//           hasPhoto={card.hasPhoto}
+//           alt={card.fullName}
+//           className="h-full w-full"
+//         />
+
+//         <span className="absolute left-2.5 top-2.5 rounded-full px-2 py-0.5 text-[10px] font-bold shadow-sm"
+//           style={{ background: tone.bg, color: tone.fg }}>
+//           {card.statusLabelFr}
+//         </span>
+
+//         {/* ⚠️ THE LOCK FOLLOWS THE REASON, NOT `produced`.
+//             A card closed by renewal was often never printed — keyed on
+//             `produced` it showed no lock, on a card nothing may change. */}
+//         {card.cannotEditReasonFr && (
+//           <span className="absolute right-2.5 top-2.5 rounded-full bg-white/90 p-1.5 shadow-sm"
+//             title={card.cannotEditReasonFr}>
+//             <Lock className="h-3 w-3 text-[var(--muted-fg)]" />
+//           </span>
+//         )}
+//       </div>
+
+//       <div className="space-y-2 p-3.5">
+//         <div className="min-w-0">
+//           <p dir="auto" className="truncate text-[13.5px] font-extrabold text-[var(--green-900)]">
+//             {card.fullName}
+//           </p>
+//           <p dir="ltr" className="font-mono text-[11px] text-[var(--muted-fg)]">
+//             {card.cardNumber}
+//           </p>
+//         </div>
+
+//         <p className="truncate text-[12px] text-[var(--slate)]">
+//           {card.categoryLabelFr ?? "—"}
+//         </p>
+//         <p className="text-[11.5px] text-[var(--muted-fg)]">
+//           jusqu&apos;au {longFr(card.expiresAt)}
+//         </p>
+
+//         <input
+//           ref={fileInput}
+//           type="file"
+//           accept="image/jpeg,image/png"
+//           className="hidden"
+//           onChange={(e) => {
+//             const file = e.target.files?.[0];
+//             if (file) onPhoto(file);
+//             e.target.value = "";
+//           }}
+//         />
+
+//         <div className="flex items-center gap-1 pt-1">
+//           {/* ⚠️ Filled while the photograph is missing — the same rule as the
+//               list. It is the blocking step, and it should look like one. */}
+//           <Button
+//             size="xs"
+//             variant={card.hasPhoto ? "outline" : "default"}
+//             className="flex-1"
+//             disabled={uploading || !!card.cannotEditReasonFr}
+//             onClick={() => fileInput.current?.click()}
+//             title={card.cannotEditReasonFr
+//               ?? (card.hasPhoto ? "Remplacer la photographie" : "Ajouter la photographie")}
+//           >
+//             {card.hasPhoto ? <Camera className="h-3 w-3" /> : <Upload className="h-3 w-3" />}
+//             {card.hasPhoto ? "Photo" : "Requise"}
+//           </Button>
+
+//           <button
+//             type="button"
+//             onClick={onEdit}
+//             disabled={!!card.cannotEditReasonFr}
+//             title={card.cannotEditReasonFr ?? "Modifier"}
+//             aria-label={`Modifier la carte ${card.cardNumber}`}
+//             className="flex-none rounded-lg p-1.5 text-[var(--muted-fg)] transition-colors hover:bg-[var(--green-tint)] hover:text-[var(--green-700)] disabled:cursor-not-allowed disabled:opacity-40"
+//           >
+//             <Pencil className="h-3 w-3" />
+//           </button>
+
+//           {/*
+//             ⚠️ ONLY WHERE RENEWING MEANS SOMETHING.
+
+//             Not on a revoked card: the server refuses, and the honest answer is
+//             a fresh grant with its own reason. Not on a card already renewed:
+//             it has a successor.
+
+//             ⚠️ AND NOT ONLY NEAR EXPIRY. An honour card is also renewed when it
+//             is lost and suspended, or when the Ministry extends a distinction
+//             before its term. Hiding the button until ninety days out would make
+//             both impossible.
+
+//             Enabled on a PRODUCED card, unlike the edit beside it: the card
+//             being renewed is precisely the one in somebody's pocket.
+//           */}
+//           {onRenew && card.status !== "REVOKED" && !card.renewedByCardNumber && (
+//             <button
+//               type="button"
+//               onClick={onRenew}
+//               title="Renouveler"
+//               aria-label={`Renouveler la carte ${card.cardNumber}`}
+//               className="flex-none rounded-lg p-1.5 text-[var(--muted-fg)] transition-colors hover:bg-[var(--green-tint)] hover:text-[var(--green-700)]"
+//             >
+//               <RefreshCw className="h-3 w-3" />
+//             </button>
+//           )}
+
+//           {card.status !== "REVOKED" && (
+//             <button
+//               type="button"
+//               onClick={onStatus}
+//               title={card.status === "SUSPENDED" ? "Rétablir" : "Suspendre ou retirer"}
+//               aria-label={`Statut de la carte ${card.cardNumber}`}
+//               className="flex-none rounded-lg p-1.5 transition-colors hover:bg-[#f2f5f3]"
+//               style={{ color: card.status === "SUSPENDED" ? "var(--green-700)" : "var(--gold-700)" }}
+//             >
+//               {card.status === "SUSPENDED"
+//                 ? <ShieldCheck className="h-3 w-3" />
+//                 : <ShieldAlert className="h-3 w-3" />}
+//             </button>
+//           )}
+//         </div>
+
+//         {/*
+//           ⚠️ "RETIRÉE" WITHOUT ITS SUCCESSOR READS AS A SANCTION.
+
+//           A renewed card stays on the grid, now revoked. Shown bare, it looks
+//           like a distinction the Ministry withdrew — from somebody it meant to
+//           honour. The successor's number says what actually happened.
+//         */}
+//         {card.renewedByCardNumber && (
+//           <p className="flex items-center gap-1.5 border-t border-[var(--line)] pt-2 text-[11px] leading-snug text-[var(--slate)]">
+//             <RefreshCw className="h-2.5 w-2.5 flex-none opacity-60" />
+//             <span className="min-w-0 truncate">
+//               Remplacée par{" "}
+//               <span dir="ltr" className="font-mono font-bold">{card.renewedByCardNumber}</span>
+//             </span>
+//           </p>
+//         )}
+//         {card.renewedFromCardNumber && (
+//           <p className="flex items-center gap-1.5 border-t border-[var(--line)] pt-2 text-[11px] leading-snug text-[var(--slate)]">
+//             <ArrowRight className="rtl-flip h-2.5 w-2.5 flex-none opacity-60" />
+//             <span className="min-w-0 truncate">
+//               Remplace{" "}
+//               <span dir="ltr" className="font-mono font-bold">{card.renewedFromCardNumber}</span>
+//             </span>
+//           </p>
+//         )}
+//       </div>
+//     </li>
+//   );
+// }
+
 "use client";
 // src/components/admin/HonourCardTile.tsx
 
 import { useRef } from "react";
 import {
   Camera, Upload, Pencil, Lock, ShieldAlert, ShieldCheck, ShieldOff, Clock,
+  RefreshCw, ArrowRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { HonourPhoto } from "./HonourPhoto";
@@ -45,12 +267,17 @@ export function longFr(iso?: string | null) {
  * ───────────────────────────────────────────────────────────────────────
  */
 export function HonourCardTile({
-  card, onEdit, onStatus, onPhoto, uploading,
+  card, onEdit, onStatus, onPhoto, onRenew, uploading,
 }: {
   card: HonourCardResponse;
   onEdit: () => void;
   onStatus: () => void;
   onPhoto: (file: File) => void;
+  /**
+   * ⚠️ OPTIONAL, so every existing caller keeps compiling. A tile rendered
+   * without it simply shows no renew button.
+   */
+  onRenew?: () => void;
   uploading: boolean;
 }) {
   const fileInput = useRef<HTMLInputElement>(null);
@@ -73,9 +300,12 @@ export function HonourCardTile({
           {card.statusLabelFr}
         </span>
 
-        {card.produced && (
+        {/* ⚠️ THE LOCK FOLLOWS THE REASON, NOT `produced`.
+            A card closed by renewal was often never printed — keyed on
+            `produced` it showed no lock, on a card nothing may change. */}
+        {card.cannotEditReasonFr && (
           <span className="absolute right-2.5 top-2.5 rounded-full bg-white/90 p-1.5 shadow-sm"
-            title={card.cannotEditReasonFr ?? undefined}>
+            title={card.cannotEditReasonFr}>
             <Lock className="h-3 w-3 text-[var(--muted-fg)]" />
           </span>
         )}
@@ -117,11 +347,10 @@ export function HonourCardTile({
             size="xs"
             variant={card.hasPhoto ? "outline" : "default"}
             className="flex-1"
-            disabled={uploading || card.produced}
+            disabled={uploading || !!card.cannotEditReasonFr}
             onClick={() => fileInput.current?.click()}
-            title={card.produced
-              ? card.cannotEditReasonFr ?? undefined
-              : card.hasPhoto ? "Remplacer la photographie" : "Ajouter la photographie"}
+            title={card.cannotEditReasonFr
+              ?? (card.hasPhoto ? "Remplacer la photographie" : "Ajouter la photographie")}
           >
             {card.hasPhoto ? <Camera className="h-3 w-3" /> : <Upload className="h-3 w-3" />}
             {card.hasPhoto ? "Photo" : "Requise"}
@@ -130,13 +359,52 @@ export function HonourCardTile({
           <button
             type="button"
             onClick={onEdit}
-            disabled={card.produced}
-            title={card.produced ? card.cannotEditReasonFr ?? undefined : "Modifier"}
+            disabled={!!card.cannotEditReasonFr}
+            title={card.cannotEditReasonFr ?? "Modifier"}
             aria-label={`Modifier la carte ${card.cardNumber}`}
             className="flex-none rounded-lg p-1.5 text-[var(--muted-fg)] transition-colors hover:bg-[var(--green-tint)] hover:text-[var(--green-700)] disabled:cursor-not-allowed disabled:opacity-40"
           >
             <Pencil className="h-3 w-3" />
           </button>
+
+          {/*
+            ⚠️ THE WHOLE RULE IS ON THE SERVER, in one string.
+
+            This tested three things — not revoked, not already renewed, and
+            implicitly "any date at all". Each was a copy of a rule the server
+            also holds, and the day the window moved they would have parted
+            company.
+
+            ⚠️ AND A CARD OUTSIDE THE WINDOW KEEPS A GREYED BUTTON rather than
+            losing it. The tooltip carries the date renewal opens, so an
+            administrator learns the rule instead of wondering where the
+            action went.
+          */}
+          {onRenew && !card.cannotRenewReasonFr && (
+            <button
+              type="button"
+              onClick={onRenew}
+              title="Renouveler"
+              aria-label={`Renouveler la carte ${card.cardNumber}`}
+              className="flex-none rounded-lg p-1.5 text-[var(--muted-fg)] transition-colors hover:bg-[var(--green-tint)] hover:text-[var(--green-700)]"
+            >
+              <RefreshCw className="h-3 w-3" />
+            </button>
+          )}
+
+          {/* Not yet in the window — shown, disabled, and explained. A card
+              revoked or already renewed shows nothing: there the answer is a
+              different act, not a wait. */}
+          {onRenew && card.cannotRenewReasonFr
+            && card.status !== "REVOKED" && !card.renewedByCardNumber && (
+            <span
+              title={card.cannotRenewReasonFr}
+              aria-label={card.cannotRenewReasonFr}
+              className="flex-none rounded-lg p-1.5 text-[var(--muted-fg)] opacity-40"
+            >
+              <RefreshCw className="h-3 w-3" />
+            </span>
+          )}
 
           {card.status !== "REVOKED" && (
             <button
@@ -153,6 +421,32 @@ export function HonourCardTile({
             </button>
           )}
         </div>
+
+        {/*
+          ⚠️ "RETIRÉE" WITHOUT ITS SUCCESSOR READS AS A SANCTION.
+
+          A renewed card stays on the grid, now revoked. Shown bare, it looks
+          like a distinction the Ministry withdrew — from somebody it meant to
+          honour. The successor's number says what actually happened.
+        */}
+        {card.renewedByCardNumber && (
+          <p className="flex items-center gap-1.5 border-t border-[var(--line)] pt-2 text-[11px] leading-snug text-[var(--slate)]">
+            <RefreshCw className="h-2.5 w-2.5 flex-none opacity-60" />
+            <span className="min-w-0 truncate">
+              Remplacée par{" "}
+              <span dir="ltr" className="font-mono font-bold">{card.renewedByCardNumber}</span>
+            </span>
+          </p>
+        )}
+        {card.renewedFromCardNumber && (
+          <p className="flex items-center gap-1.5 border-t border-[var(--line)] pt-2 text-[11px] leading-snug text-[var(--slate)]">
+            <ArrowRight className="rtl-flip h-2.5 w-2.5 flex-none opacity-60" />
+            <span className="min-w-0 truncate">
+              Remplace{" "}
+              <span dir="ltr" className="font-mono font-bold">{card.renewedFromCardNumber}</span>
+            </span>
+          </p>
+        )}
       </div>
     </li>
   );

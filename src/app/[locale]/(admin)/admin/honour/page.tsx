@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import {
   Plus, Pencil, Camera, ShieldAlert, ShieldCheck, Lock, Upload, Inbox,
   FileSpreadsheet, Search,
-  FileText,
+  FileText, RefreshCw, ArrowRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -27,11 +27,13 @@ import { HonourCardTile, toneOf, longFr } from "@/components/admin/HonourCardTil
 import { Guilloche, OfficialSeal } from "@/components/public/patterns";
 import {
   listHonourCards, grantHonourCard, updateHonourCard, setHonourCardStatus,
-  uploadHonourPhoto, honourKeys, type HonourCardResponse, type GrantBody,
+  uploadHonourPhoto, renewHonourCard, honourKeys,
+  type HonourCardResponse, type GrantBody,
 } from "@/lib/api/honour";
 import { ApiError } from "@/lib/api/client";
 import { useAuthStore } from "@/lib/auth";
 import { PvRangeDialog } from "@/components/admin/PvRangeDialog";
+import { HonourRenewDialog } from "@/components/admin/HonourRenewDialog";
 import { downloadHonourPv } from "@/lib/api/pv";
 
 /** The four scopes, as predicates — one definition, used for both the counts
@@ -52,6 +54,7 @@ export default function HonourCardsPage() {
   const [pvOpen, setPvOpen] = useState(false);
   const [editing, setEditing] = useState<HonourCardResponse | null>(null);
   const [statusFor, setStatusFor] = useState<HonourCardResponse | null>(null);
+  const [renewing, setRenewing] = useState<HonourCardResponse | null>(null);
   const [statusReason, setStatusReason] = useState("");
 
   const [filters, setFilters] = useState<HonourFilterState>(DEFAULT_HONOUR_FILTERS);
@@ -138,11 +141,38 @@ export default function HonourCardsPage() {
     }),
   });
 
+  /*
+   * ⚠️ THE TOAST NAMES THE NEW NUMBER AND SAYS WHAT HAPPENED TO THE OLD.
+   *
+   * The list refreshes and the old card now reads "Retirée". Without the
+   * sentence, an administrator scanning the list sees a card they did not
+   * mean to withdraw — the renewal did it, and the toast says so before the
+   * question is asked.
+   */
+  const renew = useMutation({
+    mutationFn: (v: { id: number; expiresAt: string; grantReason: string }) =>
+      renewHonourCard(v.id, {
+        expiresAt: v.expiresAt,
+        grantReason: v.grantReason || undefined,
+      }),
+    onSuccess: (card) => {
+      refresh();
+      setRenewing(null);
+      toast.success(`Carte ${card.cardNumber} établie`, {
+        description: card.renewedFromCardNumber
+          ? `La carte ${card.renewedFromCardNumber} est retirée.`
+          : undefined,
+      });
+    },
+    onError: (e) => toast.error("Renouvellement impossible", { description: errText(e) }),
+  });
+
   const rowProps = (card: HonourCardResponse) => ({
     card,
     onEdit: () => { setEditing(card); setDialogOpen(true); },
     onStatus: () => { setStatusFor(card); setStatusReason(""); },
     onPhoto: (file: File) => photo.mutate({ id: card.id, file }),
+    onRenew: () => setRenewing(card),
     uploading: photo.isPending,
   });
 
@@ -424,6 +454,21 @@ export default function HonourCardsPage() {
         description="Les cartes octroyées sur la période retenue."
         onDownload={downloadHonourPv}
       />
+
+      <HonourRenewDialog
+        open={!!renewing}
+        onOpenChange={(o) => !o && setRenewing(null)}
+        card={renewing && {
+          cardNumber: renewing.cardNumber,
+          fullName: renewing.fullName,
+          expiresAt: renewing.expiresAt,
+          grantReason: renewing.grantReason,
+          hasPhoto: renewing.hasPhoto,
+        }}
+        onRenew={(expiresAt, grantReason) =>
+          renewing && renew.mutate({ id: renewing.id, expiresAt, grantReason })}
+        renewing={renew.isPending}
+      />
     </div>
   );
 }
@@ -483,12 +528,13 @@ function EmptyState({
 /* ══ one honour card, in the list ══ */
 
 function HonourRow({
-  card, onEdit, onStatus, onPhoto, uploading,
+  card, onEdit, onStatus, onPhoto, onRenew, uploading,
 }: {
   card: HonourCardResponse;
   onEdit: () => void;
   onStatus: () => void;
   onPhoto: (file: File) => void;
+  onRenew: () => void;
   uploading: boolean;
 }) {
   const fileInput = useRef<HTMLInputElement>(null);
@@ -539,11 +585,10 @@ function HonourRow({
           <Button
             size="sm"
             variant={card.hasPhoto ? "outline" : "default"}
-            disabled={uploading || card.produced}
+            disabled={uploading || !!card.cannotEditReasonFr}
             onClick={() => fileInput.current?.click()}
-            title={card.produced
-              ? card.cannotEditReasonFr ?? undefined
-              : card.hasPhoto ? "Remplacer la photographie" : "Ajouter la photographie"}
+            title={card.cannotEditReasonFr
+              ?? (card.hasPhoto ? "Remplacer la photographie" : "Ajouter la photographie")}
           >
             {card.hasPhoto ? <Camera className="h-3.5 w-3.5" /> : <Upload className="h-3.5 w-3.5" />}
             {card.hasPhoto ? "Photo" : "Photo requise"}
@@ -552,13 +597,54 @@ function HonourRow({
           <button
             type="button"
             onClick={onEdit}
-            disabled={card.produced}
-            title={card.produced ? card.cannotEditReasonFr ?? undefined : "Modifier"}
+            disabled={!!card.cannotEditReasonFr}
+            title={card.cannotEditReasonFr ?? "Modifier"}
             aria-label={`Modifier la carte ${card.cardNumber}`}
             className="rounded-lg p-2 text-[var(--muted-fg)] transition-colors hover:bg-[var(--green-tint)] hover:text-[var(--green-700)] disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {card.produced ? <Lock className="h-3.5 w-3.5" /> : <Pencil className="h-3.5 w-3.5" />}
+            {/* ⚠️ The padlock says "closed", whichever way — produced, or
+                renewed and replaced. Keyed on `produced` alone, a renewed
+                card showed a pencil that leads to a refusal. */}
+            {card.cannotEditReasonFr
+              ? <Lock className="h-3.5 w-3.5" />
+              : <Pencil className="h-3.5 w-3.5" />}
           </button>
+
+          {/*
+            ⚠️ THE WHOLE RULE IS ON THE SERVER, in one string.
+
+            This tested the status and the successor itself — two copies of
+            rules the server also holds, which would have parted company the
+            day the ninety-day window moved.
+
+            ⚠️ AND A CARD OUTSIDE THE WINDOW KEEPS A GREYED BUTTON rather than
+            losing it: the tooltip carries the date renewal opens.
+          */}
+          {!card.cannotRenewReasonFr && (
+            <button
+              type="button"
+              onClick={onRenew}
+              title="Renouveler"
+              aria-label={`Renouveler la carte ${card.cardNumber}`}
+              className="rounded-lg p-2 text-[var(--muted-fg)] transition-colors hover:bg-[var(--green-tint)] hover:text-[var(--green-700)]"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+            </button>
+          )}
+
+          {/* Not yet in the window — shown, disabled, and explained. A revoked
+              or already-renewed card shows nothing: there the answer is a
+              different act, not a wait. */}
+          {card.cannotRenewReasonFr
+            && card.status !== "REVOKED" && !card.renewedByCardNumber && (
+            <span
+              title={card.cannotRenewReasonFr}
+              aria-label={card.cannotRenewReasonFr}
+              className="rounded-lg p-2 text-[var(--muted-fg)] opacity-40"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+            </span>
+          )}
 
           {/* ⚠️ Available even on a produced card, unlike an edit. The card
               already in circulation is precisely the one that must be
@@ -599,6 +685,23 @@ function HonourRow({
             style={{ color: tone.fg }}>
             <tone.Icon className="mt-0.5 h-3 w-3 flex-none" />
             <span dir="auto">{card.statusReason}</span>
+          </p>
+        )}
+
+        {/* ⚠️ "Retirée" without its successor reads as a sanction on somebody
+            the Ministry meant to honour. The chain says what happened. */}
+        {card.renewedByCardNumber && (
+          <p className="flex items-center gap-2 text-[12px] leading-relaxed text-[var(--slate)]">
+            <RefreshCw className="h-3 w-3 flex-none opacity-60" />
+            Renouvelée — remplacée par la carte{" "}
+            <span dir="ltr" className="font-mono font-bold">{card.renewedByCardNumber}</span>
+          </p>
+        )}
+        {card.renewedFromCardNumber && (
+          <p className="flex items-center gap-2 text-[12px] leading-relaxed text-[var(--slate)]">
+            <ArrowRight className="rtl-flip h-3 w-3 flex-none opacity-60" />
+            Remplace la carte{" "}
+            <span dir="ltr" className="font-mono font-bold">{card.renewedFromCardNumber}</span>
           </p>
         )}
       </div>
