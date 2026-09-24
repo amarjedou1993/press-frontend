@@ -29,6 +29,9 @@ import {
 } from "@/lib/api/admin-institutions";
 import { ApiError } from "@/lib/api/client";
 import { routes } from "@/lib/routes";
+import {
+  listInstitutionRequests, institutionRequestKeys,
+} from "@/lib/api/admin-institution-requests";
 import { PvRangeDialog } from "@/components/admin/PvRangeDialog";
 import { downloadInstitutionalPv } from "@/lib/api/pv";
 
@@ -46,6 +49,21 @@ export default function InstitutionsPage() {
   const { data: institutions, isLoading } = useQuery({
     queryKey: institutionRegistryKeys.all,
     queryFn: listInstitutions,
+  });
+
+  /*
+   * ⚠️ LA FILE EST ANNONCÉE ICI, MAIS ELLE N'Y VIT PAS.
+   *
+   * Un administrateur qui ouvre le registre des corps doit voir qu'une
+   * demande attend — sinon elle dort jusqu'à ce que quelqu'un pense à la
+   * chercher. Mais l'examen demande de la place : la lettre officielle se lit
+   * en grand, et on ne tranche pas trois dossiers en survolant une liste.
+   *
+   * Le registre annonce ; l'écran des demandes examine.
+   */
+  const pending = useQuery({
+    queryKey: institutionRequestKeys.pending,
+    queryFn: () => listInstitutionRequests("PENDING_REVIEW"),
   });
 
   const refresh = () => qc.invalidateQueries({ queryKey: institutionRegistryKeys.all });
@@ -226,6 +244,27 @@ export default function InstitutionsPage() {
           <i className="flex-1 bg-[var(--red-500)]" />
         </div>
       </section>
+
+      {/* ⚠️ SOUS LE BANDEAU, PAS DANS LA LISTE. Une demande n'est pas encore
+          un corps enregistré : la mêler au registre ferait figurer parmi les
+          institutions quelque chose que le Ministère n'a pas admis. */}
+      {(pending.data?.length ?? 0) > 0 && (
+        <button
+          type="button"
+          onClick={() => router.push(routes.admin.institutionRequests)}
+          className="flex w-full items-center gap-2.5 rounded-xl bg-[var(--gold-tint)] px-4 py-3 text-start text-[12.5px] leading-relaxed text-[var(--gold-700)] transition-colors hover:bg-[var(--gold-tint)]/70"
+        >
+          <FileText className="h-3.5 w-3.5 flex-none" />
+          <span className="min-w-0 flex-1">
+            <b className="font-bold">
+              {pending.data!.length} demande{pending.data!.length > 1 ? "s" : ""}
+              {" "}d&apos;enregistrement
+            </b>{" "}
+            attend{pending.data!.length > 1 ? "ent" : ""} votre examen.
+          </span>
+          <ChevronRight className="rtl-flip h-4 w-4 flex-none" />
+        </button>
+      )}
 
       {/* ══ search ══ */}
       <div className="flex flex-wrap items-center gap-3">
