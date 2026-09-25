@@ -1,15 +1,20 @@
 "use client";
 // src/app/[locale]/(admin)/layout.tsx — guard + chrome for SUPER_ADMIN.
 
+import { useQuery } from "@tanstack/react-query";
 import { usePathname } from "@/i18n/navigation";
 import {
   LayoutDashboard, CalendarDays, Users, IdCard, Gavel, Printer,
   Award,
   Building2,
+  FileText,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { navMatcher } from "@/lib/nav";
 import { routes } from "@/lib/routes";
+import {
+  listInstitutionRequests, institutionRequestKeys,
+} from "@/lib/api/admin-institution-requests";
 
 /**
  * Every destination in this sidebar, in one list.
@@ -30,7 +35,8 @@ const NAV_HREFS = [
   routes.admin.sessions,
   routes.admin.reviewers,
   routes.admin.printers,
-  routes.admin.institutions, 
+  routes.admin.institutions,
+  routes.admin.institutionRequests,
   routes.admin.cards,
   routes.admin.honour,
   routes.admin.revocations,
@@ -38,6 +44,28 @@ const NAV_HREFS = [
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const path = usePathname();
+
+  /*
+   * ───────────────────────────────────────────────────────────────────
+   * ⚠️ LA MÊME CLÉ QUE L'ÉCRAN D'EXAMEN, ET C'EST CE QUI FAIT TOMBER LA
+   * PASTILLE.
+   *
+   * La page des demandes invalide institutionRequestKeys.all après chaque
+   * décision. Compter ici sur une clé distincte laisserait le rail annoncer
+   * trois demandes en attente alors que l'écran n'en montre plus que deux,
+   * jusqu'au prochain rechargement.
+   *
+   * Une seule requête, filtrée en mémoire : la liste est courte, et deux
+   * requêtes qui se contredisent coûtent plus qu'un filtre.
+   * ───────────────────────────────────────────────────────────────────
+   */
+  const requests = useQuery({
+    queryKey: institutionRequestKeys.all,
+    queryFn: () => listInstitutionRequests(),
+  });
+
+  const pending = (requests.data ?? [])
+    .filter((r) => r.status === "PENDING_REVIEW").length;
 
   // Longest match wins: exactly one entry is ever active, and adding a nested
   // route can never light two at once. No per-entry rule to remember.
@@ -97,6 +125,36 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               href: routes.admin.institutions,
               icon: <Building2 className="h-[17px] w-[17px]" />,
               active: isActive(routes.admin.institutions),
+              /*
+               * ⚠️ « Demandes » EST SOUS « Institutions », pas à côté.
+               *
+               * Une demande ne mène à rien d'autre qu'à une institution :
+               * l'approuver en crée une, la refuser n'en crée aucune. C'est
+               * une dépendance, pas un voisinage de sujet — et l'imbrication
+               * dit où chercher quand on apprend qu'un corps attend d'être
+               * admis.
+               */
+              children: [
+                {
+                  label: "Demandes",
+                  href: routes.admin.institutionRequests,
+                  icon: <FileText className="h-[15px] w-[15px]" />,
+                  active: isActive(routes.admin.institutionRequests),
+                  /*
+                   * ⚠️ RIEN QUAND IL N'Y A RIEN.
+                   *
+                   * Une pastille affichant « 0 » en permanence apprend à
+                   * ignorer les pastilles — et c'est celle-ci qu'il faut
+                   * remarquer, parce qu'une demande en attente bloque tout :
+                   * ni compte, ni dépôt, ni carte pour ce corps tant que
+                   * personne ne l'a lue.
+                   *
+                   * Rail replié, ce compte remonte sur « Institutions » —
+                   * voir NavEntry.
+                   */
+                  badge: pending > 0 ? pending : undefined,
+                },
+              ],
             },
             {
               label: "Retraits de cartes",

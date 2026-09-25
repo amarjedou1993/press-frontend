@@ -95,6 +95,66 @@ export function GuillocheBand({
   );
 }
 
+
+/* ── Mauritanian flag ────────────────────────────────────────────
+   Official national flag artwork, kept as an object rather than a directional
+   decoration. It is never mirrored in RTL. Rounded corners make it suitable
+   for compact credential marks while preserving the flag itself. */
+export function MauritaniaFlag({
+  className = "",
+  id = "mauritania-flag",
+  x,
+  y,
+  width,
+  height,
+  radius = 720,
+}: {
+  className?: string;
+  id?: string;
+  x?: number | string;
+  y?: number | string;
+  width?: number | string;
+  height?: number | string;
+  radius?: number;
+}) {
+  return (
+    <svg
+      x={x}
+      y={y}
+      width={width}
+      height={height}
+      viewBox="0 0 7898.9 5272.5"
+      preserveAspectRatio="xMidYMid meet"
+      className={className}
+      aria-hidden="true"
+      style={{ direction: "ltr" }}
+    >
+      <defs>
+        <clipPath id={`${id}-clip`}>
+          <rect x="7.7" y="9.6" width="7883.5" height="5253.6" rx={radius} ry={radius} />
+        </clipPath>
+      </defs>
+
+      <g clipPath={`url(#${id}-clip)`}>
+        {/* green field */}
+        <rect x="0" y="0" width="7898.9" height="5272.5" fill="#26AB4D" />
+
+        {/* red upper and lower bands */}
+        <rect x="0" y="0" width="7898.9" height="1060.3" fill="#D01E25" />
+        <rect x="0" y="4212.45" width="7898.9" height="1060.05" fill="#D01E25" />
+
+        {/* gold crescent and star from the supplied Mauritanian flag artwork */}
+        <g transform="translate(0 5272.5) scale(1 -1)">
+          <path
+            fill="#FAD606"
+            d="M 5914.27,3441.34 C 5704.79,2685.66 4904.61,2123.08 3949.45,2123.08 c -955.16,0 -1755.35,562.58 -1964.83,1318.26 62.57,-1038.08 918.33,-1860.49 1964.83,-1860.49 1046.5,0 1902.26,822.41 1964.82,1860.49 z m -1964.82,252.29 124.44,-385.51 405.1,0.77 -328.19,-237.48 125.92,-385.03 -327.27,238.74 -327.28,-238.74 125.93,385.03 -328.2,237.48 405.11,-0.77 124.44,385.51"
+          />
+        </g>
+      </g>
+    </svg>
+  );
+}
+
 /* ── Official seal ───────────────────────────────────────────────
    Engraved concentric rings, text following a circular path, the national
    mark at the centre. The device that says "issued by an authority" faster
@@ -116,8 +176,7 @@ export function GuillocheBand({
    a rosette of ellipses mirrors to itself. On THIS it flips the artwork:
 
      · both legends read backwards, letter by letter;
-     · the national mark at the centre runs RED–GOLD–GREEN, which is the
-       flag reversed.
+     · the Mauritanian flag at the centre is mirrored.
 
    That shipped, on the landing hero, in Arabic. It looked like a text
    direction problem and was not: the text was correct and the whole drawing
@@ -213,15 +272,17 @@ export function OfficialSeal({
         </textPath>
       </text>
 
-      {/* The national mark at the centre.
-          ⚠️ GREEN, GOLD, RED — left to right, always. This is the one place
-          in the file where a mirror is detectable at a glance, and it is how
-          the rtl-mirror bug was finally seen. */}
-      <g transform="translate(100 100)">
-        <rect x="-13" y="-11" width="7" height="22" rx="3.5" fill="var(--green-500)" />
-        <rect x="-3.5" y="-11" width="7" height="22" rx="3.5" fill="var(--gold-500)" />
-        <rect x="6" y="-11" width="7" height="22" rx="3.5" fill="var(--red-500)" />
-      </g>
+      {/* Rounded Mauritanian flag at the centre.
+          It is deliberately rendered as a fixed national object and must never
+          be mirrored with the surrounding page direction. */}
+      <MauritaniaFlag
+        x={77}
+        y={85}
+        width={46}
+        height={30}
+        radius={850}
+        id={`${id}-flag`}
+      />
     </svg>
   );
 }

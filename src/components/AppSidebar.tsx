@@ -12,8 +12,9 @@
 // /ar/admin to /fr/admin, so useLocale() is always "fr" there and the rail
 // stays left on its own.
 
+import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { ChevronsLeft, Lock } from "lucide-react";
+import { ChevronDown, ChevronsLeft, Lock } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent,
   SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton,
@@ -21,6 +22,7 @@ import {
 } from "@/components/ui/sidebar";
 import { useRouter } from "@/i18n/navigation";
 import { UserMenu } from "@/components/UserMenu";
+import { MauritaniaFlag } from "@/components/public/patterns";
 
 export interface NavItem {
   label: string;
@@ -30,6 +32,19 @@ export interface NavItem {
   /** Not yet built: shown, clearly marked, and not clickable. */
   disabled?: boolean;
   badge?: string | number;
+  /**
+   * Des destinations qui APPARTIENNENT à celle-ci, et non qui la côtoient.
+   *
+   * ───────────────────────────────────────────────────────────────────
+   * ⚠️ RÉSERVÉ À UNE VRAIE DÉPENDANCE.
+   *
+   * « Demandes » est sous « Institutions » parce qu'une demande ne mène à
+   * rien d'autre : l'approuver crée une institution, la refuser n'en crée
+   * aucune. Imbriquer par simple parenté de sujet — « Cartes » sous
+   * « Sessions » — ferait un arbre où il faut deviner sous quoi chercher.
+   * ───────────────────────────────────────────────────────────────────
+   */
+  children?: NavItem[];
 }
 
 export interface NavGroup {
@@ -37,13 +52,132 @@ export interface NavGroup {
   items: NavItem[];
 }
 
-function NationalMark() {
+/**
+ * Une entrée du rail, et ses enfants s'il y en a.
+ *
+ * ⚠️ REPLIÉ, UN ENFANT DISPARAÎT — ET SA PASTILLE AVEC LUI.
+ *
+ * En mode icônes il n'y a pas de place pour un second niveau. Le compte des
+ * enfants remonte alors sur le parent : sans cela, un administrateur qui
+ * travaille rail replié ne verrait jamais qu'une demande attend.
+ */
+function NavEntry({
+  item, collapsed, onNavigate,
+}: {
+  item: NavItem;
+  collapsed: boolean;
+  onNavigate: (href: string) => void;
+}) {
+  const children = item.children ?? [];
+  const hasChildren = children.length > 0;
+  const [childrenOpen, setChildrenOpen] = useState(
+    () => children.some((child) => child.active),
+  );
+
+  const inherited = children.reduce(
+    (sum, c) => sum + (typeof c.badge === "number" ? c.badge : 0), 0);
+
+  const badge = collapsed && inherited > 0
+    ? (typeof item.badge === "number" ? item.badge + inherited : inherited)
+    : item.badge;
+
   return (
-    <span className="inline-flex items-center gap-[3px]" aria-hidden="true">
-      <i className="h-3.5 w-1 rounded-full bg-[var(--green-500)]" />
-      <i className="h-3.5 w-1 rounded-full bg-[var(--gold-500)]" />
-      <i className="h-3.5 w-1 rounded-full bg-[var(--red-500)]" />
-    </span>
+    <>
+      <SidebarMenuItem>
+        <SidebarMenuButton
+          isActive={item.active}
+          tooltip={item.label}
+          aria-disabled={item.disabled}
+          aria-expanded={hasChildren && !collapsed ? childrenOpen : undefined}
+          onClick={
+            item.disabled
+              ? undefined
+              : hasChildren && !collapsed
+                ? () => setChildrenOpen((open) => !open)
+                : () => onNavigate(item.href)
+          }
+          className={[
+            "relative h-10 rounded-lg text-[12.5px] font-semibold transition-all",
+            item.active
+              // start-0 / rounded-e: the active marker sits at the reading
+              // edge of the item, and its rounded corner faces inward.
+              ? "bg-white/[0.14] text-white hover:bg-white/[0.16] " +
+                "before:absolute before:start-0 before:top-1/2 before:h-5 before:w-[3px] " +
+                "before:-translate-y-1/2 before:rounded-e before:bg-[var(--gold-500)]"
+              : item.disabled
+                ? "cursor-not-allowed text-white/45 hover:bg-transparent"
+                : "text-white/70 hover:bg-white/[0.08] hover:text-white",
+          ].join(" ")}
+        >
+          {item.icon}
+          <span className="truncate">{item.label}</span>
+
+          {!collapsed && item.disabled && (
+            <span className="ms-auto inline-flex items-center gap-1.5">
+              {badge != null && (
+                <span className="rounded-full border border-white/25 px-1.5 py-0.5 font-mono text-[9.5px] font-bold text-white/55">
+                  {badge}
+                </span>
+              )}
+              <Lock className="h-3 w-3 flex-none text-white/40" />
+            </span>
+          )}
+
+          {/* ⚠️ Visible MÊME REPLIÉ quand elle vient d'un enfant : c'est le
+              seul endroit où le compte peut encore se lire. */}
+          {!item.disabled && badge != null && (!collapsed || inherited > 0) && (
+            <span
+              className={[
+                "rounded-full bg-[var(--gold-500)] px-1.5 py-0.5 font-mono text-[10px] font-extrabold text-[var(--green-900)]",
+                !collapsed ? "ms-auto" : "",
+              ].join(" ")}
+            >
+              {badge}
+            </span>
+          )}
+
+          {!collapsed && hasChildren && !item.disabled && (
+            <ChevronDown
+              className={[
+                "h-3.5 w-3.5 flex-none text-white/45 transition-transform duration-200",
+                badge == null ? "ms-auto" : "ms-1",
+                childrenOpen ? "rotate-180 text-white/70" : "",
+              ].join(" ")}
+              aria-hidden="true"
+            />
+          )}
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+
+      {!collapsed && childrenOpen && children.map((child) => (
+        <SidebarMenuItem key={child.href}>
+          <SidebarMenuButton
+            isActive={child.active}
+            tooltip={child.label}
+            onClick={() => onNavigate(child.href)}
+            className={[
+              // ⚠️ Un retrait, pas un corps plus petit : l'appartenance se lit
+              // par la position. Rapetisser le libellé rendrait l'entrée
+              // secondaire, alors qu'une demande en attente ne l'est pas.
+              "relative ms-4 h-9 rounded-lg text-[12px] font-semibold transition-all",
+              child.active
+                ? "bg-white/[0.12] text-white hover:bg-white/[0.14] " +
+                  "before:absolute before:start-0 before:top-1/2 before:h-4 before:w-[2px] " +
+                  "before:-translate-y-1/2 before:rounded-e before:bg-[var(--gold-500)]"
+                : "text-white/60 hover:bg-white/[0.06] hover:text-white",
+            ].join(" ")}
+          >
+            {child.icon}
+            <span className="truncate">{child.label}</span>
+            {child.badge != null && (
+              <span className="ms-auto rounded-full bg-[var(--gold-500)] px-1.5 py-0.5 font-mono text-[10px] font-extrabold text-[var(--green-900)]">
+                {child.badge}
+              </span>
+            )}
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      ))}
+    </>
   );
 }
 
@@ -79,7 +213,7 @@ export function AppSidebar({
     >
       {/* The whole rail carries the institutional gradient + security print */}
       <div
-        className="relative flex h-full flex-col"
+        className="relative flex h-full flex-col overflow-x-hidden"
         style={{
           background:
             "radial-gradient(400px 220px at 50% -8%, rgba(255,215,0,.10), transparent 65%), linear-gradient(178deg, var(--green-900) 0%, #0c3625 100%)",
@@ -97,17 +231,21 @@ export function AppSidebar({
           aria-hidden="true"
         />
 
-        <SidebarHeader className="relative z-10 border-b border-[#8a9a92]/20 p-0">
+        <SidebarHeader className="relative z-10 p-0">
           <div className={`flex items-center gap-2.5 px-4 py-4 ${collapsed ? "justify-center px-0" : ""}`}>
-            <NationalMark />
+            <MauritaniaFlag
+              id="sidebar-mauritania-flag"
+              className="h-5 w-[30px] flex-none drop-shadow-[0_1px_2px_rgba(0,0,0,.28)]"
+              radius={1050}
+            />
             {!collapsed && (
               <div className="min-w-0">
-                {/* The wordmark is fixed in both languages: it is a lockup,
-                    the same object as the tricolour beside it. */}
-                <p dir="ltr" className="truncate text-[13px] font-extrabold tracking-[0.1em] text-white rtl:text-end">
+                {/* The wordmark is fixed in both languages. The national flag
+                    is an object and must never be mirrored in RTL. */}
+                <p dir="ltr" className="truncate text-[12px] font-extrabold tracking-[0.1em] text-white rtl:text-end">
                   CARTE <span className="text-[var(--gold-500)]">/</span> PRESSE
                 </p>
-                <p className="truncate text-[9.5px] font-semibold uppercase tracking-[0.14em] text-white/45">
+                <p className="truncate text-[8px] font-semibold uppercase tracking-[0.14em] text-white/45">
                   {t("accreditation")}
                 </p>
               </div>
@@ -115,7 +253,9 @@ export function AppSidebar({
           </div>
         </SidebarHeader>
 
-        <SidebarContent className="relative z-10 gap-0">
+        <SidebarContent
+          className="relative z-10 gap-0 overflow-y-auto !overflow-x-hidden [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.18)_transparent] [&::-webkit-scrollbar]:h-0 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/15 [&::-webkit-scrollbar-thumb:hover]:bg-white/25"
+        >
           {groups.map((group, gi) => (
             <SidebarGroup key={gi} className="px-2 py-3">
               {group.label && !collapsed && (
@@ -126,45 +266,12 @@ export function AppSidebar({
               <SidebarGroupContent>
                 <SidebarMenu className="gap-1">
                   {group.items.map((item) => (
-                    <SidebarMenuItem key={item.href}>
-                      <SidebarMenuButton
-                        isActive={item.active}
-                        tooltip={item.label}
-                        aria-disabled={item.disabled}
-                        onClick={item.disabled ? undefined : () => router.push(item.href)}
-                        className={[
-                          "relative h-10 rounded-lg text-[12.5px] font-semibold transition-all",
-                          item.active
-                            // start-0 / rounded-e: the active marker sits at
-                            // the reading edge of the item, and its rounded
-                            // corner faces inward.
-                            ? "bg-white/[0.14] text-white hover:bg-white/[0.16] " +
-                              "before:absolute before:start-0 before:top-1/2 before:h-5 before:w-[3px] " +
-                              "before:-translate-y-1/2 before:rounded-e before:bg-[var(--gold-500)]"
-                            : item.disabled
-                              ? "cursor-not-allowed text-white/45 hover:bg-transparent"
-                              : "text-white/70 hover:bg-white/[0.08] hover:text-white",
-                        ].join(" ")}
-                      >
-                        {item.icon}
-                        <span className="truncate">{item.label}</span>
-                        {!collapsed && item.disabled && (
-                          <span className="ms-auto inline-flex items-center gap-1.5">
-                            {item.badge != null && (
-                              <span className="rounded-full border border-white/25 px-1.5 py-0.5 font-mono text-[9.5px] font-bold text-white/55">
-                                {item.badge}
-                              </span>
-                            )}
-                            <Lock className="h-3 w-3 flex-none text-white/40" />
-                          </span>
-                        )}
-                        {!collapsed && !item.disabled && item.badge != null && (
-                          <span className="ms-auto rounded-full bg-[var(--gold-500)] px-1.5 py-0.5 font-mono text-[10px] font-extrabold text-[var(--green-900)]">
-                            {item.badge}
-                          </span>
-                        )}
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
+                    <NavEntry
+                      key={item.href}
+                      item={item}
+                      collapsed={collapsed}
+                      onNavigate={(href) => router.push(href)}
+                    />
                   ))}
                 </SidebarMenu>
               </SidebarGroupContent>
@@ -172,11 +279,17 @@ export function AppSidebar({
           ))}
         </SidebarContent>
 
-      <SidebarFooter className="relative z-10 border-t border-[#8a9a92]/20 p-2">
+        <SidebarFooter className="relative z-10 p-2">
           <div className="flex items-center gap-1.5">
             {/* min-w-0 so the name truncates rather than pushing the
                 collapse button out of the rail. */}
-            <div className="min-w-0 flex-1">
+            <div
+              className={
+                collapsed
+                  ? "flex min-w-0 flex-1 justify-center [&_button]:!h-10 [&_button]:!w-10 [&_button]:!min-w-10 [&_button]:!rounded-full [&_button]:!p-0"
+                  : "min-w-0 flex-1"
+              }
+            >
               <UserMenu
                 user={user}
                 collapsed={collapsed}

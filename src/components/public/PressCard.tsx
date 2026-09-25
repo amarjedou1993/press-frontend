@@ -4,7 +4,7 @@
 // SPECIMEN watermark, an MRZ strip, microprint, and a slow holographic sheen.
 // Pure CSS/SVG: no image, sharp at any size, a few kilobytes.
 
-import { Guilloche, GuillocheBand, OfficialSeal, MicroprintRule, TricolorRule } from "./patterns";
+import { Guilloche, GuillocheBand, OfficialSeal, MicroprintRule, TricolorRule, MauritaniaFlag } from "./patterns";
 
 export function PressCard({ className = "" }: { className?: string }) {
   return (
@@ -63,11 +63,11 @@ export function PressCard({ className = "" }: { className?: string }) {
           {/* ── header ── */}
           <header className="flex items-start justify-between gap-3">
             <div className="flex items-start gap-2.5">
-              <span className="mt-0.5 inline-flex items-center gap-[2px]" aria-hidden="true">
-                <i className="h-[13px] w-[3px] rounded-full bg-[var(--green-500)]" />
-                <i className="h-[13px] w-[3px] rounded-full bg-[var(--gold-500)]" />
-                <i className="h-[13px] w-[3px] rounded-full bg-[var(--red-500)]" />
-              </span>
+              <MauritaniaFlag
+                className="mt-0.5 h-[16px] w-[24px] flex-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.14)]"
+                id="press-card-header-flag"
+                radius={900}
+              />
               <div>
                 <p className="text-[13px] font-extrabold leading-none tracking-[0.1em] text-[var(--green-800,#0f4a30)]">
                   RIM
@@ -118,9 +118,17 @@ export function PressCard({ className = "" }: { className?: string }) {
                     "linear-gradient(150deg, var(--green-tint), #ffffff 70%)",
                 }}
               >
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none"
-                  stroke="var(--green-600)" strokeWidth="1.5" opacity="0.5"
-                  strokeLinecap="round" aria-hidden="true">
+                <svg
+                  width="32"
+                  height="32"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="var(--green-600)"
+                  strokeWidth="1.5"
+                  opacity="0.5"
+                  strokeLinecap="round"
+                  aria-hidden="true"
+                >
                   <circle cx="12" cy="8" r="4" />
                   <path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5" />
                 </svg>
@@ -142,11 +150,16 @@ export function PressCard({ className = "" }: { className?: string }) {
                 ["N° de carte", "RIM-2026-000000"],
                 ["Validité", "31 / 12 / 2027"],
               ].map(([label, value]) => (
-                <div key={label} className="flex items-baseline gap-2 border-b border-dotted border-[var(--line)] pb-[3px]">
+                <div
+                  key={label}
+                  className="flex items-baseline gap-2 border-b border-dotted border-[var(--line)] pb-[3px]"
+                >
                   <dt className="w-[70px] flex-none text-[6.5px] font-bold uppercase tracking-[0.14em] text-[var(--green-700)]/75">
                     {label}
                   </dt>
-                  <dd className="truncate font-mono text-[9px] text-[var(--ink)]/80">{value}</dd>
+                  <dd className="truncate font-mono text-[9px] text-[var(--ink)]/80">
+                    {value}
+                  </dd>
                 </div>
               ))}
             </dl>

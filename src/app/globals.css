@@ -578,3 +578,41 @@ html[data-space="staff"] [class*="tracking-"] {
 @media print {
   html[dir="rtl"] { direction: rtl; }
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   AUTH PANEL SCROLLBAR
+
+   Only the white login/register panel uses this class. The institutional
+   green panel stays locked to the viewport. Keep the scrollbar visible
+   enough to communicate that long registration forms continue below,
+   without competing with the primary green/gold visual hierarchy.
+   ══════════════════════════════════════════════════════════════════ */
+.auth-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(0 107 60 / 0.24) transparent;
+  scrollbar-gutter: stable;
+  overscroll-behavior: contain;
+}
+
+.auth-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+
+.auth-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.auth-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgb(0 107 60 / 0.20);
+  border-radius: 999px;
+}
+
+@media (hover: hover) {
+  .auth-scrollbar:hover::-webkit-scrollbar-thumb {
+    background-color: rgb(0 107 60 / 0.34);
+  }
+
+  .auth-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: rgb(0 107 60 / 0.52);
+  }
+}

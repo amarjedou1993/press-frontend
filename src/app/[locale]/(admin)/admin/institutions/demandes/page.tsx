@@ -164,7 +164,6 @@ export default function InstitutionRequestsPage() {
       <div className="inline-flex flex-wrap rounded-xl bg-[#f2f5f3] p-1">
         {SCOPES.map((s) => {
           const on = scope === s.key;
-          if (counts[s.key] === 0 && s.key !== "ALL" && !on) return null;
           return (
             <button
               key={s.key}

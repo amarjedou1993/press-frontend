@@ -97,25 +97,23 @@ export function AuthShell({
   );
 
   /*
-      ⚠️ LES DEUX COLONNES S'ÉTIRENT — c'est voulu, et items-start ne l'était
-      pas : il laissait la colonne du formulaire s'arrêter à la hauteur de son
-      contenu, découvrant le fond de page sous elle et remontant le filet
-      tricolore au milieu de l'écran.
+      ⚠️ TWO PANELS, ONE VIEWPORT.
 
-      Le défaut à corriger n'était pas l'étirement mais la RÉPARTITION des
-      trois blocs décoratifs sur la hauteur obtenue. Elle est traitée plus bas,
-      par un conteneur d'une hauteur d'écran qui se fige.
+      The page itself never scrolls on the authentication routes. The green
+      institutional panel is locked to one dynamic viewport height, while the
+      white panel owns its own vertical scroll. That keeps the ministry
+      identity and PressCard specimen stationary even when registration grows.
   */
 
   return (
-    <main className="grid min-h-screen lg:grid-cols-[1.1fr_1fr]">
+    <main className="grid h-dvh overflow-hidden lg:grid-cols-[1.1fr_1fr]">
 
       {/* ══════════════════════════════════════════════════════════
           THE INSTITUTION — hidden below lg, where the form is all
           there is room for.
           ══════════════════════════════════════════════════════════ */}
       <section
-        className="relative hidden overflow-hidden px-12 py-4 text-white lg:block"
+        className="relative hidden h-dvh overflow-hidden px-12 py-4 text-white lg:block"
         style={{
           background:
             "radial-gradient(900px 460px at 88% -12%, rgba(255,215,0,.14), transparent 60%), radial-gradient(700px 500px at -10% 110%, rgba(0,169,92,.25), transparent 55%), linear-gradient(168deg, var(--green-900) 0%, #0e3d29 55%, #0b3524 100%)",
@@ -136,18 +134,11 @@ export function AuthShell({
         />
 
         {/*
-          ⚠️ UNE HAUTEUR D'ÉCRAN, ET QUI SE FIGE.
-
-          Le panneau lui-même suit la hauteur de la rangée — donc celle du
-          formulaire, onze champs pour une institution. Ce conteneur-ci n'en
-          prend qu'un écran : le titre reste en haut, les mentions en bas de
-          CET écran, et le spécimen au milieu, quelle que soit la longueur du
-          formulaire.
-
-          Et il reste visible pendant le défilement, sans quoi on remplit la
-          moitié basse du formulaire face à un panneau vide.
+          The green panel never participates in the form's scroll. Header and
+          footer keep their places and the specimen uses the flexible middle
+          space, so a long institution request cannot move this composition.
         */}
-        <div className="sticky top-0 flex h-screen flex-col py-4">
+        <div className="flex h-full flex-col py-4">
 
         <header className="relative z-10">
           <div className="mt-8 flex items-start gap-5">
@@ -218,7 +209,7 @@ export function AuthShell({
       {/* ══════════════════════════════════════════════════════════
           THE FORM
           ══════════════════════════════════════════════════════════ */}
-      <section className="relative flex items-center justify-center overflow-hidden bg-white p-6 sm:p-12">
+      <section className="relative h-dvh overflow-hidden bg-white">
         <div
           className="pointer-events-none absolute inset-0 opacity-60"
           style={{ background: "radial-gradient(640px 320px at 100% 0%, var(--green-tint), transparent 70%)" }}
@@ -229,52 +220,60 @@ export function AuthShell({
           rings={30}
         />
 
-        <div className="relative z-10 w-full max-w-md">
-          {/* the lockup and the switcher, for the narrow layout where the
-              left panel is gone. The switcher must be reachable there too —
-              a visitor arriving in the wrong language needs a way out. */}
-          <div className="mb-9 flex items-center justify-between gap-3 lg:hidden">
-            <span className="flex min-w-0 items-center gap-3">
-              <span className="flex h-9 w-9 flex-none items-center justify-center">
-                <OfficialSeal
-                  className="h-full w-full"
-                  color="var(--green-700)"
-                  id="auth-seal-mobile"
-                />
-              </span>
-              <span className="min-w-0 truncate text-[12.5px] font-extrabold leading-tight text-[var(--green-900)]">
-                {t("eyebrow")}
-              </span>
-            </span>
-            <LocaleSwitcher variant="light" />
-          </div>
+        {/* Only the white authentication side scrolls. The green institutional
+            panel remains locked to the viewport. The inner min-h-full wrapper
+            keeps short forms vertically centred while allowing long forms to
+            grow naturally and scroll from their true top edge. */}
+        <div className="auth-scrollbar relative z-10 h-full overflow-x-hidden overflow-y-auto">
+          <div className="flex min-h-full w-full items-center justify-center p-6 pb-8 sm:p-12 sm:pb-14">
+            <div className="w-full max-w-md">
+              {/* the lockup and the switcher, for the narrow layout where the
+                  left panel is gone. The switcher must be reachable there too —
+                  a visitor arriving in the wrong language needs a way out. */}
+              <div className="mb-9 flex items-center justify-between gap-3 lg:hidden">
+                <span className="flex min-w-0 items-center gap-3">
+                  <span className="flex h-9 w-9 flex-none items-center justify-center">
+                    <OfficialSeal
+                      className="h-full w-full"
+                      color="var(--green-700)"
+                      id="auth-seal-mobile"
+                    />
+                  </span>
+                  <span className="min-w-0 truncate text-[12.5px] font-extrabold leading-tight text-[var(--green-900)]">
+                    {t("eyebrow")}
+                  </span>
+                </span>
+                <LocaleSwitcher variant="light" />
+              </div>
 
-          <div className="mb-2.5 hidden items-center justify-between gap-3 lg:flex">
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--green-700)]">
-              {t("eyebrow")}
-            </p>
-            <LocaleSwitcher variant="light" />
-          </div>
+              <div className="mb-2.5 hidden items-center justify-between gap-3 lg:flex">
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--green-700)]">
+                  {t("eyebrow")}
+                </p>
+                <LocaleSwitcher variant="light" />
+              </div>
 
-          <h2 className="text-[30px] font-extrabold leading-tight tracking-tight text-[var(--green-900)]">
-            {title}
-          </h2>
+              <h2 className="text-[30px] font-extrabold leading-tight tracking-tight text-[var(--green-900)]">
+                {title}
+              </h2>
 
-          <span className="foil-rule mt-4 block h-px w-16 opacity-70" aria-hidden="true" />
+              <span className="foil-rule mt-4 block h-px w-16 opacity-70" aria-hidden="true" />
 
-          <p className="mt-4 text-[14.5px] leading-relaxed text-[var(--slate)]">
-            {subtitle}
-          </p>
+              <p className="mt-4 text-[14.5px] leading-relaxed text-[var(--slate)]">
+                {subtitle}
+              </p>
 
-          <div className="mt-8">{children}</div>
+              <div className="mt-8">{children}</div>
 
-          <div className="mt-7 border-t border-[var(--line)] pt-5 text-[13.5px] text-[var(--slate)]">
-            {footer}
+              <div className="mt-7 border-t border-[var(--line)] pt-5 text-[13.5px] text-[var(--slate)]">
+                {footer}
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* the national rule, closing the panel */}
-        <TricolorRule className="absolute inset-x-0 bottom-0" thin />
+        {/* Fixed to the white panel, not to its scrolling content. */}
+        <TricolorRule className="pointer-events-none absolute inset-x-0 bottom-0 z-20" thin />
       </section>
     </main>
   );
