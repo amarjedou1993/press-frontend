@@ -150,7 +150,7 @@ function NavEntry({
       </SidebarMenuItem>
 
       {!collapsed && childrenOpen && children.map((child) => (
-        <SidebarMenuItem key={child.href}>
+        <SidebarMenuItem key={child.href} className="ps-4 pe-2">
           <SidebarMenuButton
             isActive={child.active}
             tooltip={child.label}
@@ -159,7 +159,7 @@ function NavEntry({
               // ⚠️ Un retrait, pas un corps plus petit : l'appartenance se lit
               // par la position. Rapetisser le libellé rendrait l'entrée
               // secondaire, alors qu'une demande en attente ne l'est pas.
-              "relative ms-4 h-9 rounded-lg text-[12px] font-semibold transition-all",
+              "relative h-9 w-full rounded-lg pe-3 text-[12px] font-semibold transition-all",
               child.active
                 ? "bg-white/[0.12] text-white hover:bg-white/[0.14] " +
                   "before:absolute before:start-0 before:top-1/2 before:h-4 before:w-[2px] " +
@@ -170,7 +170,7 @@ function NavEntry({
             {child.icon}
             <span className="truncate">{child.label}</span>
             {child.badge != null && (
-              <span className="ms-auto rounded-full bg-[var(--gold-500)] px-1.5 py-0.5 font-mono text-[10px] font-extrabold text-[var(--green-900)]">
+              <span className="ms-auto me-1 flex-none rounded-full bg-[var(--gold-500)] px-1.5 py-0.5 font-mono text-[10px] font-extrabold text-[var(--green-900)]">
                 {child.badge}
               </span>
             )}
