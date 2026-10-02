@@ -78,7 +78,7 @@
     "contact": "Contact",
     "city": "Nouakchott",
     "country": "République Islamique de Mauritanie",
-    "contactNote": "Pour toute question relative à votre dossier, utilisez votre espace candidat.",
+    "contactNote": "Pour toute question relative à votre dossier, veuillez utiliser votre espace candidat.",
     "security": "Sécurité",
     "securityNote": "Vos informations sont traitées exclusivement par le Ministère dans le cadre de l’instruction de votre demande d’accréditation.",
     "copyright": "© {year} Ministère de la Culture — Tous droits réservés."
@@ -118,7 +118,7 @@
     },
     "categoriesOverline": "Catégories d'accréditation",
     "categoriesNote": "Les pièces justificatives requises varient selon votre catégorie. Elles vous sont indiquées lors du dépôt, et le système vérifie que votre dossier est complet avant sa soumission.",
-    "guaranteesOverline": "Nos garanties",
+    "guaranteesOverline": "Garanties du service",
     "guarantees": {
       "data": {
         "title": "Données protégées",
@@ -133,8 +133,8 @@
         "body": "Chaque carte délivrée est enregistrée dans le registre officiel et peut être vérifiée auprès du Ministère."
       }
     },
-    "ctaTitle": "Prêt à déposer votre demande ?",
-    "ctaBody": "Créez votre compte dès maintenant. Vous serez informé par courriel à chaque étape de l’instruction de votre dossier.",
+    "ctaTitle": "Déposer une demande de carte de presse",
+    "ctaBody": "Vous pouvez créer votre compte dès à présent. Vous serez informé par courriel à chaque étape de l’instruction de votre dossier.",
     "ctaButton": "Créer mon compte"
   },
   "sessions": {
@@ -147,7 +147,7 @@
     "openCount": "{count, plural, one {# session ouverte} other {# sessions ouvertes}}",
     "statusOverline": "État des candidatures",
     "noneTitle": "Aucune session n’est actuellement ouverte",
-    "noneBody": "Créez votre compte dès maintenant : vous serez informé par courriel dès l’ouverture de la prochaine session et votre profil sera prêt pour le dépôt.",
+    "noneBody": "Vous pouvez créer votre compte dès à présent. Vous serez informé par courriel lors de l’ouverture de la prochaine session et votre profil sera ainsi prêt pour le dépôt.",
     "createAccount": "Créer mon compte",
     "openBadge": "Candidatures ouvertes",
     "openedOn": "Session ouverte le {date}",
@@ -157,18 +157,18 @@
     "daysLeftWarning": "{count, plural, one {Plus qu’un jour pour déposer votre dossier} other {Plus que # jours pour déposer votre dossier}}",
     "daysRemaining": "{count, plural, =0 {dernier jour} one {jour restant} other {jours restants}}",
     "apply": "Déposer ma demande",
-    "afterClosing": "Après la clôture des dépôts, la commission d’examen étudie les dossiers. Vous serez informé par courriel de sa décision et, le cas échéant, d’une demande de correction.",
+    "afterClosing": "Après la clôture de la période de dépôt, la commission d’examen étudie les dossiers. Vous serez informé par courriel de la décision prise et, le cas échéant, de toute demande de correction.",
     "categoriesOverline": "Catégories d'accréditation",
     "renewalBadge": "Renouvellement",
     "renewalOpenedOn": "Session de renouvellement ouverte le {date}",
     "renewalSignIn": "Accéder à mon espace",
-    "renewalFootnote": "Cette session est réservée aux titulaires d’une carte de presse. Les personnes concernées ont été invitées par courriel ; si vous n’avez reçu aucun message, connectez-vous à votre espace pour vérifier votre éligibilité."
+    "renewalFootnote": "Cette session est réservée aux titulaires d’une carte de presse. Les personnes concernées sont invitées par courriel. Si vous n’avez reçu aucune invitation, veuillez vous connecter à votre espace afin de vérifier votre éligibilité."
   },
   "registry": {
     "eyebrow": "Registre officiel",
     "title": "Journalistes<br></br>accrédités",
     "titleOther": "الصحفيون المعتمدون",
-    "lede": "Vérifiez qu’une personne est titulaire d’une carte de presse en cours de validité délivrée par le Ministère.",
+    "lede": "Ce registre permet de vérifier qu’une personne est titulaire d’une carte de presse en cours de validité délivrée par le Ministère.",
     "searchPlaceholder": "Nom, organe de presse, n° de carte…",
     "searchLabel": "Rechercher un journaliste accrédité",
     "clearSearch": "Effacer la recherche",
@@ -186,15 +186,15 @@
     "unnamedOutlet": "Organe de presse non précisé",
     "validUntil": "Valable jusqu’au",
     "emptyTitle": "Personne ne correspond à cette recherche",
-    "emptyBody": "Le registre reprend le nom tel qu’il figure sur la carte. Vérifiez l’orthographe : l’absence de résultat ne signifie pas nécessairement que la carte est fausse ; elle peut être expirée, suspendue, retirée ou enregistrée sous une autre graphie.",
-    "emptyQr": "Pour vérifier une carte que vous avez en main, scannez le code figurant au recto : son statut s’affiche immédiatement.",
+    "emptyBody": "Le registre reprend le nom tel qu’il figure sur la carte. Veuillez en vérifier l’orthographe. L’absence de résultat ne permet pas, à elle seule, de conclure à l’inauthenticité d’une carte : celle-ci peut être expirée, suspendue, retirée ou enregistrée sous une autre graphie.",
+    "emptyQr": "Pour vérifier une carte, scannez le code figurant au recto afin d’en consulter immédiatement le statut.",
     "noneYetTitle": "Le registre est vide pour le moment",
     "noneYetBody": "Aucune carte de presse en cours de validité n'a encore été délivrée.",
     "unavailable": "Le registre est momentanément indisponible. Réessayez dans quelques instants.",
     "scopeOverline": "Portée du registre",
     "scopeTitle": "Ce que contient ce registre",
     "scopeBody": "Le registre recense les titulaires d’une carte de presse <b>en cours de validité</b> à la date indiquée. Les cartes expirées, suspendues ou retirées n’y figurent pas. Il ne contient ni photographie ni coordonnées personnelles : pour vérifier l’identité du porteur d’une carte, <b>scannez le code figurant au recto</b>.",
-    "areYouAJournalist": "Vous exercez le métier de journaliste en Mauritanie ?",
+    "areYouAJournalist": "Demande de carte de presse",
     "seeSessions": "Consulter les sessions de candidature"
   },
   "verify": {
@@ -228,7 +228,7 @@
       "titleOther": "بطاقة غير معروفة",
       "lede": "Aucune carte ne correspond à ce code."
     },
-    "unknownHelp": "Vérifiez que le code a été scanné dans son intégralité. En cas de doute sur l’authenticité d’une carte, signalez-la au Ministère.",
+    "unknownHelp": "Vérifiez que le code a été scanné dans son intégralité. En cas de doute sur l’authenticité d’une carte, veuillez contacter le Ministère.",
     "holder": "Titulaire",
     "photoWithheld": "Photographie non affichée",
     "cardNumber": "N° de carte",
@@ -240,8 +240,8 @@
     "signatureValid": "Signature électronique vérifiée",
     "signatureValidBody": "Cette carte a bien été délivrée par le Ministère.",
     "signatureInvalid": "Signature électronique non vérifiée",
-    "signatureInvalidBody": "Cette carte n’a pas pu être authentifiée. Signalez-la au Ministère.",
-    "about": "Cette page permet de vérifier auprès du Ministère le statut d’une carte de presse. Elle est accessible à partir du code figurant sur la carte.",
+    "signatureInvalidBody": "L’authenticité de cette carte n’a pas pu être confirmée. Veuillez en informer le Ministère afin qu’une vérification puisse être effectuée.",
+    "about": "Cette page permet de vérifier auprès du Ministère le statut enregistré d’une carte de presse à partir du code figurant sur celle-ci.",
     "aboutOther": "تؤكد هذه الصفحة حالة البطاقة الصحفية لدى الوزارة."
   },
   "auth": {
@@ -253,7 +253,7 @@
     "loginTitle": "Connexion",
     "loginSubtitle": "Accédez à votre espace d’accréditation.",
     "loginSubmit": "Se connecter",
-    "loginNoAccount": "Pas encore de compte ?",
+    "loginNoAccount": "Vous n’avez pas encore de compte ?",
     "loginCreate": "Créer un compte",
     "loginFailed": "Adresse courriel ou mot de passe incorrect.",
     "loginUnavailable": "Connexion impossible. Vérifiez votre accès à Internet et réessayez.",
@@ -271,7 +271,7 @@
     "forgotUnavailable": "Impossible d’envoyer la demande. Vérifiez votre connexion et réessayez.",
     "forgotSentTitle": "Courriel envoyé",
     "forgotSentBody": "Si un compte est associé à cette adresse, vous recevrez un lien de réinitialisation valable pendant 30 minutes.",
-    "forgotSentSpam": "Pensez également à vérifier votre dossier de courriers indésirables.",
+    "forgotSentSpam": "Veuillez également vérifier votre dossier de courriers indésirables.",
     "backToLogin": "Retour à la connexion",
     "email": "Adresse courriel",
     "password": "Mot de passe",
@@ -292,7 +292,7 @@
     "verifyIncompleteBody": "Ouvrez le lien directement depuis le courriel reçu, sans le recopier.",
     "verifyFailedTitle": "Lien invalide ou expiré",
     "verifyLinkExpired": "Ce lien n'est plus valable.",
-    "verifyFailedNext": "Connectez-vous : un bandeau en haut de la page vous permettra de demander un nouveau lien.",
+    "verifyFailedNext": "Connectez-vous à votre espace : un bandeau en haut de la page vous permettra de demander un nouveau lien.",
     "resetTitle": "Nouveau mot de passe",
     "resetSubtitle": "Choisissez un mot de passe pour votre compte.",
     "resetSubmit": "Modifier mon mot de passe",
@@ -312,7 +312,7 @@
     "registerAsCandidateNote": "Compte créé immédiatement",
     "registerAsInstitution": "Organe de presse",
     "registerAsInstitutionNote": "Demande soumise à l’examen du Ministère",
-    "institutionRequestIntro": "Ce formulaire permet de demander l’enregistrement d’un organe de presse. Le compte ne sera créé qu’après examen, par le Ministère, de la lettre officielle transmise.",
+    "institutionRequestIntro": "Ce formulaire permet de solliciter l’enregistrement d’un organe de presse. Le compte ne sera créé qu’après examen par le Ministère de la lettre officielle transmise.",
     "institutionNameFr": "Nom de l’organe (en français)",
     "institutionNameAr": "Nom de l’organe (en arabe)",
     "institutionContactName": "Personne responsable",
@@ -323,9 +323,9 @@
     "institutionLetterHint": "Sur papier à en-tête, signée et cachetée. Formats acceptés : PDF, JPEG ou PNG.",
     "institutionLetterRemove": "Retirer le fichier",
     "institutionRequestSubmit": "Déposer la demande",
-    "institutionRequestSentTitle": "Votre demande a bien été reçue",
-    "institutionRequestSentBody": "Confirmez cette adresse à partir du message que nous venons de vous envoyer. Après confirmation, votre demande sera transmise au Ministère et vous serez informé de la décision.",
-    "institutionRequestSentSpam": "Vous n’avez pas reçu le message ? Vérifiez vos courriers indésirables. Le lien est valable pendant sept jours.",
+    "institutionRequestSentTitle": "Votre demande a été reçue",
+    "institutionRequestSentBody": "Veuillez confirmer cette adresse à partir du message qui vient de vous être envoyé. Après confirmation, votre demande sera transmise au Ministère et vous serez informé de la décision prise.",
+    "institutionRequestSentSpam": "Si vous n’avez pas reçu le message, veuillez vérifier votre dossier de courriers indésirables. Le lien est valable pendant sept jours.",
     "institutionConfirmTitle": "Confirmation de votre adresse courriel",
     "institutionConfirmSubtitle": "Demande d’enregistrement d’un organe de presse",
     "institutionConfirmDoneTitle": "Adresse confirmée",
@@ -374,7 +374,7 @@
     "urlRequired": "L'adresse du lien est requise.",
     "urlInvalid": "Adresse invalide (ex. : https://exemple.mr/article)",
     "groundInvalid": "Motif de réclamation invalide.",
-    "argumentTooShort": "Exposez votre contestation en au moins 30 caractères afin que le membre de la commission chargé du réexamen comprenne précisément ce que vous contestez.",
+    "argumentTooShort": "Veuillez exposer votre contestation en au moins 30 caractères afin que le membre de la commission chargé du réexamen puisse identifier précisément les éléments contestés.",
     "groundRequired": "Sélectionnez un motif.",
     "passwordMismatch": "Les deux mots de passe ne correspondent pas.",
     "currentPasswordWrong": "Mot de passe actuel incorrect.",
@@ -411,19 +411,19 @@
   "institution": {
     "eyebrow": "Espace organe de presse",
     "title": "Vos journalistes",
-    "lede": "Déclarez vos journalistes ; le Ministère délivre leurs cartes. Les informations relatives à votre organe sont déjà enregistrées : seules les informations concernant vos journalistes sont à renseigner.",
+    "lede": "Déclarez les journalistes exerçant au sein de votre organe de presse ; le Ministère procédera à l’examen de leurs informations et à la délivrance de leurs cartes. Les informations relatives à votre organe étant déjà enregistrées, seules celles concernant les journalistes sont à renseigner.",
     "grantedCount": "cartes délivrées",
     "noPhotoCount": "sans photographie",
     "import": "Importer",
     "fileOne": "Déclarer un journaliste",
     "awaitingNote": "<b>{count, plural, one {Un dossier est en attente} other {# dossiers sont en attente}}</b> de délivrance par le Ministère. Aucune action n’est requise de votre part : vous serez informé dès que les cartes seront établies.",
-    "expiringNote": "<b>{count, plural, one {Une carte arrive} other {# cartes arrivent}}</b> prochainement à échéance, la première le {date}. Importez à nouveau votre registre pour demander leur renouvellement : les journalistes qui y figurent seront pris en compte.",
+    "expiringNote": "<b>{count, plural, one {Une carte arrive} other {# cartes arrivent}}</b> prochainement à échéance, la première le {date}. Déposez à nouveau votre registre afin de demander leur renouvellement ; les journalistes qui y figurent seront pris en compte.",
     "searchPlaceholder": "Nom, NNI, fonction…",
     "staffCount": "{count, plural, one {# journaliste} other {# journalistes}}",
     "noneTitle": "Aucun journaliste déclaré",
     "noneBody": "Déclarez vos journalistes un par un ou importez l’ensemble de votre registre dans une seule archive.",
     "noneMatch": "Aucun journaliste ne correspond à cette recherche",
-    "noneMatchBody": "Vérifiez l'orthographe, ou effacez la recherche.",
+    "noneMatchBody": "Veuillez vérifier l’orthographe ou effacer la recherche.",
     "noneNoPhoto": "Tous les dossiers comportent une photographie",
     "noneNoPhotoBody": "Aucune photographie n’est manquante : toutes les cartes peuvent être produites.",
     "scopeAll": "Tous",
@@ -441,7 +441,7 @@
     "replacePhoto": "Remplacer la photographie",
     "edit": "Modifier",
     "grantedLocked": "Carte délivrée : les informations signées ne peuvent plus être modifiées.",
-    "withdrawTitle": "Supprimer ce dossier ?",
+    "withdrawTitle": "Confirmer la suppression de ce dossier ?",
     "withdrawBody": "Le dossier de {name} sera supprimé. Aucune carte n’ayant encore été délivrée, aucune carte ne sera invalidée.",
     "withdrawAction": "Supprimer",
     "withdrawing": "Suppression…",
@@ -461,7 +461,7 @@
     "done": "Terminer",
     "choose": "Sélectionnez…",
     "dialogFileTitle": "Déclarer un journaliste",
-    "dialogFileBody": "Vous attestez que cette personne exerce au sein de votre organe. Le Ministère pourra ensuite lui délivrer une carte.",
+    "dialogFileBody": "En déclarant cette personne, vous attestez qu’elle exerce au sein de votre organe de presse. Le Ministère pourra ensuite procéder à l’examen de son dossier en vue de la délivrance d’une carte.",
     "dialogEditTitle": "Modifier le dossier",
     "dialogEditBody": "Les informations restent modifiables tant que la carte n’a pas été délivrée.",
     "fileAction": "Déclarer",
@@ -485,14 +485,14 @@
     "errorIdentityShort": "Numéro trop court.",
     "importTitle": "Importer votre registre",
     "importBody": "Un fichier Excel et un dossier de photographies regroupés dans une seule archive .zip.",
-    "importRenewalHeading": "Cet import permettra de renouveler vos cartes",
+    "importRenewalHeading": "Renouvellement des cartes éligibles",
     "importRenewalBody": "<b>{count, plural, one {Une de vos cartes arrive} other {# de vos cartes arrivent}}</b> à échéance. Les journalistes déjà titulaires d’une carte seront <b>renouvelés et non dupliqués</b> : leur ancienne carte sera retirée lors de la délivrance de la nouvelle. Les personnes absentes de cet import ne feront pas l’objet d’un renouvellement.",
     "importDoneTitle": "Import terminé",
     "importDoneBody": "Vos journalistes ont été enregistrés.",
     "importFailed": "Import impossible",
     "importReading": "Lecture de l'archive…",
     "importChoose": "Choisir une archive .zip",
-    "importChooseHint": "Les lignes rejetées seront clairement identifiées.",
+    "importChooseHint": "Les lignes qui ne peuvent pas être enregistrées seront clairement identifiées.",
     "templateTitle": "Commencez par le modèle",
     "templateBody": "Il contient les colonnes attendues, la liste des catégories et la convention de nommage des photographies.",
     "templateAction": "Modèle .xlsx",
@@ -501,9 +501,9 @@
     "archiveNote": "Chaque photographie doit porter comme nom le NNI ou le numéro de passeport de son titulaire. Taille maximale : 10 Mo ; environ quarante journalistes par archive.",
     "tallyFiled": "déposés",
     "tallyPhotos": "avec photographie",
-    "tallyRefused": "rejetés",
-    "refusedHeading": "Lignes rejetées — non enregistrées",
-    "failedHeading": "Lignes en échec",
+    "tallyRefused": "non enregistrés",
+    "refusedHeading": "Lignes non enregistrées",
+    "failedHeading": "Lignes en erreur",
     "photosMissing": "{count, plural, one {Un dossier attend sa photographie} other {# dossiers attendent leur photographie}}.",
     "photosMissingHint": "Ajoutez la photographie depuis la ligne correspondante : sans elle, la carte ne peut pas être produite.",
     "scopeToRenew": "À renouveler",
@@ -521,7 +521,7 @@
     "sessionOpenTitle": "Une session est ouverte",
     "sessionOpenBody": "Vous pouvez déposer votre demande jusqu'au <b>{date}</b>.",
     "noSessionTitle": "Aucune session ouverte",
-    "noSessionBody": "Vous serez informé par courriel dès l’ouverture de la prochaine session de candidature.",
+    "noSessionBody": "Vous serez informé par courriel lors de l’ouverture de la prochaine session de candidature.",
     "apply": "Déposer ma demande",
     "daysRemaining": "{count, plural, =0 {dernier jour} one {jour restant} other {jours restants}}",
     "toSubmit": "pour déposer",
@@ -570,7 +570,7 @@
     },
     "CORRECTION_REQUESTED": {
       "headline": "Corrections demandées",
-      "body": "La commission a signalé des pièces à corriger. Remplacez-les avant l’expiration du délai ; à défaut, votre dossier pourra être rejeté comme incomplet.",
+      "body": "La commission a signalé des pièces à corriger. Veuillez les remplacer avant l’expiration du délai ; à défaut, votre dossier sera rejeté pour incomplétude.",
       "cta": "Corriger mon dossier"
     },
     "UNDER_FINAL_REVIEW": {
@@ -580,7 +580,7 @@
     },
     "ACCEPTED": {
       "headline": "Demande acceptée",
-      "body": "La commission a reconnu votre qualité de journaliste professionnel. Le Ministère procédera à la délivrance de votre carte de presse.",
+      "body": "La commission a donné une suite favorable à votre demande. Le Ministère procédera à la délivrance de votre carte de presse.",
       "cta": "Voir la décision"
     },
     "CARD_ISSUED": {
@@ -590,7 +590,7 @@
     },
     "REJECTED": {
       "headline": "Demande non retenue",
-      "body": "La commission n’a pas donné une suite favorable à votre demande. Vous pouvez exercer votre droit de réclamation selon les modalités prévues.",
+      "body": "La commission a décidé de ne pas donner une suite favorable à votre demande. Vous pouvez exercer votre droit de réclamation selon les modalités prévues.",
       "cta": "Consulter la décision"
     },
     "UNDER_RECLAMATION": {
@@ -600,18 +600,18 @@
     },
     "FINAL_REJECTION": {
       "headline": "Décision définitive",
-      "body": "Après réexamen, la décision de rejet est confirmée. Vous pourrez déposer une nouvelle demande lors d’une prochaine session.",
+      "body": "Après réexamen, la décision de rejet a été confirmée. Vous pourrez déposer une nouvelle demande lors d’une prochaine session.",
       "cta": "Consulter la décision"
     },
     "card": {
       "SUSPENDED": {
         "headline": "Carte de presse suspendue",
-        "body": "Votre carte est temporairement suspendue. Toute vérification indiquera qu’elle est suspendue.",
+        "body": "Votre carte fait l’objet d’une suspension temporaire. Toute vérification indiquera son statut de carte suspendue.",
         "cta": "Consulter la décision"
       },
       "REVOKED": {
         "headline": "Carte de presse retirée",
-        "body": "Votre carte n’est plus valide. Elle a été retirée par le Ministère sur proposition de la commission.",
+        "body": "Votre carte n’est plus valide. Elle a fait l’objet d’un retrait décidé par le Ministère sur proposition de la commission.",
         "cta": "Consulter la décision"
       },
       "EXPIRED": {
@@ -638,8 +638,8 @@
       "title": "Votre carte de presse est suspendue",
       "lede": "Votre carte est temporairement suspendue. Toute vérification du code qu’elle porte indiquera qu’elle est suspendue.",
       "reasonLabel": "Motif de la suspension",
-      "nextHeading": "Ce que cela signifie",
-      "nextBody": "La suspension est une mesure <b>conservatoire et réversible</b>. Votre accréditation n’est pas retirée. Pour toute contestation, adressez-vous au Ministère."
+      "nextHeading": "Effets de la suspension",
+      "nextBody": "La suspension constitue une mesure <b>conservatoire et réversible</b>. Elle n’emporte pas retrait de votre accréditation. Pour toute contestation, veuillez vous adresser au Ministère."
     },
     "REVOKED": {
       "seal": "RETIRÉE",
@@ -648,7 +648,7 @@
       "lede": "Votre carte n’est plus valide. Toute vérification du code qu’elle porte indiquera qu’elle a été retirée.",
       "reasonLabel": "Motif du retrait",
       "nextHeading": "Suite de la procédure",
-      "nextBody": "Le retrait d’une carte est prononcé par le Ministère sur proposition de la commission. Vous pourrez déposer une <b>nouvelle candidature</b> lors d’une prochaine session. Pour toute contestation, adressez-vous au Ministère."
+      "nextBody": "Le retrait d’une carte est prononcé par le Ministère sur proposition de la commission. Vous pourrez déposer une <b>nouvelle candidature</b> lors d’une prochaine session. Pour toute contestation, veuillez vous adresser au Ministère."
     },
     "EXPIRED": {
       "seal": "EXPIRÉE",
@@ -657,7 +657,7 @@
       "lede": "Votre carte a atteint sa date d’expiration. Il ne s’agit pas d’une sanction : chaque carte a une durée de validité déterminée.",
       "reasonLabel": "Observation",
       "nextHeading": "Renouveler votre accréditation",
-      "nextBody": "Vous pourrez déposer une nouvelle demande lors de la <b>prochaine session de candidature</b>. Les dates seront publiées sur le site du Ministère et vous serez informé par courriel de l’ouverture de la session."
+      "nextBody": "Vous pourrez demander le renouvellement de votre carte lors de la <b>prochaine session de renouvellement</b>. Les dates seront publiées sur le site du Ministère et vous serez informé par courriel de l’ouverture de la session."
     }
   },
   "roles": {
@@ -699,8 +699,8 @@
     "stillDays": "{count, plural, one {Encore un jour pour déposer} other {Encore # jours pour déposer}}",
     "removeTitle": "Retirer cette pièce ?",
     "removeBody": "Cette pièce sera supprimée de votre dossier. Vous pourrez en ajouter une autre tant que le dossier n’a pas été soumis.",
-    "confirmSubmitTitle": "Déposer votre dossier ?",
-    "confirmSubmitBody": "Votre dossier sera transmis à la commission d’examen, qui statuera sur votre demande.",
+    "confirmSubmitTitle": "Confirmer le dépôt de votre dossier ?",
+    "confirmSubmitBody": "Votre dossier sera transmis à la commission d’examen afin qu’elle statue sur votre demande.",
     "noMoreEdits": "Après le dépôt, vous ne pourrez plus modifier vos pièces, sauf si la commission vous demande une correction.",
     "confirmSubmit": "Confirmer le dépôt",
     "cancel": "Annuler",
@@ -709,7 +709,7 @@
     "removeFailed": "Suppression impossible",
     "submittedTitle": "Dossier déposé",
     "submittedBody": "Votre demande a été transmise à la commission d’examen.",
-    "submitRefused": "Dépôt refusé",
+    "submitRefused": "Dépôt impossible",
     "conditionsUnmet": "Certaines conditions ne sont pas remplies.",
     "tryAgain": "Réessayez.",
     "yourCardWithheld": "Votre carte — non valide"
@@ -744,7 +744,7 @@
     "readyToSubmit": "Votre dossier est complet et peut être transmis à la commission."
   },
   "blockers": {
-    "SESSION_NOT_RECEIVING": "La session n'accepte plus de candidatures.",
+    "SESSION_NOT_RECEIVING": "La session n’accepte plus de nouveaux dépôts.",
     "DEADLINE_PASSED": "La date limite de dépôt était le {deadline}.",
     "EMAIL_NOT_VERIFIED": "Vérifiez votre adresse courriel avant de déposer votre dossier.",
     "PROFILE_INCOMPLETE": "Complétez votre profil (identité, date et lieu de naissance, photographie) avant de déposer votre dossier.",
@@ -763,7 +763,7 @@
       "seal": "ACCEPTÉE",
       "kicker": "Notification de décision",
       "title": "Votre demande a été acceptée",
-      "lede": "La commission d’examen a reconnu votre qualité de journaliste professionnel. Le Ministère procédera à la délivrance de votre carte de presse.",
+      "lede": "La commission d’examen a donné une suite favorable à votre demande. Le Ministère procédera à la délivrance de votre carte de presse.",
       "reasonLabel": "Observation de la commission",
       "nextHeading": "Suite de la procédure",
       "nextBody": "Votre carte sera établie et vous serez informé par courriel dès qu’elle sera disponible. Aucune démarche supplémentaire n’est requise de votre part."
@@ -774,23 +774,23 @@
       "title": "Votre carte a été délivrée",
       "lede": "Votre carte de presse a été délivrée par le Ministère et porte un numéro officiel.",
       "reasonLabel": "Observation",
-      "nextHeading": "Retrait de votre carte",
+      "nextHeading": "Modalités de retrait",
       "nextBody": "Les modalités de retrait de votre carte vous ont été communiquées par courriel."
     },
     "REJECTED": {
       "seal": "REFUSÉE",
       "kicker": "Notification de décision",
       "title": "Votre demande n'a pas été retenue",
-      "lede": "Après examen de votre dossier, la commission n'a pas pu donner une suite favorable à votre demande pour la présente session.",
+      "lede": "Après examen de votre dossier, la commission a décidé de ne pas donner une suite favorable à votre demande pour la présente session.",
       "reasonLabel": "Motif de la décision",
-      "nextHeading": "Votre droit de réclamation",
-      "nextBody": "Vous pouvez contester cette décision. Une réclamation peut être déposée depuis votre espace pendant la phase de réclamation de la session. Elle sera examinée par un membre de la commission <b>différent</b> de celui qui a rendu la décision contestée."
+      "nextHeading": "Droit de réclamation",
+      "nextBody": "Vous pouvez former une réclamation contre cette décision. Celle-ci doit être déposée depuis votre espace pendant la phase de réclamation de la session. Elle sera examinée par un membre de la commission <b>différent</b> de celui ayant rendu la décision contestée."
     },
     "UNDER_RECLAMATION": {
       "seal": "EN COURS",
       "kicker": "Réclamation",
       "title": "Votre réclamation est en cours d’examen",
-      "lede": "Votre réclamation a été enregistrée et transmise à un membre de la commission différent de celui ayant rendu la décision initiale.",
+      "lede": "Votre réclamation a été enregistrée et transmise à un membre de la commission différent de celui ayant rendu la décision contestée.",
       "reasonLabel": "Motif de la réclamation",
       "nextHeading": "Suite de la procédure",
       "nextBody": "Vous serez informé par courriel de la décision définitive, qui clôturera l’instruction de votre dossier pour cette session."
@@ -799,7 +799,7 @@
       "seal": "DÉFINITIVE",
       "kicker": "Décision définitive",
       "title": "Votre réclamation n’a pas été retenue",
-      "lede": "Après réexamen par un autre membre de la commission, la décision de rejet est confirmée. Cette décision met fin à l’instruction de votre dossier pour la présente session.",
+      "lede": "Après réexamen par un autre membre de la commission, la décision de rejet a été confirmée. Cette décision met fin à l’instruction de votre dossier pour la présente session.",
       "reasonLabel": "Motif de la décision définitive",
       "nextHeading": "Prochaine session",
       "nextBody": "Vous pourrez déposer une nouvelle demande lors d'une prochaine session de candidature. Les conditions et le calendrier seront publiés par le Ministère."
@@ -811,8 +811,8 @@
         "title": "Votre carte de presse est suspendue",
         "lede": "Votre carte est temporairement suspendue. Toute vérification du code qu’elle porte indiquera qu’elle est suspendue.",
         "reasonLabel": "Motif de la suspension",
-        "nextHeading": "Ce que cela signifie",
-        "nextBody": "La suspension est une mesure <b>conservatoire et réversible</b>. Votre accréditation n’est pas retirée. Pour toute contestation, adressez-vous au Ministère."
+        "nextHeading": "Effets de la suspension",
+        "nextBody": "La suspension constitue une mesure <b>conservatoire et réversible</b>. Elle n’emporte pas retrait de votre accréditation. Pour toute contestation, veuillez vous adresser au Ministère."
       },
       "REVOKED": {
         "seal": "RETIRÉE",
@@ -821,7 +821,7 @@
         "lede": "Votre carte n’est plus valide. Toute vérification du code qu’elle porte indiquera qu’elle a été retirée.",
         "reasonLabel": "Motif du retrait",
         "nextHeading": "Suite de la procédure",
-        "nextBody": "Le retrait d’une carte est prononcé par le Ministère sur proposition de la commission. Vous pourrez déposer une <b>nouvelle candidature</b> lors d’une prochaine session. Pour toute contestation, adressez-vous au Ministère."
+        "nextBody": "Le retrait d’une carte est prononcé par le Ministère sur proposition de la commission. Vous pourrez déposer une <b>nouvelle candidature</b> lors d’une prochaine session. Pour toute contestation, veuillez vous adresser au Ministère."
       },
       "EXPIRED": {
         "seal": "EXPIRÉE",
@@ -830,7 +830,7 @@
         "lede": "Votre carte a atteint sa date d’expiration. Il ne s’agit pas d’une sanction : chaque carte a une durée de validité déterminée.",
         "reasonLabel": "Observation",
         "nextHeading": "Renouveler votre accréditation",
-        "nextBody": "Vous pourrez déposer une nouvelle demande lors de la <b>prochaine session de candidature</b>. Les dates seront publiées sur le site du Ministère et vous serez informé par courriel de l’ouverture de la session."
+        "nextBody": "Vous pourrez demander le renouvellement de votre carte lors de la <b>prochaine session de renouvellement</b>. Les dates seront publiées sur le site du Ministère et vous serez informé par courriel de l’ouverture de la session."
       }
     }
   },
@@ -843,11 +843,11 @@
   "correction": {
     "eyebrow": "Corrections demandées",
     "expired": "Le délai de correction est expiré",
-    "expiredBody": "La commission examinera votre dossier dans son état actuel.",
+    "expiredBody": "Le délai accordé pour déposer les corrections est expiré.",
     "lastDay": "Dernier jour pour répondre",
     "daysToAnswer": "{count, plural, one {# jour pour répondre} other {# jours pour répondre}}",
     "until": "— jusqu'au {date}",
-    "consequence": "À l’expiration de ce délai, en l’absence de réponse de votre part, votre dossier sera rejeté pour incomplétude.",
+    "consequence": "À l’expiration de ce délai, à défaut de réponse de votre part, votre dossier sera rejeté pour incomplétude.",
     "corrected": "corrigées",
     "photo": "Photographie d'identité",
     "photoReplaced": "Nouvelle photographie enregistrée.",
@@ -859,12 +859,12 @@
     "replaceAgain": "Remplacer à nouveau",
     "allCorrected": "Toutes les corrections demandées ont été effectuées.",
     "resubmit": "Renvoyer mon dossier à la commission",
-    "stillToCorrect": "Il reste à corriger : {list}",
+    "stillToCorrect": "Éléments restant à corriger : {list}",
     "listSeparator": ", ",
     "allBeforeResubmit": "Votre dossier ne peut être renvoyé à la commission qu’après remplacement de toutes les pièces signalées.",
     "confirmTitle": "Renvoyer votre dossier à la commission ?",
     "confirmBody": "Vos corrections seront transmises à la commission pour examen final.",
-    "oneCorrectionOnly": "Une seule phase de correction est prévue : après cet envoi, vous ne pourrez plus modifier les pièces concernées.",
+    "oneCorrectionOnly": "Une seule phase de correction est prévue. Après cet envoi, vous ne pourrez plus modifier les pièces concernées.",
     "cancel": "Annuler",
     "confirmSend": "Confirmer l'envoi",
     "sending": "Envoi…",
@@ -874,23 +874,23 @@
     "tryAgain": "Réessayez."
   },
   "objection": {
-    "eyebrow": "Droit de réclamation",
-    "youMayContest": "Vous pouvez contester cette décision",
+    "eyebrow": "Réclamation",
+    "youMayContest": "Vous pouvez former une réclamation contre cette décision",
     "differentMember": "Votre réclamation sera examinée par un membre de la commission <b>différent</b> de celui ayant rendu la décision contestée.",
     "fileBefore": "À déposer avant le <b>{date}</b>.",
     "days": "{count, plural, one {jour} other {jours}}",
     "contestedDecision": "Décision contestée",
-    "onWhatGround": "Quel est le motif de votre contestation ?",
-    "setOutYourCase": "Exposez les motifs de votre réclamation",
-    "setOutHint": "Le membre de la commission chargé du réexamen lira ce texte. Soyez précis : indiquez ce que vous contestez et pour quelles raisons.",
-    "argumentPlaceholder": "Exemple : mon attestation de travail du 12 mars couvre bien les douze derniers mois, alors que la décision indique une activité irrégulière…",
+    "onWhatGround": "Motif de la réclamation",
+    "setOutYourCase": "Exposé de votre réclamation",
+    "setOutHint": "Le membre de la commission chargé du réexamen prendra connaissance de cet exposé. Veuillez indiquer précisément les éléments que vous contestez et les motifs sur lesquels vous vous fondez.",
+    "argumentPlaceholder": "Exemple : une pièce versée à mon dossier n’a pas été prise en compte dans la décision, alors qu’elle répond à l’exigence indiquée…",
     "charCount": "{length} / {min} caractères minimum",
     "longEnough": "Longueur suffisante",
-    "onlyOne": "Une seule <b>réclamation</b> est autorisée par dossier. Relisez attentivement votre exposé avant de l’envoyer.",
+    "onlyOne": "Une seule <b>réclamation</b> peut être déposée par dossier. Veuillez relire attentivement votre exposé avant son envoi.",
     "fileObjection": "Déposer ma réclamation",
-    "confirmTitle": "Déposer votre réclamation ?",
+    "confirmTitle": "Confirmer le dépôt de votre réclamation ?",
     "confirmBody": "Votre réclamation sera transmise à un membre de la commission différent de celui ayant rendu la décision contestée.",
-    "confirmWarning": "Il s’agit de l’unique réclamation autorisée pour ce dossier. Après l’envoi, vous ne pourrez plus la modifier ni en déposer une autre.",
+    "confirmWarning": "Une seule réclamation est autorisée pour ce dossier. Après son dépôt, elle ne pourra plus être modifiée et aucune nouvelle réclamation ne pourra être déposée.",
     "rereadMyCase": "Relire mon exposé",
     "confirmFile": "Confirmer le dépôt",
     "sending": "Envoi…",
@@ -1053,7 +1053,7 @@
     "lapsedOn": "Expirée depuis le {date}",
     "deadline": "Date limite de dépôt",
     "lapsedWarning": "Votre carte est <b>expirée</b> et n’est plus valide : toute vérification l’indiquera comme telle. Le renouvellement reste possible, mais votre nouvelle carte ne deviendra valide qu’après sa délivrance.",
-    "whatIsAsked": "Documents et informations à fournir",
+    "whatIsAsked": "Pièces et informations requises",
     "identityCarriedOver": "Votre identité a déjà été vérifiée : l’acte de naissance, la pièce d’identité et le diplôme ne vous sont pas redemandés. Seules les pièces relatives à votre activité professionnelle actuelle sont requises.",
     "asked": {
       "employment": "Votre contrat de travail en cours de validité",
@@ -1067,8 +1067,8 @@
     "categoryHint": "Cette catégorie peut être différente de celle de votre carte actuelle si votre activité professionnelle a changé.",
     "step2": "Étape 2 sur 2",
     "employerQuestion": "Exercez-vous toujours au sein de cet organe de presse ?",
-    "stillThere": "Oui, je travaille toujours pour cet organe",
-    "hasChanged": "Non, mon organe de presse a changé",
+    "stillThere": "Oui, j’exerce toujours au sein de cet organe",
+    "hasChanged": "Non, j’exerce désormais au sein d’un autre organe",
     "changedNote": "Vous indiquerez votre nouvel organe de presse et votre spécialité dans le dossier, à l’étape suivante.",
     "cancel": "Annuler",
     "continue": "Commencer le renouvellement",
@@ -1130,7 +1130,7 @@
     "identity": {
       "title": "Identité officielle",
       "subtitle": "Requise avant tout dépôt de dossier",
-      "choice": "Renseignez votre NNI <b>ou</b> votre numéro de passeport : un seul de ces identifiants suffit.",
+      "choice": "Renseignez votre NNI <b>ou</b> votre numéro de passeport. Un seul de ces identifiants est requis.",
       "nni": "Numéro national d’identification",
       "nniHint": "10 chiffres",
       "passport": "Passeport",
@@ -1144,7 +1144,7 @@
     },
     "photoTitle": "Photographie",
     "cardPreviewTitle": "Aperçu de votre carte",
-    "cardPreviewBody": "Aperçu indicatif. Votre catégorie, votre spécialité et le numéro de carte sont déterminés lors de l’examen de votre dossier. La carte définitive est délivrée par le Ministère après acceptation de la demande.",
+    "cardPreviewBody": "Aperçu fourni à titre indicatif. Votre catégorie, votre spécialité et le numéro de carte sont déterminés lors de l’examen de votre dossier. La carte définitive est délivrée par le Ministère après acceptation de la demande.",
     "saveFailed": "Enregistrement impossible"
   }
 }
