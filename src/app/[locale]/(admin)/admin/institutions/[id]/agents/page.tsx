@@ -1,7 +1,7 @@
 "use client";
 // src/app/[locale]/(admin)/admin/institutions/[id]/agents/page.tsx
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -87,6 +87,34 @@ export default function InstitutionAgentsPage() {
   /* ⚠️ Back to page one when the set changes: an administrator on page four
      who selects "Bloquées" — three rows — would otherwise see an empty list
      and conclude there are none. */
+  /*
+   * ───────────────────────────────────────────────────────────────────
+   * ⚠️ NE PAS OUVRIR SUR UNE VUE VIDE.
+   *
+   * La page s'ouvre sur « En attente », parce que c'est le travail. Mais un
+   * onglet vide n'est affiché que tant qu'il est sélectionné — ce qui évite
+   * qu'il disparaisse sous le curseur après le dernier octroi. Ouvrir la page
+   * sur un « En attente » vide le montrait donc à zéro par simple défaut ;
+   * au premier clic ailleurs, il perdait sa seule raison d'être là et
+   * s'effaçait : trois onglets, puis deux.
+   *
+   * Quand rien n'attend au chargement, la page s'ouvre donc sur « Toutes ».
+   *
+   * ⚠️ UNE SEULE FOIS, AU PREMIER CHARGEMENT. Après un octroi qui vide la
+   * file, rester sur « En attente » est voulu : l'écran y dit « rien n'attend
+   * d'octroi », qui est la nouvelle du moment, et le quitter d'office
+   * l'escamoterait.
+   * ───────────────────────────────────────────────────────────────────
+   */
+  const scopeSettled = useRef(false);
+  useEffect(() => {
+    if (scopeSettled.current || !staff.data) return;
+    scopeSettled.current = true;
+    if (counts.awaiting === 0 && filters.scope === "awaiting") {
+      setFilters((f) => ({ ...f, scope: "all" }));
+    }
+  }, [staff.data, counts.awaiting, filters.scope]);
+
   useEffect(() => { setPage(1); }, [filters]);
 
   /* ── selection ── */

@@ -505,7 +505,9 @@
     "refusedHeading": "Lignes rejetées — non enregistrées",
     "failedHeading": "Lignes en échec",
     "photosMissing": "{count, plural, one {Un dossier attend sa photographie} other {# dossiers attendent leur photographie}}.",
-    "photosMissingHint": "Ajoutez la photographie depuis la ligne correspondante : sans elle, la carte ne peut pas être produite."
+    "photosMissingHint": "Ajoutez la photographie depuis la ligne correspondante : sans elle, la carte ne peut pas être produite.",
+    "scopeToRenew": "À renouveler",
+    "dueForRenewal": "À renouveler — échéance le {date}"
   },
   "institutionShell": {
     "title": "Espace organe de presse",

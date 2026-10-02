@@ -4,7 +4,7 @@
 import { useTranslations } from "next-intl";
 import { Search } from "lucide-react";
 
-export type RollScope = "all" | "noPhoto" | "awaiting" | "granted";
+export type RollScope = "all" | "toRenew" | "noPhoto" | "awaiting" | "granted";
 
 export interface RollFilterState {
   scope: RollScope;
@@ -54,6 +54,17 @@ export function StaffFilters({
 
   const SCOPES: Array<{ key: RollScope; label: string }> = [
     { key: "all", label: t("scopeAll") },
+    /*
+     * ⚠️ SECOND, JUSTE APRÈS « Toutes » — et masqué quand il est vide, comme
+     * les autres.
+     *
+     * C'est la seule vue qui porte une échéance : des cartes qui cesseront
+     * d'être valables à une date connue si personne ne redépose leurs
+     * titulaires. Placée en fin de rangée, elle se lirait comme un filtre
+     * parmi d'autres ; ici, elle apparaît au moment où elle compte, à
+     * l'endroit où l'œil commence.
+     */
+    { key: "toRenew", label: t("scopeToRenew") },
     { key: "noPhoto", label: t("scopeNoPhoto") },
     { key: "awaiting", label: t("scopeAwaiting") },
     { key: "granted", label: t("scopeGranted") },

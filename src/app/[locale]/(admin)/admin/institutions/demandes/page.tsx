@@ -1,7 +1,7 @@
 "use client";
 // src/app/[locale]/(admin)/admin/institutions/demandes/page.tsx
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -94,6 +94,27 @@ export default function InstitutionRequestsPage() {
     REJECTED: all.filter((r) => r.status === "REJECTED").length,
     ALL: all.length,
   }), [all]);
+
+  /*
+   * ⚠️ NE PAS OUVRIR SUR UNE VUE VIDE — le même correctif que la page des
+   * agents.
+   *
+   * Un onglet vide n'est affiché que tant qu'il est sélectionné. Ouvrir sur
+   * un « À examiner » vide le montrait donc à zéro par simple défaut, et au
+   * premier clic ailleurs il s'effaçait : trois onglets, puis deux.
+   *
+   * Une seule fois, au premier chargement : après la dernière décision,
+   * rester sur « À examiner » vide est voulu — l'écran y dit « rien à
+   * examiner », qui est la nouvelle du moment.
+   */
+  const scopeSettled = useRef(false);
+  useEffect(() => {
+    if (scopeSettled.current || !requests.data) return;
+    scopeSettled.current = true;
+    if (counts.PENDING_REVIEW === 0 && scope === "PENDING_REVIEW") {
+      setScope("ALL");
+    }
+  }, [requests.data, counts.PENDING_REVIEW, scope]);
 
   const visible = useMemo(
     () => scope === "ALL" ? all : all.filter((r) => r.status === scope),

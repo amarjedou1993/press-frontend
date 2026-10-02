@@ -12,7 +12,7 @@
 // /ar/admin to /fr/admin, so useLocale() is always "fr" there and the rail
 // stays left on its own.
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { ChevronDown, ChevronsLeft, Lock } from "lucide-react";
 import {
@@ -70,9 +70,26 @@ function NavEntry({
 }) {
   const children = item.children ?? [];
   const hasChildren = children.length > 0;
+  const childActive = children.some((child) => child.active);
+
   const [childrenOpen, setChildrenOpen] = useState(
-    () => children.some((child) => child.active),
+    () => item.active || childActive,
   );
+
+  /*
+   * ⚠️ OUVERT DÈS QU'ON EST DEDANS, pas seulement au premier rendu.
+   *
+   * L'état initial ne se calcule qu'une fois. Arriver sur « Demandes » par
+   * le bandeau du tableau de bord laissait le groupe fermé : l'entrée active
+   * était cachée sous un parent replié, et le rail ne disait plus où l'on
+   * se trouvait.
+   *
+   * On ouvre, on ne ferme jamais d'office : refermer un groupe que
+   * l'administrateur a déplié lui-même serait lui retirer la main.
+   */
+  useEffect(() => {
+    if (item.active || childActive) setChildrenOpen(true);
+  }, [item.active, childActive]);
 
   const inherited = children.reduce(
     (sum, c) => sum + (typeof c.badge === "number" ? c.badge : 0), 0);
@@ -83,21 +100,43 @@ function NavEntry({
 
   return (
     <>
-      <SidebarMenuItem>
+      {/* ⚠️ relative déclaré ici, pas supposé : le chevron se positionne
+          sur cette ligne, et la version de shadcn en place ne le garantit
+          pas forcément. */}
+      <SidebarMenuItem className="relative">
         <SidebarMenuButton
           isActive={item.active}
           tooltip={item.label}
           aria-disabled={item.disabled}
-          aria-expanded={hasChildren && !collapsed ? childrenOpen : undefined}
+          /*
+           * ═══════════════════════════════════════════════════════════════
+           * ⚠️ LE LIBELLÉ NAVIGUE, LE CHEVRON DÉPLIE — DEUX CIBLES, PAS UNE.
+           *
+           * Un clic sur « Institutions » ne faisait que déplier : la page du
+           * registre n'était plus atteignable depuis le rail, alors que c'est
+           * la destination principale de cette entrée et les demandes une
+           * annexe.
+           *
+           * Le chevron est un bouton FRÈRE, jamais un enfant de celui-ci :
+           * un bouton dans un bouton est du HTML
+           * invalide, et un lecteur d'écran n'y verrait qu'une seule action.
+           *
+           * Naviguer vers le parent ouvre aussi le groupe : qui va au
+           * registre veut voir d'un coup d'œil si une demande attend.
+           * ═══════════════════════════════════════════════════════════════
+           */
           onClick={
             item.disabled
               ? undefined
-              : hasChildren && !collapsed
-                ? () => setChildrenOpen((open) => !open)
-                : () => onNavigate(item.href)
+              : () => {
+                  if (hasChildren) setChildrenOpen(true);
+                  onNavigate(item.href);
+                }
           }
           className={[
             "relative h-10 rounded-lg text-[12.5px] font-semibold transition-all",
+            // Place pour le chevron, qui se pose par-dessus le bord de fin.
+            hasChildren && !collapsed ? "pe-9" : "",
             item.active
               // start-0 / rounded-e: the active marker sits at the reading
               // edge of the item, and its rounded corner faces inward.
@@ -136,17 +175,39 @@ function NavEntry({
             </span>
           )}
 
-          {!collapsed && hasChildren && !item.disabled && (
+        </SidebarMenuButton>
+
+        {!collapsed && hasChildren && !item.disabled && (
+          <button
+            type="button"
+            onClick={() => setChildrenOpen((open) => !open)}
+            aria-expanded={childrenOpen}
+            aria-label={childrenOpen
+              ? `Replier ${item.label}`
+              : `Déplier ${item.label}`}
+            /*
+             * ⚠️ UN BOUTON ORDINAIRE, PAS SidebarMenuAction.
+             *
+             * Le composant shadcn impose sa propre position — un `right`
+             * physique, un `top` calé sur une hauteur de ligne qui n'est pas
+             * la nôtre, une taille fixe — et les surcharges se battaient avec
+             * lui selon la version installée. Le chevron sortait écrasé et
+             * décalé, et le groupe ne se refermait plus.
+             *
+             * Ici tout est explicite : bord de fin (suit le sens de lecture),
+             * centré sur la ligne, zone de clic de 28 px.
+             */
+            className="absolute end-1.5 top-1/2 z-10 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-white/45 transition-colors hover:bg-white/[0.08] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+          >
             <ChevronDown
               className={[
-                "h-3.5 w-3.5 flex-none text-white/45 transition-transform duration-200",
-                badge == null ? "ms-auto" : "ms-1",
+                "h-3.5 w-3.5 transition-transform duration-200",
                 childrenOpen ? "rotate-180 text-white/70" : "",
               ].join(" ")}
               aria-hidden="true"
             />
-          )}
-        </SidebarMenuButton>
+          </button>
+        )}
       </SidebarMenuItem>
 
       {!collapsed && childrenOpen && children.map((child) => (
@@ -235,7 +296,7 @@ export function AppSidebar({
           <div className={`flex items-center gap-2.5 px-4 py-4 ${collapsed ? "justify-center px-0" : ""}`}>
             <MauritaniaFlag
               id="sidebar-mauritania-flag"
-              className="h-5 w-[30px] flex-none drop-shadow-[0_1px_2px_rgba(0,0,0,.28)]"
+              className="h-6 w-[40px] flex-none drop-shadow-[0_1px_2px_rgba(0,0,0,.28)]"
               radius={1050}
             />
             {!collapsed && (

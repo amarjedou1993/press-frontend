@@ -37,7 +37,16 @@ import {
  * ⚠️ DEFINED ONCE, and used for both the counts and the filtering — so a tab
  * can never disagree with what it opens.
  */
-const IN_SCOPE: Record<RollScope, (r: FilingResponse) => boolean> = {
+/*
+ * ⚠️ "toRenew" N'EST PAS ICI, et ce n'est pas un oubli.
+ *
+ * Savoir si une carte est à renouveler dépend des AUTRES lignes : une carte
+ * dont le titulaire a déjà été redéposé n'est plus à renouveler, et seule la
+ * ligne suivante le dit. Un prédicat qui ne voit qu'une ligne ne peut pas
+ * répondre — la portée est donc calculée sur l'ensemble, plus bas, par le
+ * même `expiring` que le bandeau et le courriel.
+ */
+const IN_SCOPE: Record<Exclude<RollScope, "toRenew">, (r: FilingResponse) => boolean> = {
   all: () => true,
   noPhoto: (r) => !r.hasPhoto,
   awaiting: (r) => !r.granted,
@@ -84,32 +93,6 @@ export default function InstitutionStaffPage() {
    * those are the ones whose cards will sit at the printer undone.
    */
   /*
-   * ⚠️ ONE SET OF COUNTS, FROM THE PREDICATES ABOVE.
-   *
-   * They previously lived here as three separate filters, and the tabs would
-   * have been a fourth definition of the same questions. A tab whose count
-   * disagrees with what it opens is worse than no tab.
-   */
-  const counts = useMemo(() => ({
-    all: all.length,
-    noPhoto: all.filter(IN_SCOPE.noPhoto).length,
-    awaiting: all.filter(IN_SCOPE.awaiting).length,
-    granted: all.filter(IN_SCOPE.granted).length,
-  }), [all]);
-
-  const filtered = useMemo(() => {
-    const term = filters.search.trim().toLowerCase();
-    return all.filter((r) => {
-      if (!IN_SCOPE[filters.scope](r)) return false;
-      if (!term) return true;
-      return r.fullName.toLowerCase().includes(term)
-          || r.identityNumber.toLowerCase().includes(term)
-          || (r.cardNumber ?? "").toLowerCase().includes(term)
-          || (r.jobTitle ?? "").toLowerCase().includes(term);
-    });
-  }, [all, filters]);
-
-  /*
    * ───────────────────────────────────────────────────────────────────
    * ⚠️ NINETY DAYS, MATCHING InstitutionalRenewalJob's HORIZON.
    *
@@ -151,6 +134,45 @@ export default function InstitutionStaffPage() {
   const earliestExpiry = expiring[0]?.expiresAt
     ? format.dateTime(new Date(expiring[0].expiresAt + "T00:00:00"), "long")
     : null;
+
+  /*
+   * ⚠️ UN ENSEMBLE, POUR QUE LA VUE ET LE BANDEAU NE DIVERGENT JAMAIS.
+   *
+   * Le bandeau annonce « douze cartes » ; la vue « À renouveler » doit en
+   * montrer douze, pas onze parce qu'un second calcul aurait oublié la
+   * clause des cartes déjà redéposées.
+   */
+  const expiringIds = useMemo(() => new Set(expiring.map((r) => r.id)), [expiring]);
+
+  /*
+   * ⚠️ ONE SET OF COUNTS, FROM THE PREDICATES ABOVE.
+   *
+   * They previously lived here as three separate filters, and the tabs would
+   * have been a fourth definition of the same questions. A tab whose count
+   * disagrees with what it opens is worse than no tab.
+   */
+  const counts = useMemo(() => ({
+    all: all.length,
+    toRenew: expiring.length,
+    noPhoto: all.filter(IN_SCOPE.noPhoto).length,
+    awaiting: all.filter(IN_SCOPE.awaiting).length,
+    granted: all.filter(IN_SCOPE.granted).length,
+  }), [all, expiring]);
+
+  const filtered = useMemo(() => {
+    const term = filters.search.trim().toLowerCase();
+    return all.filter((r) => {
+      const inScope = filters.scope === "toRenew"
+        ? expiringIds.has(r.id)
+        : IN_SCOPE[filters.scope](r);
+      if (!inScope) return false;
+      if (!term) return true;
+      return r.fullName.toLowerCase().includes(term)
+          || r.identityNumber.toLowerCase().includes(term)
+          || (r.cardNumber ?? "").toLowerCase().includes(term)
+          || (r.jobTitle ?? "").toLowerCase().includes(term);
+    });
+  }, [all, filters, expiringIds]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
   const safePage = Math.min(page, pageCount);
@@ -354,7 +376,10 @@ export default function InstitutionStaffPage() {
       {expiringSoon > 0 && (
         <button
           type="button"
-          onClick={() => setFilters({ ...filters, scope: "granted", search: "" })}
+          /* ⚠️ Vers « À renouveler », plus « Octroyées » : cette dernière
+             montrait TOUTES les cartes accordées, et il fallait lire chaque
+             date pour trouver les concernées. */
+          onClick={() => setFilters({ ...filters, scope: "toRenew", search: "" })}
           className="flex w-full items-start gap-2.5 rounded-xl bg-[var(--gold-tint)] px-4 py-3 text-start text-[12.5px] leading-relaxed text-[var(--gold-700)] transition-colors hover:bg-[var(--gold-tint)]/70"
         >
           <RefreshCw className="mt-0.5 h-3.5 w-3.5 flex-none" />
@@ -398,6 +423,7 @@ export default function InstitutionStaffPage() {
               <StaffRow
                 key={row.id}
                 row={row}
+                dueForRenewal={expiringIds.has(row.id)}
                 onEdit={() => { setEditing(row); setDialogOpen(true); }}
                 onWithdraw={() => setWithdrawing(row)}
                 onPhoto={(f) => photo.mutate({ id: row.id, file: f })}
@@ -466,9 +492,11 @@ export default function InstitutionStaffPage() {
 /* ══ one filing ══ */
 
 function StaffRow({
-  row, onEdit, onWithdraw, onPhoto, uploading,
+  row, dueForRenewal = false, onEdit, onWithdraw, onPhoto, uploading,
 }: {
   row: FilingResponse;
+  /** Granted, valid, lapsing within 90 days, and not yet re-filed. */
+  dueForRenewal?: boolean;
   onEdit: () => void;
   onWithdraw: () => void;
   onPhoto: (file: File) => void;
@@ -595,14 +623,29 @@ function StaffRow({
         </p>
       )}
 
-      {row.granted && row.expiresAt && (
+      {/*
+        ⚠️ LA MÊME DATE, DEUX LECTURES.
+
+        « Valable jusqu'au … » est un fait tranquille. À moins de quatre-vingt-
+        dix jours et sans redépôt, c'est une échéance : la ligne passe en or et
+        dit ce qu'il faut faire. Sans cela, il fallait comparer chaque date au
+        calendrier pour trouver les cartes du bandeau.
+      */}
+      {row.granted && row.expiresAt && (dueForRenewal ? (
+        <div className="flex items-center gap-2 border-t border-[var(--gold-500)]/30 bg-[var(--gold-tint)] px-5 py-2.5 text-[12px] font-semibold text-[var(--gold-700)]">
+          <RefreshCw className="h-3 w-3 flex-none" />
+          {t("dueForRenewal", {
+            date: format.dateTime(new Date(row.expiresAt + "T00:00:00"), "long"),
+          })}
+        </div>
+      ) : (
         <div className="flex items-center gap-2 border-t border-[var(--line)] bg-[#fbfcfb] px-5 py-2.5 text-[12px] text-[var(--slate)]">
           <Check className="h-3 w-3 flex-none text-[var(--green-600)]" />
           {t("validUntil", {
             date: format.dateTime(new Date(row.expiresAt + "T00:00:00"), "long"),
           })}
         </div>
-      )}
+      ))}
     </li>
   );
 }
