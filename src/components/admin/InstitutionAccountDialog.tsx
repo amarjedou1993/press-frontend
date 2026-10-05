@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { KeyRound, UserPlus, Copy, Check, ShieldAlert } from "lucide-react";
+import { KeyRound, UserPlus, Copy, Check, ShieldAlert, AtSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Field, FieldLabel, FieldDescription, FieldError } from "@/components/ui/field";
 import {
-  createInstitutionAccount, resetInstitutionPassword,
+  createInstitutionAccount, resetInstitutionPassword, changeInstitutionAccountEmail,
   type InstitutionResponse,
 } from "@/lib/api/admin-institutions";
 import { ApiError } from "@/lib/api/client";
@@ -45,6 +45,17 @@ export function InstitutionAccountDialog({
 }) {
   const resetting = institution?.accountId != null;
 
+  /*
+   * ⚠️ DEUX GESTES SUR UN COMPTE EXISTANT, et on n'en fait qu'un à la fois.
+   *
+   * Changer le mot de passe et changer l'adresse répondent au même événement
+   * — la personne qui tenait le compte est partie — mais ce sont deux actes.
+   * Les mêler dans un seul envoi ferait d'une faute de frappe dans l'adresse
+   * une réinitialisation ratée aussi.
+   */
+  const [section, setSection] = useState<"password" | "email">("password");
+  const changingEmail = resetting && section === "email";
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   /**
@@ -63,6 +74,7 @@ export function InstitutionAccountDialog({
     setPassword(suggestPassword());
     setErrors({});
     setCopied(false);
+    setSection("password");
   }, [open, institution]);
 
   const errText = (e: unknown) =>
@@ -96,8 +108,33 @@ export function InstitutionAccountDialog({
     onError: (e) => setErrors({ form: errText(e) }),
   });
 
+  const changeEmail = useMutation({
+    mutationFn: () => changeInstitutionAccountEmail(institution!.id, email.trim().toLowerCase()),
+    onSuccess: () => {
+      toast.success("Adresse du compte modifiée", {
+        description: "Les liens de réinitialisation déjà envoyés à l'ancienne adresse ne fonctionnent plus.",
+      });
+      onDone();
+    },
+    onError: (e) => setErrors({ form: errText(e) }),
+  });
+
   function submit() {
     const found: Record<string, string> = {};
+
+    if (changingEmail) {
+      const value = email.trim().toLowerCase();
+      if (!value) {
+        found.email = "L'adresse e-mail est requise.";
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+        found.email = "Adresse e-mail invalide.";
+      } else if (value === (institution?.accountEmail ?? "").toLowerCase()) {
+        found.email = "C'est déjà l'adresse du compte.";
+      }
+      setErrors(found);
+      if (Object.keys(found).length === 0) changeEmail.mutate();
+      return;
+    }
 
     if (!resetting) {
       const value = email.trim();
@@ -124,22 +161,57 @@ export function InstitutionAccountDialog({
       <p className="text-[12px] font-medium text-[var(--red-700)]">{errors[field]}</p>
     ) : null;
 
-  const pending = create.isPending || reset.isPending;
+  const pending = create.isPending || reset.isPending || changeEmail.isPending;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[520px]">
         <DialogHeader className="pr-8">
           <DialogTitle>
-            {resetting ? "Réinitialiser le mot de passe" : "Créer le compte"}
+            {!resetting ? "Créer le compte"
+              : changingEmail ? "Changer l'adresse du compte"
+              : "Réinitialiser le mot de passe"}
           </DialogTitle>
           <DialogDescription>
             {institution?.nameFr}
-            {resetting
-              ? " — l'ancien mot de passe cessera immédiatement de fonctionner."
-              : " — un compte unique, qui appartient à l'institution et non à une personne."}
+            {!resetting
+              ? " — un compte unique, qui appartient à l'institution et non à une personne."
+              : changingEmail
+                ? " — l'institution se connectera désormais avec la nouvelle adresse."
+                : " — l'ancien mot de passe cessera immédiatement de fonctionner."}
           </DialogDescription>
         </DialogHeader>
+
+        {resetting && (
+          <div className="grid grid-cols-2 gap-1 rounded-xl bg-[#f2f5f3] p-1">
+            {([
+              { key: "password" as const, label: "Mot de passe", Icon: KeyRound },
+              { key: "email" as const, label: "Adresse e-mail", Icon: AtSign },
+            ]).map((tab) => {
+              const on = section === tab.key;
+              return (
+                <button
+                  key={tab.key}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => {
+                    setSection(tab.key);
+                    setErrors({});
+                    setEmail(institution?.accountEmail ?? "");
+                  }}
+                  className="flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-[12.5px] font-bold transition-all"
+                  style={on
+                    ? { background: "#fff", color: "var(--green-900)",
+                        boxShadow: "0 1px 3px rgba(11,46,31,.14)" }
+                    : { color: "var(--slate)" }}
+                >
+                  <tab.Icon className="h-3.5 w-3.5 flex-none" />
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         <div className="space-y-4">
           <Field data-invalid={!!errors.email}>
@@ -154,7 +226,7 @@ export function InstitutionAccountDialog({
               spellCheck={false}
               placeholder="accreditation@hapa.mr"
               value={email}
-              disabled={resetting}
+              disabled={resetting && !changingEmail}
               aria-invalid={!!errors.email}
               onChange={(e) => {
                 setEmail(e.target.value);
@@ -163,11 +235,28 @@ export function InstitutionAccountDialog({
             />
             {err("email")}
             <FieldDescription>
-              {resetting
-                ? "L'adresse ne change pas ici."
-                : "Une adresse de service plutôt qu'une personnelle : le compte survit au départ de qui l'utilise."}
+              {changingEmail
+                ? "Vérifiez-la avec soin : les réinitialisations de mot de passe y seront envoyées. Une adresse de service survit au départ de la personne."
+                : resetting
+                  ? "Pour changer l'adresse, utilisez l'onglet « Adresse e-mail »."
+                  : "Une adresse de service plutôt qu'une personnelle : le compte survit au départ de qui l'utilise."}
             </FieldDescription>
           </Field>
+
+          {changingEmail && (
+            <p className="flex items-start gap-2.5 rounded-lg bg-[var(--gold-tint)] px-3.5 py-2.5 text-[12.5px] leading-relaxed text-[var(--gold-700)]">
+              <ShieldAlert className="mt-0.5 h-3.5 w-3.5 flex-none" />
+              {/* ⚠️ Dit avant l'acte : c'est précisément ce qui protège quand
+                  la personne partie avait demandé un lien la veille. */}
+              <span>
+                Les liens de réinitialisation déjà envoyés à l&apos;ancienne
+                adresse cesseront de fonctionner, et toute session ouverte
+                avec elle prendra fin. Le mot de passe, lui, ne change pas.
+              </span>
+            </p>
+          )}
+
+          {!changingEmail && (<>
 
           <Field data-invalid={!!errors.password}>
             <FieldLabel htmlFor="inst-password">Mot de passe</FieldLabel>
@@ -227,6 +316,7 @@ export function InstitutionAccountDialog({
               moyens.
             </span>
           </p>
+          </>)}
 
           {/* The server's own refusal — about the account, not a field. */}
           {errors.form && <FieldError errors={[{ message: errors.form }]} />}
@@ -238,9 +328,13 @@ export function InstitutionAccountDialog({
             Annuler
           </Button>
           <Button className="w-full sm:w-auto" onClick={submit} disabled={pending}>
-            {resetting ? <KeyRound className="h-4 w-4 flex-none" />
-                       : <UserPlus className="h-4 w-4 flex-none" />}
-            {pending ? "Enregistrement…" : resetting ? "Réinitialiser" : "Créer le compte"}
+            {changingEmail ? <AtSign className="h-4 w-4 flex-none" />
+              : resetting ? <KeyRound className="h-4 w-4 flex-none" />
+              : <UserPlus className="h-4 w-4 flex-none" />}
+            {pending ? "Enregistrement…"
+              : changingEmail ? "Changer l'adresse"
+              : resetting ? "Réinitialiser"
+              : "Créer le compte"}
           </Button>
         </DialogFooter>
       </DialogContent>

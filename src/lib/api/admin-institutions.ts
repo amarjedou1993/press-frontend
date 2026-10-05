@@ -81,6 +81,19 @@ export function resetInstitutionPassword(id: number, password: string) {
   });
 }
 
+/**
+ * Move the account to another address.
+ *
+ * ⚠️ Links already sent to the old address stop working, and any session
+ * opened with it ends. The password itself does not change.
+ */
+export function changeInstitutionAccountEmail(id: number, email: string) {
+  return apiFetch<InstitutionResponse>(`/api/admin/institutions/${id}/account/email`, {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
+}
+
 export function setInstitutionAccountEnabled(id: number, enabled: boolean) {
   return apiFetch<InstitutionResponse>(
     `/api/admin/institutions/${id}/account/enabled?enabled=${enabled}`,
