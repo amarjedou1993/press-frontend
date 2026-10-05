@@ -40,6 +40,12 @@ export const V = {
   /** Renvoyé par le SERVEUR (409), pas par un validateur — mais c'est notre
       phrase, donc elle vit avec les autres. */
   emailTaken: "validation.emailTaken",
+
+  /* ── demande d'enregistrement d'une institution ── */
+  requiredInstitutionNameFr: "validation.requiredInstitutionNameFr",
+  requiredInstitutionNameAr: "validation.requiredInstitutionNameAr",
+  requiredContactRole: "validation.requiredContactRole",
+  institutionLetterRequired: "validation.institutionLetterRequired",
 } as const;
 
 /**
@@ -81,6 +87,56 @@ export function validateRegistration(input: {
   if (!input.password) errors.password = V.requiredPassword;
   else if (!PASSWORD_REGEX.test(input.password))
     errors.password = V.password;
+
+  return errors;
+}
+
+/**
+ * An institution's registration request.
+ *
+ * ───────────────────────────────────────────────────────────────────────
+ * ⚠️ LES MÊMES RÈGLES QUE validateRegistration, PAS DE NOUVELLES.
+ *
+ * Adresse, téléphone et mot de passe passent par les expressions et les clés
+ * déjà employées pour un candidat. Une institution qui saisit un numéro
+ * mauritanien obéit à la règle mauritanienne, et lit la même phrase qu'un
+ * journaliste quand elle se trompe.
+ *
+ * ⚠️ LE TÉLÉPHONE EST OBLIGATOIRE. Le Ministère examine une lettre officielle
+ * et peut avoir besoin d'appeler le signataire pour la confirmer — c'est même
+ * la vérification qui déjoue une demande déposée au nom d'un corps par
+ * quelqu'un qui n'en fait pas partie.
+ * ───────────────────────────────────────────────────────────────────────
+ */
+export function validateInstitutionRequest(input: {
+  proposedNameFr: string;
+  proposedNameAr: string;
+  contactName: string;
+  contactRole: string;
+  email: string;
+  phone: string;
+  password: string;
+  hasLetter: boolean;
+}): Record<string, string> {
+  const errors: Record<string, string> = {};
+
+  if (!input.proposedNameFr.trim()) errors.proposedNameFr = V.requiredInstitutionNameFr;
+  if (!input.proposedNameAr.trim()) errors.proposedNameAr = V.requiredInstitutionNameAr;
+  if (!input.contactName.trim()) errors.contactName = V.requiredName;
+  if (!input.contactRole.trim()) errors.contactRole = V.requiredContactRole;
+
+  if (!input.email.trim()) errors.email = V.requiredEmail;
+  else if (!EMAIL_REGEX.test(input.email.trim())) errors.email = V.email;
+
+  if (!input.phone.trim()) errors.phone = V.requiredPhone;
+  else if (!PHONE_REGEX.test(input.phone.replace(/\s/g, "")))
+    errors.phone = V.phone;
+
+  if (!input.password) errors.password = V.requiredPassword;
+  else if (!PASSWORD_REGEX.test(input.password))
+    errors.password = V.password;
+
+  if (!input.hasLetter) errors.letter = V.institutionLetterRequired;
 
   return errors;
 }

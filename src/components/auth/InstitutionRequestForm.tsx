@@ -6,6 +6,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { FileText, Upload, X, CheckCircle2, Mail } from "lucide-react";
 import { Field, PasswordField, SubmitButton, FormError } from "@/components/AuthShell";
 import { useFieldError } from "@/lib/useFieldError";
+import { validateInstitutionRequest } from "@/lib/validation";
 import {
   submitInstitutionRequest, type InstitutionRequestForm as Payload,
 } from "@/lib/api/institution-requests";
@@ -55,19 +56,28 @@ export function InstitutionRequestForm() {
     };
 
     /*
-     * ⚠️ THE LETTER IS CHECKED HERE, because it is the one field a browser
-     * cannot mark required in a way that reads well — and because sending the
-     * form without it wastes a round trip on the largest request the applicant
-     * will make.
+     * ⚠️ TOUT EST VÉRIFIÉ ICI, AVANT L'ENVOI — comme le formulaire candidat.
+     *
+     * Ce formulaire n'avait que le contrôle de la lettre : le reste partait au
+     * serveur, qui renvoyait ses refus un par un. Le téléphone n'était pas
+     * vérifié du tout. Les règles sont celles de validateRegistration —
+     * mêmes expressions, mêmes clés — et toutes les erreurs s'affichent
+     * ensemble, à côté de leur champ.
+     *
+     * La lettre reste dans le même lot : envoyer le formulaire sans elle
+     * gaspillerait l'aller-retour le plus lourd que le demandeur fera.
      */
-    if (!letter) {
-      setFieldErrors({ letter: "validation.institutionLetterRequired" });
+    const clientErrors = validateInstitutionRequest({ ...payload, hasLetter: !!letter });
+    if (Object.keys(clientErrors).length > 0) {
+      setFieldErrors(clientErrors);
       return;
     }
 
     setLoading(true);
     try {
-      const created = await submitInstitutionRequest(payload, letter);
+      // `letter` est non nul ici : la validation ci-dessus l'exige, mais
+      // TypeScript ne suit pas cette garantie à travers la fonction.
+      const created = await submitInstitutionRequest(payload, letter!);
       setSubmittedTo(created.email);
     } catch (e) {
       const problem = e as { status?: number; errors?: Record<string, string>; detail?: string };

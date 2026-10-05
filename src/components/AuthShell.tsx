@@ -1,25 +1,48 @@
 "use client";
+
 // src/components/AuthShell.tsx
+
 //
+
 // A journalist's first impression of the Authority. Whoever reaches this
+
 // screen is about to hand their identity documents to a government system —
+
 // what the page must establish, before a field is filled, is that this is the
+
 // real thing.
+
 //
+
 // ───────────────────────────────────────────────────────────────────────
+
 // ⚠️ THE FIELD PRIMITIVES RESOLVE ERROR CODES, NOT SENTENCES.
+
 //
+
 // Validation used to return French text: «Adresse e-mail invalide». Under an
+
 // Arabic label that is the exact mixed-language failure this whole exercise
+
 // exists to avoid.
+
 //
+
 // So the validators now return KEYS — "validation.email" — and Field resolves
+
 // them here. A key that has no entry is rendered as-is, which lets a SERVER
+
 // message («Cet e-mail est déjà utilisé», already translated by the backend)
+
 // pass through untouched.
+
 //
+
 // Every call site is unchanged: they still pass `error` and it still renders.
+
 // ───────────────────────────────────────────────────────────────────────
+
+
 
 import { useState, type ComponentProps, type ReactNode } from "react";
 import { useLocale, useTranslations } from "next-intl";
@@ -40,14 +63,9 @@ export function AuthShell({
   const locale = useLocale();
   const t = useTranslations("auth");
   const arabic = locale === "ar";
-
   /* ── the two halves of the ministry signature ── */
-
   const latinName = (
-    <p
-      dir="ltr"
-      lang="fr"
-      className="gold-foil text-[10.5px] font-bold uppercase leading-[1.7] tracking-[0.16em]"
+    <p dir="ltr" lang="fr" className="gold-foil text-[10.5px] font-bold uppercase leading-[1.7] tracking-[0.16em]"
     >
       Ministère de la Culture, des Arts,
       <br />
@@ -56,348 +74,655 @@ export function AuthShell({
       avec le Parlement
     </p>
   );
-
   const arabicName = (
     <p
-      dir="rtl"
-      lang="ar"
-      className="text-[13px] font-semibold leading-[1.8] text-white/40"
+      dir="rtl" lang="ar" className="text-[13px] font-semibold leading-[1.8] text-white/40"
     >
       وزارة الثقافة والفنون والاتصال والعلاقات مع البرلمان
     </p>
   );
 
   /**
+
    * ⚠️ Arabic leading gets the foil WITHOUT tracking.
-   *
    * gold-foil carries letter-spacing: 0.16em, which separates Arabic
    * letterforms — the word visibly falls apart.
    */
   const arabicNameLeading = (
-    <p
-      dir="rtl"
-      lang="ar"
-      className="gold-foil text-[15px] font-bold leading-[1.85]"
+    <p dir="rtl" lang="ar" className="gold-foil text-[15px] font-bold leading-[1.85]"
+
       style={{ letterSpacing: 0 }}
+
     >
+
       وزارة الثقافة والفنون والاتصال والعلاقات مع البرلمان
+
     </p>
+
   );
+
+
 
   const latinNameFollowing = (
+
     <p
+
       dir="ltr"
+
       lang="fr"
+
       className="text-[10px] font-bold uppercase leading-[1.75] tracking-[0.12em] text-white/40"
+
     >
+
       Ministère de la Culture, des Arts, de la Communication
+
       <br />
+
       et des Relations avec le Parlement
+
     </p>
+
   );
 
+
+
   /*
+
       ⚠️ TWO PANELS, ONE VIEWPORT.
 
+
+
       The page itself never scrolls on the authentication routes. The green
+
       institutional panel is locked to one dynamic viewport height, while the
+
       white panel owns its own vertical scroll. That keeps the ministry
+
       identity and PressCard specimen stationary even when registration grows.
+
   */
 
+
+
   return (
+
     <main className="grid h-dvh overflow-hidden lg:grid-cols-[1.1fr_1fr]">
 
+
+
       {/* ══════════════════════════════════════════════════════════
+
           THE INSTITUTION — hidden below lg, where the form is all
+
           there is room for.
+
           ══════════════════════════════════════════════════════════ */}
+
       <section
-        className="relative hidden h-dvh overflow-hidden px-12 py-4 text-white lg:block"
+
+        className="relative hidden h-dvh overflow-hidden px-12 py-4 text-white lg:block [@media(max-height:800px)]:py-2"
+
         style={{
+
           background:
+
             "radial-gradient(900px 460px at 88% -12%, rgba(255,215,0,.14), transparent 60%), radial-gradient(700px 500px at -10% 110%, rgba(0,169,92,.25), transparent 55%), linear-gradient(168deg, var(--green-900) 0%, #0e3d29 55%, #0b3524 100%)",
+
         }}
+
       >
+
         <Guilloche
+
           className="rtl-mirror pointer-events-none absolute -left-52 -top-56 h-[640px] w-[640px] text-white opacity-[0.055]"
+
           rings={50}
+
         />
+
         <Guilloche
+
           className="rtl-mirror pointer-events-none absolute -bottom-64 -right-40 h-[460px] w-[460px] text-[var(--gold-500)] opacity-[0.05]"
+
           rings={34}
+
         />
+
         <div
+
           className="pointer-events-none absolute inset-0 opacity-[0.045]"
+
           style={{ backgroundImage: "repeating-linear-gradient(115deg, #ffffff 0 1px, transparent 1px 11px)" }}
+
           aria-hidden="true"
+
         />
 
         {/*
-          The green panel never participates in the form's scroll. Header and
-          footer keep their places and the specimen uses the flexible middle
-          space, so a long institution request cannot move this composition.
-        */}
-        <div className="flex h-full flex-col py-4">
 
-        <header className="relative z-10">
-          <div className="mt-8 flex items-start gap-5">
+          The green panel never participates in the form's scroll. Header and
+
+          footer keep their places and the specimen uses the flexible middle
+
+          space, so a long institution request cannot move this composition.
+
+        */}
+
+        <div className="flex h-full min-h-0 flex-col py-4 [@media(max-height:800px)]:py-2">
+
+
+
+        <header className="relative z-10 shrink-0">
+
+          <div className="mt-8 flex items-start gap-5 [@media(max-height:800px)]:mt-4 [@media(max-height:720px)]:mt-2">
+
             <span className="relative mt-1 flex h-[54px] w-[54px] flex-none items-center justify-center">
+
               <span
+
                 className="absolute inset-0 rounded-full"
+
                 style={{ background: "radial-gradient(circle, rgba(255,215,0,.20), transparent 70%)" }}
+
                 aria-hidden="true"
+
               />
+
               <OfficialSeal
+
                 className="seal-turn relative h-full w-full"
+
                 color="var(--gold-500)"
+
                 id="auth-seal"
+
               />
+
             </span>
+
+
 
             {/* The reader's own language leads; the other follows. */}
+
             <div className="min-w-0">
+
               {arabic ? arabicNameLeading : latinName}
+
               <div className="mt-2.5">
+
                 {arabic ? latinNameFollowing : arabicName}
+
               </div>
+
             </div>
+
           </div>
 
-          <span className="foil-rule mt-7 block h-px w-40 opacity-55" aria-hidden="true" />
 
-          <h1 className="engraved-dark mt-7 text-[38px] font-extrabold leading-[1.08] tracking-[-0.015em] xl:text-[44px]">
+
+          <span className="foil-rule mt-7 block h-px w-40 opacity-55 [@media(max-height:800px)]:mt-5 [@media(max-height:720px)]:mt-4" aria-hidden="true" />
+
+
+
+          <h1 className="engraved-dark mt-7 text-[38px] font-extrabold leading-[1.08] tracking-[-0.015em] xl:text-[44px] [@media(max-height:800px)]:mt-5 [@media(max-height:800px)]:text-[34px] [@media(max-height:720px)]:mt-4 [@media(max-height:720px)]:text-[31px]">
+
             {t.rich("heroTitle", {
+
               gold: (c) => <span className="text-[var(--gold-500)]">{c}</span>,
+
               br: () => <br />,
+
             })}
+
           </h1>
+
         </header>
 
-        {/* THE SPECIMEN — the real component, so what an applicant sees here
-            is what they will actually be issued.
-            ⚠️ NOT mirrored: the card is a physical object with a fixed
-            layout, and Arabic already leads on it. */}
-        {/* ⚠️ flex-1 ET min-h-0 : le spécimen occupe ce qui reste entre
-            l'en-tête et le pied, centré dans cet espace-là plutôt que poussé
-            par une répartition. min-h-0 l'autorise à se réduire sur un écran
-            court au lieu de déborder. */}
-        <div className="relative z-10 flex min-h-0 flex-1 items-center justify-center px-6 py-6">
-          <PressCard className="w-full max-w-[380px]" />
-        </div>
 
-        <footer className="relative z-10">
-          <div className="flex flex-wrap gap-x-7 gap-y-2.5 text-[11.5px] font-semibold text-white/65">
-            <span className="inline-flex items-center gap-2">
-              <ShieldCheck className="h-3.5 w-3.5 flex-none text-[var(--gold-500)]" />
-              {t("secureData")}
-            </span>
-            <span className="inline-flex items-center gap-2">
-              <Languages className="h-3.5 w-3.5 flex-none text-[var(--gold-500)]" />
-              {t("bilingual")}
-            </span>
+
+        {/* THE SPECIMEN — the real component, so what an applicant sees here
+
+            is what they will actually be issued.
+
+            ⚠️ NOT mirrored: the card is a physical object with a fixed
+
+            layout, and Arabic already leads on it. */}
+
+        <div className="relative z-10 flex min-h-0 flex-1 items-center justify-center overflow-hidden px-6 py-6 [@media(max-height:800px)]:py-3 [@media(max-height:720px)]:py-2">
+
+          {/*
+            Keep the card at its native 380 px layout. PressCard contains fixed-size
+            credential elements (portrait, seal, type, MRZ), so reducing its width
+            would reflow/crowd the design. On short laptop viewports we instead
+            scale the completed card uniformly and give the flex layout a matching
+            scaled footprint.
+          */}
+          <div
+            className="relative h-[240px] w-[380px] shrink-0
+           "
+          >
+            <PressCard
+              className="absolute left-1/2 top-1/2 w-[380px] max-w-none
+                         origin-center -translate-x-1/2 -translate-y-1/2
+                       "
+            />
           </div>
 
-          <p className="mt-4 max-w-md text-[12px] leading-relaxed text-white/40">
+        </div>
+
+
+
+        <footer className="relative z-10 shrink-0">
+
+          <div className="flex flex-wrap gap-x-7 gap-y-2.5 text-[11.5px] font-semibold text-white/65">
+
+            <span className="inline-flex items-center gap-2">
+
+              <ShieldCheck className="h-3.5 w-3.5 flex-none text-[var(--gold-500)]" />
+
+              {t("secureData")}
+
+            </span>
+
+            <span className="inline-flex items-center gap-2">
+
+              <Languages className="h-3.5 w-3.5 flex-none text-[var(--gold-500)]" />
+
+              {t("bilingual")}
+
+            </span>
+
+          </div>
+
+
+
+          <p className="mt-4 max-w-md text-[12px] leading-relaxed text-white/40 [@media(max-height:800px)]:mt-2 [@media(max-height:720px)]:text-[11px]">
+
             {t("secureNotice")}
+
           </p>
+
         </footer>
 
+
+
         </div>
+
       </section>
 
+
+
       {/* ══════════════════════════════════════════════════════════
+
           THE FORM
+
           ══════════════════════════════════════════════════════════ */}
+
       <section className="relative h-dvh overflow-hidden bg-white">
+
         <div
+
           className="pointer-events-none absolute inset-0 opacity-60"
+
           style={{ background: "radial-gradient(640px 320px at 100% 0%, var(--green-tint), transparent 70%)" }}
+
           aria-hidden="true"
+
         />
+
         <Guilloche
+
           className="rtl-mirror pointer-events-none absolute -right-28 -top-28 h-[360px] w-[360px] text-[var(--green-900)] opacity-[0.03]"
+
           rings={30}
+
         />
+
+
 
         {/* Only the white authentication side scrolls. The green institutional
+
             panel remains locked to the viewport. The inner min-h-full wrapper
+
             keeps short forms vertically centred while allowing long forms to
+
             grow naturally and scroll from their true top edge. */}
+
         <div className="auth-scrollbar relative z-10 h-full overflow-x-hidden overflow-y-auto">
+
           <div className="flex min-h-full w-full items-center justify-center p-6 pb-8 sm:p-12 sm:pb-14">
+
             <div className="w-full max-w-md">
+
               {/* the lockup and the switcher, for the narrow layout where the
+
                   left panel is gone. The switcher must be reachable there too —
+
                   a visitor arriving in the wrong language needs a way out. */}
+
               <div className="mb-9 flex items-center justify-between gap-3 lg:hidden">
+
                 <span className="flex min-w-0 items-center gap-3">
+
                   <span className="flex h-9 w-9 flex-none items-center justify-center">
+
                     <OfficialSeal
+
                       className="h-full w-full"
+
                       color="var(--green-700)"
+
                       id="auth-seal-mobile"
+
                     />
+
                   </span>
+
                   <span className="min-w-0 truncate text-[12.5px] font-extrabold leading-tight text-[var(--green-900)]">
+
                     {t("eyebrow")}
+
                   </span>
+
                 </span>
+
                 <LocaleSwitcher variant="light" />
+
               </div>
+
+
 
               <div className="mb-2.5 hidden items-center justify-between gap-3 lg:flex">
+
                 <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--green-700)]">
+
                   {t("eyebrow")}
+
                 </p>
+
                 <LocaleSwitcher variant="light" />
+
               </div>
 
+
+
               <h2 className="text-[30px] font-extrabold leading-tight tracking-tight text-[var(--green-900)]">
+
                 {title}
+
               </h2>
+
+
 
               <span className="foil-rule mt-4 block h-px w-16 opacity-70" aria-hidden="true" />
 
+
+
               <p className="mt-4 text-[14.5px] leading-relaxed text-[var(--slate)]">
+
                 {subtitle}
+
               </p>
+
+
 
               <div className="mt-8">{children}</div>
 
+
+
               <div className="mt-7 border-t border-[var(--line)] pt-5 text-[13.5px] text-[var(--slate)]">
+
                 {footer}
+
               </div>
+
             </div>
+
           </div>
+
         </div>
 
+
+
         {/* Fixed to the white panel, not to its scrolling content. */}
+
         <TricolorRule className="pointer-events-none absolute inset-x-0 bottom-0 z-20" thin />
+
       </section>
+
     </main>
+
   );
+
 }
+
+
 
 /* ══════════════════════════════════════════════════════════════════
+
    FORM PRIMITIVES — same signatures, unchanged API
+
    ══════════════════════════════════════════════════════════════════ */
 
+
+
 export function Field({
+
   label, error, ...inputProps
+
 }: { label: string; error?: string } & ComponentProps<typeof Input>) {
+
   const id = inputProps.id ?? inputProps.name;
+
   const resolve = useFieldError();
+
   const message = resolve(error);
 
+
+
   return (
+
     <div className="mb-5 space-y-2">
+
       <Label htmlFor={id}>{label}</Label>
+
       <Input
+
         id={id}
+
         aria-invalid={!!message}
+
         className={message ? "border-[var(--red-500)]" : ""}
+
         {...inputProps}
+
       />
+
       {message && (
+
         <p className="text-xs font-medium text-[var(--red-500)]" role="alert">
+
           {message}
+
         </p>
+
       )}
+
     </div>
+
   );
+
 }
+
+
 
 export function PasswordField({
+
   label, error, ...inputProps
+
 }: { label: string; error?: string } & Omit<ComponentProps<typeof Input>, "type">) {
+
   const id = inputProps.id ?? inputProps.name;
+
   const t = useTranslations("auth");
+
   const resolve = useFieldError();
+
   const message = resolve(error);
+
   const [visible, setVisible] = useState(false);
 
+
+
   // ⚠️ Branched, not logical.
+
   //
+
   // pe-11 and end-0 SHOULD do this on their own — they are exactly what
+
   // logical properties are for. They do not resolve in this subtree, which
+
   // means `dir` is not reaching it, so the reading edge is computed here
+
   // instead of inferred from the document.
+
   //
+
   // See the note below: this is a workaround, not the right answer.
+
   const arabic = useLocale() === "ar";
 
+
+
   return (
+
     <div className="mb-5 space-y-2">
+
       <Label htmlFor={id}>{label}</Label>
+
       <div className="relative">
+
         {/* The reveal button sits at the END of the field — the right in
+
             French, the left in Arabic — and the padding follows it, so the
+
             icon never covers the text. */}
+
         <Input
+
           id={id}
+
           type={visible ? "text" : "password"}
+
           aria-invalid={!!message}
+
           className={`${arabic ? "pl-11" : "pr-11"} ${message ? "border-[var(--red-500)]" : ""}`}
+
           {...inputProps}
+
         />
+
         <button
+
           type="button"
+
           onClick={() => setVisible((v) => !v)}
+
           aria-label={visible ? t("hidePassword") : t("showPassword")}
+
           aria-pressed={visible}
+
           className={`absolute inset-y-0 ${arabic ? "left-0" : "right-0"} flex w-11 items-center justify-center text-[var(--muted-fg)] transition-colors hover:text-[var(--green-700)]`}
+
         >
+
           {visible ? <EyeOff size={18} /> : <Eye size={18} />}
+
         </button>
+
       </div>
+
       {message && (
+
         <p className="text-xs font-medium text-[var(--red-500)]" role="alert">
+
           {message}
+
         </p>
+
       )}
+
     </div>
+
   );
+
 }
+
+
 
 export function SubmitButton({ children, loading }: { children: ReactNode; loading?: boolean }) {
+
   const t = useTranslations("common");
+
   return (
+
     <button
+
       type="submit"
+
       disabled={loading}
+
       className="group relative inline-flex h-10 w-full items-center justify-center gap-2 overflow-hidden rounded-md text-[13px] font-extrabold text-white
+
                  shadow-[0_12px_28px_-14px_rgba(0,107,60,.95)] transition-all
+
                  hover:-translate-y-px hover:shadow-[0_16px_34px_-14px_rgba(0,107,60,1)]
+
                  disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0
+
                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold-500)] focus-visible:ring-offset-2"
+
       style={{ background: "linear-gradient(140deg, var(--green-600), var(--green-700) 60%, #05502c)" }}
+
     >
+
       <span className="relative z-10">
+
         {loading ? t("pleaseWait") : children}
+
       </span>
+
       {/* the sheen the site uses on its primary actions */}
+
       <span
+
         className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent transition-transform duration-700 group-hover:translate-x-full"
+
         aria-hidden="true"
+
       />
+
     </button>
+
   );
+
 }
 
+
+
 export function FormError({ message }: { message?: string }) {
+
   const resolve = useFieldError();
+
   const text = resolve(message);
+
   if (!text) return null;
+
   return (
-    // ⚠️ text-start overrides the Alert's baked-in text-left.
-    //
-    // shadcn's alert hardcodes `text-left` and `pr-18` — physical properties
-    // chosen when nobody expected an RTL page. dir="auto" fixes the reading
-    // ORDER of the Arabic, but alignment is a separate declaration and the
-    // component's own class wins until this one arrives after it.
     <Alert variant="destructive" className="mb-5 text-start">
       <AlertDescription dir="auto">{text}</AlertDescription>
     </Alert>
   );
+
 }
