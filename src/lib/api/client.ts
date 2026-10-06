@@ -1,8 +1,31 @@
-
-
 import type { ProblemDetail } from "@/lib/types";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
+/*
+ * ═══════════════════════════════════════════════════════════════════════
+ * ⚠️ DEUX ADRESSES POUR LA MÊME API, SELON QUI APPELLE.
+ *
+ * Le NAVIGATEUR appelle l'adresse publique (NEXT_PUBLIC_API_URL), inscrite
+ * dans le code au moment du build : c'est la seule qu'il puisse joindre.
+ *
+ * Le SERVEUR Next.js — rendu des pages publiques, rafraîchissement après une
+ * nouvelle session — tourne dans le même réseau Docker que l'application. Lui
+ * faire appeler l'adresse publique le ferait sortir du conteneur, traverser
+ * le reverse proxy du MTNIMA et revenir : un détour qui échoue si le
+ * conteneur ne résout pas le domaine public, et qui fait passer par le proxy
+ * des appels qui n'ont rien à y faire.
+ *
+ * API_INTERNAL_URL (http://backend:8080 dans le manifeste) n'a pas le
+ * préfixe NEXT_PUBLIC_ : Next.js ne l'inscrit donc jamais dans le code du
+ * navigateur, et elle n'existe que côté serveur. Absente — en développement —
+ * le serveur retombe sur l'adresse publique, comme avant.
+ * ═══════════════════════════════════════════════════════════════════════
+ */
+const PUBLIC_API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
+
+const BASE_URL =
+  typeof window === "undefined"
+    ? process.env.API_INTERNAL_URL ?? PUBLIC_API_URL
+    : PUBLIC_API_URL;
 
 export class ApiError extends Error {
   constructor(public readonly problem: ProblemDetail) {
