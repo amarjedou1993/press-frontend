@@ -2,7 +2,13 @@
 //
 // The read-only namespace: no token, no personal data.
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
+// const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
+
+import { serverApiBaseUrl } from "./base-url";
+
+const BASE_URL = typeof window === "undefined"
+    ? serverApiBaseUrl()
+    : process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
 
 export interface PublicSession {
   id: number;
