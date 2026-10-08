@@ -2,6 +2,7 @@
 // src/components/admin/ApproveRequestDialog.tsx
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { ShieldCheck, AlertTriangle } from "lucide-react";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
@@ -10,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { InstitutionRequestResponse } from "@/lib/api/admin-institution-requests";
-/**
+/** 
  * Approuver une demande : créer le corps et son compte.
  *
  * ───────────────────────────────────────────────────────────────────────
@@ -26,8 +27,23 @@ import { InstitutionRequestResponse } from "@/lib/api/admin-institution-requests
  * Rien ne le propose : il n'existe nulle part dans la demande, et un code
  * deviné à partir du nom se heurterait au premier homonyme. Le serveur refuse
  * un code déjà attribué.
+ *
+ * ⚠️ L'ERREUR DU SERVEUR EST UNE CLÉ, PAS UNE PHRASE.
+ *
+ * Le serveur répond « validation.institutionCodeTaken » : on la traduit si
+ * le catalogue la connaît, sinon on affiche le texte tel quel (message déjà
+ * rédigé, ou erreur réseau).
  * ───────────────────────────────────────────────────────────────────────
  */
+function useServerMessage() {
+  const t = useTranslations();
+  return (message?: string): string | undefined => {
+    if (!message) return message;
+    const key = message as Parameters<typeof t>[0];
+    return t.has(key) ? t(key) : message;
+  };
+}
+
 export function ApproveRequestDialog({
   open, onOpenChange, request, onApprove, approving, error,
 }: {
@@ -42,6 +58,8 @@ export function ApproveRequestDialog({
   const [nameFr, setNameFr] = useState("");
   const [nameAr, setNameAr] = useState("");
   const [local, setLocal] = useState<string>();
+  const serverMessage = useServerMessage();
+  const shownError = local ?? serverMessage(error);
 
   useEffect(() => {
     if (!open || !request) return;
@@ -103,7 +121,7 @@ export function ApproveRequestDialog({
               value={code}
               dir="ltr"
               className="font-mono uppercase"
-              placeholder="HAPA"
+              placeholder="AMI"
               onChange={(e) => { setCode(e.target.value); setLocal(undefined); }}
             />
             {/* ⚠️ Il figure dans le numéro des cartes de la série C et ne se
@@ -134,9 +152,9 @@ export function ApproveRequestDialog({
             />
           </div>
 
-          {(local ?? error) && (
+          {shownError && (
             <p className="rounded-lg bg-[var(--red-tint)] px-3.5 py-2.5 text-[12.5px] font-medium text-[var(--red-700)]">
-              {local ?? error}
+              {shownError}
             </p>
           )}
         </div>
